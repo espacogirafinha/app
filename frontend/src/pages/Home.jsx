@@ -69,52 +69,45 @@ const Home = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-24 pb-20 px-4 overflow-hidden">
+      <section className="relative pt-24 pb-20 px-4 overflow-hidden min-h-[600px] md:min-h-[700px] flex items-center">
         {/* Hero Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1756621716318-9eec89d42715?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwyfHxjaGlsZHJlbiUyMGJpcnRoZGF5JTIwcGFydHl8ZW58MHx8fHwxNzczNzY4NjIwfDA&ixlib=rb-4.1.0&q=85)',
+            backgroundImage: 'url(/hero-party.jpg)',
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-100/95 via-orange-100/90 to-green-100/95"></div>
+          {/* Dark Overlay for Text Readability */}
+          <div className="absolute inset-0 bg-black/30"></div>
         </div>
+        
         <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+            <h2 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight drop-shadow-2xl">
               Festas infantis inesquecíveis em Silves{' '}
               <span className="inline-block animate-bounce">🎉</span>
             </h2>
-            <p className="text-xl md:text-2xl text-gray-800 mb-4 font-semibold">
-              Diversão garantida para crianças e tranquilidade para os pais
+            <p className="text-xl md:text-2xl text-white mb-4 font-semibold drop-shadow-lg">
+              Diversão garantida para crianças e tranquilidade para os pais{' '}
+              <span className="inline-block">🦒</span>
             </p>
-            <p className="text-lg text-orange-600 font-bold mb-8 animate-pulse">
+            <p className="text-lg md:text-xl text-yellow-300 font-bold mb-8 animate-pulse drop-shadow-lg bg-black/40 inline-block px-6 py-2 rounded-full">
               ⚠️ Datas limitadas — reserve com antecedência
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
               <Button
                 size="lg"
-                className="bg-orange-600 hover:bg-orange-700 text-white text-lg px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transition-all font-bold"
-                onClick={scrollToContact}
-              >
-                Pedir Orçamento
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-3 border-orange-600 text-orange-700 hover:bg-orange-100 text-lg px-10 py-7 rounded-full shadow-lg hover:shadow-xl transition-all font-semibold"
+                className="bg-orange-600 hover:bg-orange-700 text-white text-lg md:text-xl px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transition-all font-bold"
                 onClick={openWhatsApp}
               >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                Contactar
+                💬 Pedir Orçamento
               </Button>
             </div>
           </div>
         </div>
         
-        {/* Decorative elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-yellow-400 rounded-full opacity-30 animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-32 h-32 bg-orange-400 rounded-full opacity-30 animate-pulse delay-100"></div>
+        {/* Decorative gradient at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent"></div>
       </section>
 
       {/* About Section */}

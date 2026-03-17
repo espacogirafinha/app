@@ -375,3 +375,59 @@ Urgência implementada em 3 pontos estratégicos:
 - **Google Reviews Badge**: Reforça avaliação pública verificável
 
 **Resultado**: Secção de testemunhos que constrói confiança forte e conexão emocional genuína com potenciais clientes através de experiências reais autênticas.
+
+### Data: 17 de Março de 2026 (Noite) - HERO SECTION COM IMAGEM REAL
+
+#### Hero Section Atualizado com Foto Autêntica
+
+✅ **Imagem Real da Festa Implementada**
+- **Foto autêntica**: Imagem do próprio Espaço Girafinha (IMG_0347.heic → hero-party.jpg)
+- **Conteúdo visível**: Crianças reais brincando, balões amarelos vibrantes, decoração colorida
+- **Formato**: Convertido HEIC para JPG (1.8MB) para compatibilidade web
+- **Localização**: `/app/frontend/public/hero-party.jpg`
+
+✅ **Overlay Escuro para Legibilidade**
+- **Opacidade**: 30% (bg-black/30)
+- **Resultado**: Texto branco perfeitamente legível mantendo imagem vibrante visível
+- **Contraste**: Excelente entre texto branco e fundo escurecido
+
+✅ **Texto Atualizado e Otimizado**
+- **Headline**: "Festas infantis inesquecíveis em Silves 🎉"
+  * text-5xl md:text-7xl
+  * text-white
+  * drop-shadow-2xl para legibilidade extra
+- **Subheadline**: "Diversão garantida para crianças e tranquilidade para os pais 🦒"
+  * Emoji girafa adicionado (representando a marca)
+  * text-xl md:text-2xl
+  * text-white com drop-shadow-lg
+- **Urgência**: "⚠️ Datas limitadas — reserve com antecedência"
+  * text-yellow-300 (amarelo vibrante)
+  * Background preto/40 arredondado
+  * animate-pulse para chamar atenção
+
+✅ **CTA Único e Direto**
+- **Botão único**: "💬 Pedir Orçamento" (removido segundo botão para simplificar)
+- **Ação direta**: Redireciona para WhatsApp
+- **Styling**: orange-600 hover:orange-700, py-7, shadow-2xl
+- **Tamanho**: Grande e impactante (text-lg md:text-xl, px-10)
+
+✅ **Layout e Responsividade**
+- **Altura mínima**: 600px mobile, 700px desktop
+- **Flexbox centering**: items-center para centralização vertical perfeita
+- **Imagem background**: bg-cover bg-center para cobertura total
+- **Gradiente inferior**: Transição suave para secção seguinte (white gradient)
+
+✅ **Mobile Optimization**
+- Texto redimensiona automaticamente (responsive text-5xl → text-7xl)
+- Botão CTA full-width em mobile
+- Imagem cobre toda área sem distorção
+- Todo conteúdo legível sem zoom
+
+✅ **Impacto Emocional e Visual**
+- **Autenticidade**: Foto real do espaço cria confiança imediata
+- **Conexão**: Vê-se crianças realmente brincando e felizes
+- **Vibração**: Cores vibrantes (amarelos, decoração colorida)
+- **Primeira impressão**: Forte e positiva - mostra exatamente o que é oferecido
+- **Trust building**: Não é foto de stock, é o espaço real
+
+**Resultado**: Hero Section que cria impacto emocional imediato e autêntico, mostrando o ambiente real onde as festas acontecem, construindo confiança instantânea.
