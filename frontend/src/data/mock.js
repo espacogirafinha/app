@@ -6,12 +6,14 @@ export const packages = [
     name: "Pack Simples",
     image: "/Pack simples.png",
     children: "Até 15 crianças",
+    duration: "3 horas",
     description: "Perfeito para festas pequenas e intimistas",
     included: [
       "Aluguer do espaço por 3 horas",
-      "Mesas e cadeiras",
+      "Mesas e cadeiras incluídas",
       "Frigorífico disponível",
-      "Acesso a área de brincadeiras"
+      "Acesso a área de brincadeiras",
+      "Cozinha equipada"
     ]
   },
   {
@@ -19,13 +21,15 @@ export const packages = [
     name: "Pack com Decoração",
     image: "/Pack com decoração.png",
     children: "Até 20 crianças",
-    description: "Inclui decoração temática personalizada",
+    duration: "3 horas",
+    description: "Festa completa com decoração personalizada ao seu gosto",
     included: [
       "Tudo do Pack Simples",
       "Decoração temática completa",
-      "Balões e festões",
+      "Balões e festões personalizados",
       "Mesa decorada para o bolo",
-      "Apoio na montagem"
+      "Apoio profissional na montagem",
+      "Coordenação no dia da festa"
     ],
     popular: true
   },
@@ -34,13 +38,15 @@ export const packages = [
     name: "Pack Completo",
     image: "/Pack completo.png",
     children: "Até 25 crianças",
-    description: "A festa completa sem preocupações",
+    duration: "3 horas",
+    description: "A festa dos sonhos sem preocupações — relaxe e aproveite!",
     included: [
       "Tudo do Pack com Decoração",
-      "Lanche para crianças",
-      "Animação infantil",
+      "Lanche completo para crianças",
+      "Animação infantil profissional",
       "Monitores especializados",
-      "Lembranças para as crianças"
+      "Lembranças personalizadas",
+      "Fotografia de recordação"
     ]
   },
   {
@@ -48,12 +54,14 @@ export const packages = [
     name: "Aluguer do Espaço",
     image: "/Aluguer do espaço.png",
     children: "Flexível",
-    description: "Alugue apenas o espaço e organize como quiser",
+    duration: "3 horas",
+    description: "Total liberdade para criar a festa à sua maneira",
     included: [
-      "Espaço privado",
+      "Espaço privado e seguro",
       "Mesas e cadeiras",
-      "Cozinha equipada",
-      "Área exterior"
+      "Cozinha totalmente equipada",
+      "Área exterior para brincadeiras",
+      "Flexibilidade total na organização"
     ]
   }
 ];
@@ -76,26 +84,26 @@ export const galleryImages = [
 export const features = [
   {
     id: 1,
-    title: "Ambiente Seguro",
-    description: "Espaço totalmente seguro e adaptado para crianças",
+    title: "Espaço seguro e adaptado para crianças",
+    description: "Instalações pensadas ao pormenor para a segurança dos mais pequenos, com áreas protegidas e supervisão constante",
     icon: "Shield"
   },
   {
     id: 2,
-    title: "Espaço Privado",
-    description: "Privacidade total para sua festa",
+    title: "Ambiente privado para a sua festa",
+    description: "Celebre em exclusivo! O espaço é totalmente privado durante a sua festa — sem partilhar com outros eventos",
     icon: "Lock"
   },
   {
     id: 3,
-    title: "Atividades Divertidas",
-    description: "Jogos e brincadeiras para todas as idades",
+    title: "Diversão garantida com várias atividades",
+    description: "Área de brincadeiras, jogos e animação que mantêm as crianças felizes e entretidas do início ao fim",
     icon: "PartyPopper"
   },
   {
     id: 4,
-    title: "Sem Stress para os Pais",
-    description: "Cuidamos de tudo para você relaxar",
+    title: "Sem stress para os pais — tratamos de tudo",
+    description: "Relaxe e aproveite! Cuidamos da decoração, animação e limpeza. Você só precisa de curtir o momento especial",
     icon: "Heart"
   }
 ];

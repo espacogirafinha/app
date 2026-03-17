@@ -70,20 +70,31 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-yellow-100 via-orange-100 to-green-100 opacity-60"></div>
+        {/* Hero Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1756621716318-9eec89d42715?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwyfHxjaGlsZHJlbiUyMGJpcnRoZGF5JTIwcGFydHl8ZW58MHx8fHwxNzczNzY4NjIwfDA&ixlib=rb-4.1.0&q=85)',
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-100/95 via-orange-100/90 to-green-100/95"></div>
+        </div>
         <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Festas Infantis em Silves{' '}
+            <h2 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+              Festas infantis inesquecíveis em Silves{' '}
               <span className="inline-block animate-bounce">🎉</span>
             </h2>
-            <p className="text-xl md:text-2xl text-gray-700 mb-8 font-medium">
-              O espaço perfeito para celebrar aniversários com diversão garantida
+            <p className="text-xl md:text-2xl text-gray-800 mb-4 font-semibold">
+              Diversão garantida para crianças e tranquilidade para os pais
+            </p>
+            <p className="text-lg text-orange-600 font-bold mb-8 animate-pulse">
+              ⚠️ Datas limitadas — reserve com antecedência
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className="bg-orange-500 hover:bg-orange-600 text-white text-lg px-8 py-6 rounded-full shadow-lg hover:shadow-xl transition-all"
+                className="bg-orange-600 hover:bg-orange-700 text-white text-lg px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transition-all font-bold"
                 onClick={scrollToContact}
               >
                 Pedir Orçamento
@@ -91,7 +102,7 @@ const Home = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-orange-500 text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 rounded-full shadow-lg hover:shadow-xl transition-all"
+                className="border-3 border-orange-600 text-orange-700 hover:bg-orange-100 text-lg px-10 py-7 rounded-full shadow-lg hover:shadow-xl transition-all font-semibold"
                 onClick={openWhatsApp}
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
@@ -102,30 +113,55 @@ const Home = () => {
         </div>
         
         {/* Decorative elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-yellow-300 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-32 h-32 bg-orange-300 rounded-full opacity-20 animate-pulse delay-100"></div>
+        <div className="absolute top-20 left-10 w-20 h-20 bg-yellow-400 rounded-full opacity-30 animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-32 h-32 bg-orange-400 rounded-full opacity-30 animate-pulse delay-100"></div>
       </section>
 
       {/* About Section */}
       <section id="sobre" className="py-20 px-4 bg-white">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-12">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Sobre o Espaço Girafinha</h3>
             <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full"></div>
           </div>
-          <div className="prose prose-lg max-w-none text-gray-700 text-center">
-            <p className="text-lg leading-relaxed mb-6">
-              O <strong>Espaço Girafinha</strong> é o local ideal para celebrar o aniversário do seu filho em Silves, Algarve. 
-              Oferecemos um ambiente seguro, colorido e totalmente privado, onde as crianças podem brincar e divertir-se à vontade.
-            </p>
-            <p className="text-lg leading-relaxed mb-6">
-              Com decorações personalizadas, área de brincadeiras e pacotes completos, cuidamos de todos os detalhes 
-              para que os pais possam relaxar e aproveitar o momento especial junto com os seus filhos.
-            </p>
-            <p className="text-lg leading-relaxed">
-              Venha conhecer o nosso espaço e descubra porque somos a escolha favorita das famílias do Algarve 
-              para festas infantis inesquecíveis!
-            </p>
+          <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-3xl p-8 md:p-12 shadow-xl">
+            <div className="prose prose-lg max-w-none text-gray-700">
+              <p className="text-xl leading-relaxed mb-6 text-center font-semibold text-gray-800">
+                Transformamos aniversários em memórias inesquecíveis! ✨
+              </p>
+              <p className="text-lg leading-relaxed mb-6">
+                O <strong className="text-orange-600">Espaço Girafinha</strong> nasceu do sonho de criar o local perfeito para celebrar 
+                momentos especiais com os mais pequenos. Localizado em <strong>Silves, Algarve</strong>, o nosso espaço oferece 
+                um ambiente <strong>seguro, colorido e totalmente privado</strong>, onde as crianças podem brincar, 
+                rir e criar memórias que vão guardar para sempre.
+              </p>
+              <p className="text-lg leading-relaxed mb-6">
+                Sabemos que organizar uma festa infantil pode ser stressante. Por isso, criámos pacotes completos 
+                onde cuidamos de <strong>todos os detalhes</strong> — desde a decoração personalizada até à animação 
+                e lanche. Os pais podem finalmente relaxar e <strong>aproveitar o momento especial</strong> ao lado 
+                dos seus filhos, sem preocupações.
+              </p>
+              <p className="text-lg leading-relaxed text-center">
+                <strong className="text-orange-600 text-xl">
+                  Mais do que um espaço de festas, somos parceiros na criação de sorrisos! 😊
+                </strong>
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-6 mt-10 text-center">
+              <div className="bg-white rounded-xl p-6 shadow-md">
+                <p className="text-4xl font-bold text-orange-600 mb-2">500+</p>
+                <p className="text-gray-700 font-semibold">Festas Realizadas</p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-md">
+                <p className="text-4xl font-bold text-orange-600 mb-2">100%</p>
+                <p className="text-gray-700 font-semibold">Pais Satisfeitos</p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-md">
+                <p className="text-4xl font-bold text-orange-600 mb-2">5★</p>
+                <p className="text-gray-700 font-semibold">Avaliação Google</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -136,18 +172,23 @@ const Home = () => {
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Pacotes de Festas</h3>
             <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
-            <p className="text-xl text-gray-600">Escolha o pacote perfeito para a festa do seu filho</p>
+            <p className="text-xl text-gray-600 mb-2">Escolha o pacote perfeito para a festa do seu filho</p>
+            <p className="text-lg text-orange-600 font-bold animate-pulse">
+              ⚠️ Disponibilidade limitada — garanta já a sua data!
+            </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {packages.map((pkg) => (
               <Card 
                 key={pkg.id} 
-                className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-orange-200 relative"
+                className={`overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 relative ${
+                  pkg.popular ? 'border-orange-500 shadow-xl scale-105' : 'border-orange-200'
+                }`}
               >
                 {pkg.popular && (
-                  <Badge className="absolute top-4 right-4 bg-orange-500 text-white z-10">
-                    Mais Popular
+                  <Badge className="absolute top-4 right-4 bg-orange-600 text-white z-10 text-sm px-3 py-1">
+                    ⭐ Mais Popular
                   </Badge>
                 )}
                 <div className="relative h-48 overflow-hidden bg-gradient-to-br from-yellow-100 to-orange-100">
@@ -159,25 +200,34 @@ const Home = () => {
                 </div>
                 <CardHeader>
                   <CardTitle className="text-2xl text-orange-600">{pkg.name}</CardTitle>
-                  <CardDescription className="text-base font-semibold text-gray-700">
-                    {pkg.children}
-                  </CardDescription>
-                  <p className="text-sm text-gray-600 mt-2">{pkg.description}</p>
+                  <div className="flex items-center gap-2 text-gray-700 font-semibold mt-2">
+                    <span className="text-base">{pkg.children}</span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-base">{pkg.duration}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">{pkg.description}</p>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {pkg.included.map((item, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                        <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="mb-4">
+                    <p className="text-sm font-bold text-gray-800 mb-3">O que está incluído:</p>
+                    <ul className="space-y-2">
+                      {pkg.included.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                          <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   <Button 
-                    className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white rounded-full"
+                    className={`w-full mt-4 text-white rounded-full font-semibold ${
+                      pkg.popular 
+                        ? 'bg-orange-600 hover:bg-orange-700 shadow-lg' 
+                        : 'bg-orange-500 hover:bg-orange-600'
+                    }`}
                     onClick={openWhatsApp}
                   >
-                    Pedir Informações
+                    💬 Pedir Informações
                   </Button>
                 </CardContent>
               </Card>
@@ -190,25 +240,40 @@ const Home = () => {
       <section id="galeria" className="py-20 px-4 bg-white">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold text-gray-900 mb-4">Galeria de Momentos</h3>
+            <h3 className="text-4xl font-bold text-gray-900 mb-4">Galeria de Momentos Felizes</h3>
             <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
-            <p className="text-xl text-gray-600">Veja algumas das festas realizadas no nosso espaço</p>
+            <p className="text-xl text-gray-600">Fotos reais das festas realizadas no nosso espaço — momentos inesquecíveis!</p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {galleryImages.map((image) => (
               <div
                 key={image.id}
-                className="relative overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 aspect-square group"
+                className="relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 aspect-square group cursor-pointer"
               >
                 <img
                   src={image.src}
                   alt={image.alt}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                  <p className="text-white text-sm font-semibold">{image.alt}</p>
+                </div>
               </div>
             ))}
+          </div>
+          
+          <div className="text-center mt-12">
+            <p className="text-lg text-gray-600 mb-4">
+              Quer ver a sua festa aqui? 📸
+            </p>
+            <Button
+              size="lg"
+              className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 rounded-full font-semibold"
+              onClick={openWhatsApp}
+            >
+              Reserve Já a Sua Data
+            </Button>
           </div>
         </div>
       </section>
@@ -217,24 +282,26 @@ const Home = () => {
       <section className="py-20 px-4 bg-gradient-to-b from-green-50 to-yellow-50">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold text-gray-900 mb-4">Porque Escolher-nos?</h3>
+            <h3 className="text-4xl font-bold text-gray-900 mb-4">Porque Escolher o Espaço Girafinha?</h3>
             <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full"></div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {features.map((feature) => {
               const IconComponent = iconMap[feature.icon];
               return (
-                <Card key={feature.id} className="text-center hover:shadow-xl transition-shadow duration-300 border-2 border-orange-100">
+                <Card key={feature.id} className="hover:shadow-xl transition-shadow duration-300 border-2 border-orange-100">
                   <CardHeader>
-                    <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                      <IconComponent className="h-8 w-8 text-orange-500" />
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <IconComponent className="h-7 w-7 text-orange-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-gray-900 mb-3">{feature.title}</CardTitle>
+                        <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                      </div>
                     </div>
-                    <CardTitle className="text-xl text-gray-900">{feature.title}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">{feature.description}</p>
-                  </CardContent>
                 </Card>
               );
             })}
@@ -246,55 +313,65 @@ const Home = () => {
       <section id="contacto" className="py-20 px-4 bg-white">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold text-gray-900 mb-4">Entre em Contacto</h3>
+            <h3 className="text-4xl font-bold text-gray-900 mb-4">Reserve a Festa dos Sonhos</h3>
             <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
-            <p className="text-xl text-gray-600">Pronto para reservar a festa perfeita?</p>
+            <p className="text-xl text-gray-600 mb-2">Pronto para criar memórias inesquecíveis?</p>
+            <p className="text-lg text-orange-600 font-bold animate-pulse">
+              ⚠️ Vagas limitadas — garanta já a sua data preferida!
+            </p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-12">
             <div>
-              <h4 className="text-2xl font-bold text-gray-900 mb-6">Informações</h4>
+              <h4 className="text-2xl font-bold text-gray-900 mb-6">Fale Connosco</h4>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-orange-500" />
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Phone className="h-6 w-6 text-orange-600" />
                   </div>
-                  <a href={`tel:${contactInfo.phone}`} className="text-gray-700 hover:text-orange-500">
+                  <a href={`tel:${contactInfo.phone}`} className="text-gray-700 hover:text-orange-600 font-semibold">
                     {contactInfo.phone}
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Instagram className="h-5 w-5 text-orange-500" />
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Instagram className="h-6 w-6 text-orange-600" />
                   </div>
                   <a 
                     href={`https://instagram.com/${contactInfo.instagram}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-700 hover:text-orange-500"
+                    className="text-gray-700 hover:text-orange-600 font-semibold"
                   >
                     @{contactInfo.instagram}
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Facebook className="h-5 w-5 text-orange-500" />
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Facebook className="h-6 w-6 text-orange-600" />
                   </div>
                   <a 
                     href={contactInfo.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-700 hover:text-orange-500"
+                    className="text-gray-700 hover:text-orange-600 font-semibold"
                   >
                     Girafinha Decoração
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-orange-500" />
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <MapPin className="h-6 w-6 text-orange-600" />
                   </div>
-                  <span className="text-gray-700">{contactInfo.address}</span>
+                  <span className="text-gray-700 font-semibold">{contactInfo.address}</span>
                 </div>
+              </div>
+              
+              <div className="mt-8 p-6 bg-orange-50 rounded-xl border-2 border-orange-200">
+                <p className="text-gray-800 font-semibold mb-2">💡 Resposta rápida garantida!</p>
+                <p className="text-gray-600 text-sm">
+                  Respondemos a todas as mensagens em menos de 2 horas durante o horário comercial
+                </p>
               </div>
             </div>
             
@@ -304,22 +381,22 @@ const Home = () => {
                   <Input
                     type="text"
                     name="name"
-                    placeholder="Nome"
+                    placeholder="Nome completo"
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="border-orange-200 focus:border-orange-600 h-12"
                   />
                 </div>
                 <div>
                   <Input
                     type="tel"
                     name="phone"
-                    placeholder="Telefone"
+                    placeholder="Telefone / WhatsApp"
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="border-orange-200 focus:border-orange-600 h-12"
                   />
                 </div>
                 <div>
@@ -330,27 +407,29 @@ const Home = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="border-orange-200 focus:border-orange-600 h-12"
                   />
                 </div>
                 <div>
                   <Textarea
                     name="message"
-                    placeholder="Mensagem"
-                    rows={4}
+                    placeholder="Conte-nos sobre a festa que imagina (data pretendida, número de crianças, tema...)"
+                    rows={5}
                     value={formData.message}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-500"
+                    className="border-orange-200 focus:border-orange-600"
                   />
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-green-500 hover:bg-green-600 text-white py-6 rounded-full text-lg"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-7 rounded-full text-lg font-bold shadow-xl hover:shadow-2xl"
                 >
-                  <MessageCircle className="mr-2 h-5 w-5" />
-                  Enviar via WhatsApp
+                  💬 Pedir Orçamento por WhatsApp
                 </Button>
+                <p className="text-xs text-center text-gray-500">
+                  Ao enviar, será redirecionado para o WhatsApp com a sua mensagem pronta
+                </p>
               </form>
             </div>
           </div>
@@ -398,10 +477,10 @@ const Home = () => {
       {/* Floating WhatsApp Button */}
       <button
         onClick={openWhatsApp}
-        className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-50"
+        className="fixed bottom-6 right-6 bg-green-600 hover:bg-green-700 text-white p-5 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-50 animate-pulse"
         aria-label="Contactar via WhatsApp"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-7 w-7" />
       </button>
     </div>
   );

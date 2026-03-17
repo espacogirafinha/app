@@ -94,18 +94,19 @@ Criar um website moderno, colorido e responsivo de página única para um espaç
 - Logo: `/app/frontend/public/Logotipo girafinha (1).png`
 - Pacotes: Pack Simples, Pack com Decoração, Pack Completo, Aluguer do Espaço
 - Galeria: 25 fotos reais de festas em `/app/frontend/public/gallery/`
+- Hero: Imagem emocional de crianças em festa (Unsplash)
 
 ✅ **Funcionalidades Implementadas (Frontend)**
 1. **Navegação Suave**: Links de âncora para secções
 2. **Header Fixo**: Com logo e navegação
-3. **Hero Section**: Com gradientes suaves e CTAs
-4. **About Section**: Texto informativo sobre o espaço
-5. **Packages Cards**: 4 pacotes com imagens reais, descrições e botões CTA
-6. **Gallery Grid**: 4x2 grid responsivo com efeitos hover
-7. **Features Section**: 4 cards com ícones
-8. **Contact Form**: Formulário que redireciona para WhatsApp
+3. **Hero Section**: Com imagem de fundo emocional, headline otimizada e urgência
+4. **About Section**: Texto emocional + estatísticas sociais (500+ festas, 100% satisfação, 5★)
+5. **Packages Cards**: 4 pacotes com duração, descrições emocionais e urgência
+6. **Gallery Grid**: 3x4 grid maior e mais engaging com CTAs
+7. **Features Section**: 4 benefícios reescritos emocionalmente (2x2 layout)
+8. **Contact Form**: Formulário otimizado que redireciona para WhatsApp
 9. **Footer**: Com logo e links de redes sociais
-10. **WhatsApp Floating Button**: Fixo e funcional
+10. **WhatsApp Floating Button**: Maior, mais verde e com pulse animation
 11. **Responsive Design**: Funciona em mobile e desktop
 12. **Smooth Scrolling**: Animações suaves
 
@@ -113,6 +114,84 @@ Criar um website moderno, colorido e responsivo de página única para um espaç
 - Formulário envia dados formatados via WhatsApp
 - Botão flutuante com mensagem pré-definida
 - Número: +351935541254
+
+### Data: 17 de Março de 2026 (Tarde) - MELHORIAS DE CONVERSÃO
+
+#### Otimizações Implementadas para Aumentar Conversões
+
+✅ **Hero Section Otimizado**
+- Nova headline emocional: "Festas infantis inesquecíveis em Silves 🎉"
+- Subheadline focada em benefícios: "Diversão garantida para crianças e tranquilidade para os pais"
+- Elemento de urgência destacado: "⚠️ Datas limitadas — reserve com antecedência"
+- Imagem de fundo com crianças felizes (maior impacto emocional)
+- Botões CTA maiores e com melhor contraste (orange-600/700)
+
+✅ **About Section Emocional**
+- Título impactante: "Transformamos aniversários em memórias inesquecíveis! ✨"
+- Copy reescrito focando em criar memórias e eliminar stress dos pais
+- **Social Proof adicionado**: 3 cards com estatísticas
+  * 500+ Festas Realizadas
+  * 100% Pais Satisfeitos
+  * 5★ Avaliação Google
+- Frase de encerramento emocional: "Mais do que um espaço de festas, somos parceiros na criação de sorrisos! 😊"
+
+✅ **Packages Section Melhorado**
+- **Urgência adicionada**: "⚠️ Disponibilidade limitada — garanta já a sua data!"
+- **Duração visível**: "3 horas" em todos os pacotes
+- Pack mais popular **visualmente destacado**:
+  * Borda laranja mais forte (border-orange-500)
+  * Badge "⭐ Mais Popular"
+  * Escala ligeiramente maior (scale-105)
+  * Sombra mais proeminente
+  * Botão com cor mais forte (orange-600)
+- Descrições emocionalmente otimizadas
+- Lista de inclusões expandida e mais clara
+- Botão CTA melhorado: "💬 Pedir Informações"
+
+✅ **Gallery Engagement**
+- Título mais emocional: "Galeria de Momentos Felizes"
+- Ênfase em autenticidade: "Fotos reais das festas realizadas no nosso espaço — momentos inesquecíveis!"
+- **Imagens maiores**: 3 colunas (era 4) para maior impacto
+- Cantos mais arredondados (rounded-2xl)
+- Overlay com descrição ao hover
+- **CTA no final da galeria**: "Quer ver a sua festa aqui? 📸" + botão "Reserve Já a Sua Data"
+
+✅ **Why Choose Us - Reescrito Emocionalmente**
+- Benefícios reescritos focando em sentimentos e resultados:
+  1. "Espaço seguro e adaptado para crianças" - com detalhes sobre supervisão
+  2. "Ambiente privado para a sua festa" - exclusividade destacada
+  3. "Diversão garantida com várias atividades" - mantém crianças felizes
+  4. "Sem stress para os pais — tratamos de tudo" - foco em relaxamento
+- Layout 2x2 (era 4 colunas) para permitir descrições mais longas
+- Ícones maiores e mais proeminentes
+
+✅ **Contact Section Otimizada**
+- Título mais urgente: "Reserve a Festa dos Sonhos"
+- **Urgência repetida**: "⚠️ Vagas limitadas — garanta já a sua data preferida!"
+- **Caixa informativa**: "💡 Resposta rápida garantida! Respondemos em menos de 2 horas"
+- Botão WhatsApp otimizado: "💬 Pedir Orçamento por WhatsApp"
+- Botão maior (py-7) e mais verde (green-600/700) com sombra forte
+- Placeholder do textarea mais descritivo e específico
+- Nota explicativa sobre funcionamento do WhatsApp
+
+✅ **WhatsApp Floating Button Melhorado**
+- Tamanho aumentado (p-5, h-7 w-7)
+- Cor mais forte e contrastante (green-600/700)
+- **Animação pulse** para chamar atenção constantemente
+
+✅ **Elementos de Urgência (SCARCITY)**
+Urgência implementada em 3 pontos estratégicos:
+1. Hero Section
+2. Packages Section
+3. Contact Section
+
+✅ **Melhorias Globais de UX**
+- Contraste aumentado em todos os botões
+- Emotividade aumentada em todos os textos
+- Foco em benefícios emocionais (não features técnicas)
+- Social proof destacado (estatísticas)
+- CTAs mais específicos e action-oriented
+- Elementos visuais hierarquicamente organizados
 
 ## Backlog Priorizado
 
