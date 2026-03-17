@@ -91,7 +91,7 @@ const Home = () => {
               <span className="inline-block">🦒</span>
             </p>
             <p className="text-lg md:text-xl text-yellow-300 font-bold mb-8 animate-pulse drop-shadow-lg bg-black/40 inline-block px-6 py-2 rounded-full">
-              ⚠️ Datas limitadas — reserve com antecedência
+              ⚠️ Fins de semana esgotam rapidamente — reserve com antecedência
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
               <Button
@@ -99,7 +99,7 @@ const Home = () => {
                 className="bg-orange-600 hover:bg-orange-700 text-white text-lg md:text-xl px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transition-all font-bold"
                 onClick={openWhatsApp}
               >
-                💬 Pedir Orçamento
+                💬 Ver disponibilidade
               </Button>
             </div>
           </div>
@@ -165,8 +165,11 @@ const Home = () => {
             <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Pacotes de Festas</h3>
             <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
             <p className="text-xl text-gray-600 mb-2">Escolha o pacote perfeito para a festa do seu filho</p>
-            <p className="text-lg text-orange-600 font-bold animate-pulse">
+            <p className="text-lg text-orange-600 font-bold animate-pulse mb-4">
               ⚠️ Disponibilidade limitada — garanta já a sua data!
+            </p>
+            <p className="text-lg text-gray-700 font-semibold mb-2">
+              👇 Escolha o pack ideal para a festa do seu filho
             </p>
           </div>
           
@@ -425,8 +428,11 @@ const Home = () => {
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Reserve a Festa dos Sonhos</h3>
             <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
             <p className="text-xl text-gray-600 mb-2">Pronto para criar memórias inesquecíveis?</p>
-            <p className="text-lg text-orange-600 font-bold animate-pulse">
+            <p className="text-lg text-orange-600 font-bold animate-pulse mb-2">
               ⚠️ Vagas limitadas — garanta já a sua data preferida!
+            </p>
+            <p className="text-base text-green-600 font-semibold">
+              ⏱️ Resposta rápida em poucas horas
             </p>
           </div>
           

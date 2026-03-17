@@ -127,23 +127,23 @@ export const testimonials = [
   },
   {
     id: 2,
+    text: "Espaço fantástico! Decoração, catering e apoio durante a festa foram impecáveis. Muito fácil e tranquilo para os pais.",
+    author: "Ana",
+    location: "Portimão",
+    rating: 5
+  },
+  {
+    id: 3,
     text: "Não tenho nada a apontar! Desde a decoração ao atendimento, tudo foi excelente. As crianças adoraram e sentimos muito carinho em todos os detalhes.",
     author: "Amanda",
     location: "Tunes",
     rating: 5
   },
   {
-    id: 3,
+    id: 4,
     text: "Um dia super feliz para o meu filho! A decoração, o espaço e todo o carinho fizeram a diferença. Recomendo a 100%.",
     author: "Jéssica",
     location: "Silves",
-    rating: 5
-  },
-  {
-    id: 4,
-    text: "Espaço fantástico! Decoração, catering e apoio durante a festa foram impecáveis. Muito fácil e tranquilo para os pais.",
-    author: "Ana",
-    location: "Portimão",
     rating: 5
   },
   {
