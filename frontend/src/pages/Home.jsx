@@ -70,19 +70,15 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-20 px-4 overflow-hidden min-h-[600px] md:min-h-[700px] flex items-center">
-        {/* Hero Background Image */}
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: 'url(/hero-party.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
-        >
-          {/* Dark Overlay for Text Readability */}
-          <div className="absolute inset-0 bg-black/30"></div>
-        </div>
+        {/* Hero Image Element */}
+        <img
+          src="/hero-party.jpg"
+          alt="Festa infantil no Espaço Girafinha"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        
+        {/* Dark Overlay for Text Readability */}
+        <div className="absolute inset-0 bg-black/30"></div>
         
         <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center">
@@ -110,7 +106,7 @@ const Home = () => {
         </div>
         
         {/* Decorative gradient at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent z-10"></div>
       </section>
 
       {/* About Section */}
