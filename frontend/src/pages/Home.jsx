@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Shield, Lock, PartyPopper, Heart, Phone, Instagram, Facebook, MapPin, Check, MessageCircle } from 'lucide-react';
-import { packages, galleryImages, features, contactInfo } from '../data/mock';
+import { Shield, Lock, PartyPopper, Heart, Phone, Instagram, Facebook, MapPin, Check, MessageCircle, Quote } from 'lucide-react';
+import { packages, galleryImages, features, contactInfo, testimonials } from '../data/mock';
 
 const iconMap = {
   Shield: Shield,
@@ -150,7 +150,7 @@ const Home = () => {
             
             <div className="grid grid-cols-3 gap-6 mt-10 text-center">
               <div className="bg-white rounded-xl p-6 shadow-md">
-                <p className="text-4xl font-bold text-orange-600 mb-2">500+</p>
+                <p className="text-4xl font-bold text-orange-600 mb-2">100+</p>
                 <p className="text-gray-700 font-semibold">Festas Realizadas</p>
               </div>
               <div className="bg-white rounded-xl p-6 shadow-md">
@@ -354,6 +354,74 @@ const Home = () => {
                 </Card>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">O que dizem os pais</h3>
+            <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
+            <p className="text-xl text-gray-600">Experiências reais de famílias que confiaram em nós</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {testimonials.map((testimonial) => (
+              <Card key={testimonial.id} className="bg-white border-2 border-gray-100 hover:border-orange-200 hover:shadow-xl transition-all duration-300">
+                <CardHeader>
+                  {/* Stars */}
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <svg
+                        key={i}
+                        className="w-5 h-5 fill-orange-500"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                      </svg>
+                    ))}
+                  </div>
+                  
+                  {/* Quote Icon */}
+                  <Quote className="h-8 w-8 text-orange-200 mb-2" />
+                </CardHeader>
+                
+                <CardContent>
+                  {/* Testimonial Text */}
+                  <p className="text-gray-700 leading-relaxed mb-6 italic">
+                    "{testimonial.text}"
+                  </p>
+                  
+                  {/* Author */}
+                  <div className="border-t border-gray-200 pt-4">
+                    <p className="font-bold text-gray-900">{testimonial.author}</p>
+                    <p className="text-sm text-gray-600">{testimonial.location}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {/* Google Reviews CTA */}
+          <div className="text-center mt-12">
+            <div className="inline-flex items-center gap-3 bg-orange-50 rounded-full px-6 py-3 border-2 border-orange-200">
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <svg
+                    key={i}
+                    className="w-5 h-5 fill-orange-500"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                  </svg>
+                ))}
+              </div>
+              <span className="text-gray-800 font-semibold">
+                5.0 no Google Reviews
+              </span>
+            </div>
           </div>
         </div>
       </section>

@@ -315,3 +315,63 @@ Urgência implementada em 3 pontos estratégicos:
 - Cores consistentes com brand (orange-500/600, green-600, gray-700)
 
 **Resultado**: Secção de pacotes extremamente clara, fácil de comparar e otimizada para conversão mobile e desktop.
+
+### Data: 17 de Março de 2026 (Noite) - SECÇÃO DE TESTEMUNHOS REAIS ADICIONADA
+
+#### Nova Secção: "O que dizem os pais"
+
+✅ **Testemunhos Reais Implementados**
+- **5 testemunhos** de clientes reais (Marta-Lagoa, Amanda-Tunes, Jéssica-Silves, Ana-Portimão, Tânia-Silves)
+- Todos com **avaliação 5 estrelas**
+- Textos **autênticos e emocionais** mantendo clareza e legibilidade
+- Foco em experiências reais: decoração, comida, equipa, diversão das crianças
+
+✅ **Design dos Cards de Testemunhos**
+- **Fundo branco limpo** com borda cinza suave
+- **5 estrelas laranjas** visíveis no topo de cada card
+- **Ícone de aspas decorativo** (Quote icon) em laranja suave
+- **Texto em itálico** com formato de citação ("...")
+- **Divider horizontal** separando texto de autor
+- **Nome do autor em bold** + localização em cinza
+- **Hover effect**: borda muda para laranja e sombra aumenta
+
+✅ **Layout e Grid**
+- **Desktop**: Grid 3 colunas (lg:grid-cols-3)
+- **Tablet**: Grid 2 colunas (md:grid-cols-2)
+- **Mobile**: 1 coluna empilhada
+- Espaçamento generoso (gap-8)
+- Máximo 7xl container
+
+✅ **Badge do Google Reviews**
+- **Centralizado** abaixo dos testemunhos
+- **Inline-flex** com fundo laranja suave (orange-50)
+- **5 estrelas laranjas** + texto "5.0 no Google Reviews"
+- Design arredondado (rounded-full)
+- Borda laranja (border-2 border-orange-200)
+
+✅ **Posicionamento Estratégico**
+- Colocada **DEPOIS** de "Why Choose Us"
+- Colocada **ANTES** de "Contact Section"
+- Razão: Construir confiança máxima antes do pedido de contacto
+- Fluxo: Features → Social Proof (Testemunhos) → Action (Contacto)
+
+✅ **Social Proof Atualizado na Secção About**
+- **Corrigido**: 500+ → **100+ Festas Realizadas**
+- Mantido: **100% Pais Satisfeitos**
+- Mantido: **5★ Avaliação Google**
+
+✅ **Elementos de Autenticidade**
+- Nomes reais dos clientes
+- Localizações variadas (Algarve: Lagoa, Tunes, Silves, Portimão)
+- Detalhes específicos mencionados (decoração, catering, equipa, carinho)
+- Linguagem natural e emocional
+- Foco em resultados (felicidade das crianças, tranquilidade dos pais)
+
+✅ **Impacto de Conversão**
+- **Trust Building**: 5 testemunhos de 5 estrelas constroem forte credibilidade
+- **Regional Reach**: Localidades variadas mostram alcance no Algarve
+- **Emotional Connection**: Foco em momentos especiais e memórias
+- **Specific Benefits**: Menção a aspectos tangíveis (decoração, comida, equipa)
+- **Google Reviews Badge**: Reforça avaliação pública verificável
+
+**Resultado**: Secção de testemunhos que constrói confiança forte e conexão emocional genuína com potenciais clientes através de experiências reais autênticas.

@@ -116,3 +116,41 @@ export const contactInfo = {
   address: "Silves, Algarve, Portugal",
   whatsappMessage: "Olá! Gostaria de saber disponibilidade para uma festa no Espaço Girafinha."
 };
+
+export const testimonials = [
+  {
+    id: 1,
+    text: "Foi uma excelente decisão! As crianças e os adultos divertiram-se sem preocupações, a comida estava ótima e a decoração estava um mimo. Espaço limpo e equipa muito profissional.",
+    author: "Marta",
+    location: "Lagoa",
+    rating: 5
+  },
+  {
+    id: 2,
+    text: "Não tenho nada a apontar! Desde a decoração ao atendimento, tudo foi excelente. As crianças adoraram e sentimos muito carinho em todos os detalhes.",
+    author: "Amanda",
+    location: "Tunes",
+    rating: 5
+  },
+  {
+    id: 3,
+    text: "Um dia super feliz para o meu filho! A decoração, o espaço e todo o carinho fizeram a diferença. Recomendo a 100%.",
+    author: "Jéssica",
+    location: "Silves",
+    rating: 5
+  },
+  {
+    id: 4,
+    text: "Espaço fantástico! Decoração, catering e apoio durante a festa foram impecáveis. Muito fácil e tranquilo para os pais.",
+    author: "Ana",
+    location: "Portimão",
+    rating: 5
+  },
+  {
+    id: 5,
+    text: "Adorámos tudo! As crianças divertiram-se imenso, ambiente excelente e equipa sempre disponível. Vamos voltar de certeza!",
+    author: "Tânia",
+    location: "Silves",
+    rating: 5
+  }
+];
