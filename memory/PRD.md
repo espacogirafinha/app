@@ -254,3 +254,64 @@ Urgência implementada em 3 pontos estratégicos:
 - **Website**: https://girafinha-silves.preview.emergentagent.com
 - **Instagram**: https://instagram.com/espacogirafinha.silves
 - **Facebook**: https://www.facebook.com/p/Girafinha-decora%C3%A7%C3%A3o-61559630369569/
+
+### Data: 17 de Março de 2026 (Noite) - REDESIGN MINIMALISTA DOS PACOTES
+
+#### Secção de Pacotes Completamente Redesenhada
+
+✅ **Design Minimalista Implementado**
+- **Imagens removidas**: Cards agora são 100% texto e informação
+- **Layout limpo**: Fundo branco, tipografia clara, espaçamento generoso
+- **Zero clutter**: Focado apenas no essencial
+
+✅ **Hierarquia Visual Clara (Top to Bottom)**
+1. **Nome do Pacote**: Texto grande e bold (text-2xl)
+2. **Preço**: Muito destacado em laranja grande (text-4xl)
+   - Pack Simples: 220€
+   - Pack com Decoração: 350€ (MAIS POPULAR)
+   - Pack Completo: 500€
+   - Aluguer do Espaço: 150€
+3. **Quick Info com Ícones SVG**:
+   - Ícone de pessoas + "Até X crianças"
+   - Ícone de relógio + "3 horas"
+4. **Descrição**: Curta e objetiva (1 linha)
+5. **Divider**: Linha separadora
+6. **Lista de Inclusões**: 
+   - Título em uppercase "O QUE ESTÁ INCLUÍDO:"
+   - Checkmarks verdes com texto descritivo
+7. **CTA Button**: "💬 Pedir Orçamento" em laranja
+
+✅ **Pack Popular Visualmente Destacado**
+- Badge laranja no topo: "⭐ MAIS POPULAR"
+- Borda mais forte (border-3 border-orange-500)
+- Botão CTA com cor mais intensa (orange-600)
+- Sombra mais proeminente
+
+✅ **Scannable em < 5 Segundos**
+- Preço imediatamente visível no topo
+- Informação organizada verticalmente
+- Ícones facilitam compreensão rápida
+- Checkmarks verdes para leitura rápida da lista
+- Sem elementos distrativos
+
+✅ **Mobile-Optimized**
+- Cards empilhados verticalmente (1 coluna)
+- Toda informação visível sem scroll horizontal
+- Botões grandes e fáceis de tocar (py-6)
+- Espaçamento touch-friendly
+
+✅ **Elementos Adicionais de Conversão**
+- Caixa informativa no final da secção:
+  * "💡 Precisa de algo personalizado?"
+  * Texto explicativo sobre customização
+  * Botão "Falar Connosco" (outline style)
+- Reforça flexibilidade e atendimento personalizado
+
+✅ **Melhorias UX**
+- Cards com hover effect (-translate-y-1)
+- Transições suaves (duration-300)
+- Espaçamento consistente entre elementos
+- Tipografia bem definida (text-sm, text-base, text-2xl, text-4xl)
+- Cores consistentes com brand (orange-500/600, green-600, gray-700)
+
+**Resultado**: Secção de pacotes extremamente clara, fácil de comparar e otimizada para conversão mobile e desktop.

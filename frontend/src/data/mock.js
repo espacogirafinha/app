@@ -4,10 +4,10 @@ export const packages = [
   {
     id: 1,
     name: "Pack Simples",
-    image: "/Pack simples.png",
+    price: "220€",
     children: "Até 15 crianças",
     duration: "3 horas",
-    description: "Perfeito para festas pequenas e intimistas",
+    description: "Ideal para festas pequenas e intimistas",
     included: [
       "Aluguer do espaço por 3 horas",
       "Mesas e cadeiras incluídas",
@@ -19,10 +19,10 @@ export const packages = [
   {
     id: 2,
     name: "Pack com Decoração",
-    image: "/Pack com decoração.png",
+    price: "350€",
     children: "Até 20 crianças",
     duration: "3 horas",
-    description: "Festa completa com decoração personalizada ao seu gosto",
+    description: "Festa completa com decoração personalizada",
     included: [
       "Tudo do Pack Simples",
       "Decoração temática completa",
@@ -36,10 +36,10 @@ export const packages = [
   {
     id: 3,
     name: "Pack Completo",
-    image: "/Pack completo.png",
+    price: "500€",
     children: "Até 25 crianças",
     duration: "3 horas",
-    description: "A festa dos sonhos sem preocupações — relaxe e aproveite!",
+    description: "A experiência completa sem preocupações",
     included: [
       "Tudo do Pack com Decoração",
       "Lanche completo para crianças",
@@ -52,16 +52,16 @@ export const packages = [
   {
     id: 4,
     name: "Aluguer do Espaço",
-    image: "/Aluguer do espaço.png",
+    price: "150€",
     children: "Flexível",
     duration: "3 horas",
-    description: "Total liberdade para criar a festa à sua maneira",
+    description: "Total liberdade para organizar à sua maneira",
     included: [
       "Espaço privado e seguro",
       "Mesas e cadeiras",
       "Cozinha totalmente equipada",
       "Área exterior para brincadeiras",
-      "Flexibilidade total na organização"
+      "Flexibilidade total"
     ]
   }
 ];
