@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import { Shield, Lock, PartyPopper, Heart, Phone, Instagram, Facebook, MapPin, Check, MessageCircle, Quote } from 'lucide-react';
-import { packages, galleryImages, features, contactInfo, testimonials } from '../data/mock';
+import { packages, galleryImages, features, contactInfo, testimonials, foodOptions } from '../data/mock';
 
 const iconMap = {
   Shield: Shield,
@@ -173,109 +173,156 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {packages.map((pkg) =>
-            <Card
-              key={pkg.id}
-              className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
-              pkg.popular ?
-              'border-3 border-orange-500 shadow-xl bg-white' :
-              'border border-gray-200 bg-white'}`
-              }>
-
-                {pkg.popular &&
-              <div className="absolute top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm font-bold">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {packages.map((pkg) => (
+              <Card 
+                key={pkg.id} 
+                className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
+                  pkg.popular 
+                    ? 'border-3 border-orange-500 shadow-xl bg-white' 
+                    : 'border border-gray-200 bg-white'
+                }`}
+              >
+                {pkg.popular && (
+                  <div className="absolute top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm font-bold">
                     ⭐ MAIS POPULAR
                   </div>
-              }
+                )}
                 
                 <CardHeader className={pkg.popular ? 'pt-12' : 'pt-6'}>
-                  {/* Package Name */}
                   <CardTitle className="text-2xl font-bold text-gray-900 mb-3">
                     {pkg.name}
                   </CardTitle>
                   
-                  {/* Price */}
                   <div className="mb-4">
                     <div className="text-4xl font-bold text-orange-600">
                       {pkg.price}
                     </div>
                   </div>
                   
-                  {/* Quick Info */}
-                  <div className="flex flex-col gap-2 mb-4 text-sm">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                      <span className="font-semibold">{pkg.children}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="font-semibold">{pkg.duration}</span>
-                    </div>
+                  <div className="bg-orange-50 rounded-lg p-3 mb-4">
+                    {pkg.schedules.map((schedule, index) => (
+                      <p key={index} className="text-sm font-semibold text-gray-700">
+                        {schedule}
+                      </p>
+                    ))}
                   </div>
-                  
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                    {pkg.description}
-                  </p>
                 </CardHeader>
                 
                 <CardContent>
-                  {/* Divider */}
                   <div className="border-t border-gray-200 mb-4"></div>
                   
-                  {/* Included Items */}
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <p className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-3">
-                      O que está incluído:
+                      Inclui:
                     </p>
-                    <ul className="space-y-2.5">
-                      {pkg.included.map((item, index) =>
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                    <ul className="space-y-2">
+                      {pkg.includes.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
                           <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                           <span className="leading-tight">{item}</span>
                         </li>
-                    )}
+                      ))}
                     </ul>
                   </div>
                   
-                  {/* CTA Button */}
-                  <Button
-                  className="inline-flex items-center justify-center whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-9 w-full hover:bg-orange-700 text-sm font-semibold gap-2 px-4 py-6 rounded-full !shadow-lg text-white bg-orange-600"
-
-
-
-
-                  onClick={openWhatsApp}>
-
+                  {pkg.extras && pkg.extras.length > 0 && (
+                    <div className="mb-4 bg-yellow-50 rounded-lg p-3">
+                      <p className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-2">
+                        Extras:
+                      </p>
+                      <ul className="space-y-1">
+                        {pkg.extras.map((extra, index) => (
+                          <li key={index} className="text-sm text-gray-700 font-semibold">
+                            • {extra}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {pkg.notes && pkg.notes.length > 0 && (
+                    <div className="mb-6 border-t border-gray-200 pt-4">
+                      <p className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-2">
+                        Notas:
+                      </p>
+                      <ul className="space-y-1.5">
+                        {pkg.notes.map((note, index) => (
+                          <li key={index} className="text-xs text-gray-600 leading-relaxed">
+                            • {note}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    className={`w-full text-white rounded-full font-semibold py-6 ${
+                      pkg.popular 
+                        ? 'bg-orange-600 hover:bg-orange-700 shadow-lg' 
+                        : 'bg-orange-500 hover:bg-orange-600'
+                    }`}
+                    onClick={openWhatsApp}
+                  >
                     💬 Saber disponibilidade
                   </Button>
                 </CardContent>
               </Card>
-            )}
+            ))}
           </div>
           
-          {/* Additional Info */}
-          <div className="text-center mt-12 max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-orange-200">
-              <p className="text-gray-800 font-semibold mb-2">
-                💡 Precisa de algo personalizado?
-              </p>
-              <p className="text-gray-600 text-sm mb-4">
-                Todos os nossos pacotes podem ser adaptados às suas necessidades. Contacte-nos para criar a festa perfeita!
-              </p>
-              <Button
-                variant="outline"
-                className="border-2 border-orange-500 text-orange-600 hover:bg-orange-50 font-semibold"
-                onClick={openWhatsApp}>
+          <div className="text-center mt-12">
+            <p className="text-sm text-gray-600">
+              Todos os preços incluem IVA à taxa legal em vigor.
+            </p>
+          </div>
+        </div>
+      </section>
 
-                Falar Connosco
-              </Button>
-            </div>
+      {/* Food Options Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h3 className="text-4xl font-bold text-gray-900 mb-4">Opções de Lanche e Catering</h3>
+            <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {foodOptions.map((option) => (
+              <Card key={option.id} className="border-2 border-orange-100 hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle className="text-2xl text-orange-600 mb-2">{option.name}</CardTitle>
+                  {option.subtitle && (
+                    <p className="text-sm font-semibold text-gray-700 bg-orange-50 rounded-lg px-3 py-2 inline-block">
+                      {option.subtitle}
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-3">
+                    Inclui:
+                  </p>
+                  <ul className="space-y-2">
+                    {option.includes.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                        <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          <div className="text-center mt-12">
+            <Button
+              size="lg"
+              className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 rounded-full font-semibold"
+              onClick={openWhatsApp}
+            >
+              💬 Pedir Informações sobre Lanche e Catering
+            </Button>
           </div>
         </div>
       </section>

@@ -5,31 +5,47 @@ export const packages = [
     id: 1,
     name: "Pack Simples",
     price: "220€",
-    children: "Ideal para 15 crianças",
-    duration: "3 horas",
-    description: "Ideal para festas pequenas focada nas crianças",
-    included: [
-      "Aluguer do espaço por 3 horas",
-      "Mesas e cadeiras incluídas",
-      "Frigorífico disponível",
-      "Acesso a área de brincadeiras",
-      "Cozinha equipada"
+    schedules: [
+      "Manhã: 10h – 13h",
+      "Tarde: 16h – 19h"
+    ],
+    includes: [
+      "Utilização exclusiva do espaço",
+      "Insuflável, trampolim, piscina de bolas, brinquedos de imitação e outras atividades",
+      "Monitor/animador",
+      "Lanche para até 20 crianças"
+    ],
+    extras: [
+      "Hora extra: +75€"
+    ],
+    notes: [
+      "É permitido trazer comida, decoração e bolo de aniversário",
+      "Reserva com pagamento de 20% do valor total",
+      "Restante pagamento no dia do evento"
     ]
   },
   {
     id: 2,
     name: "Pack com Decoração",
     price: "350€",
-    children: "Ideal para 20 crianças",
-    duration: "3 horas",
-    description: "Festa completa com decoração personalizada e lanche",
-    included: [
-      "Tudo do Pack Simples",
-      "Decoração temática completa",
-      "Balões e festões personalizados",
-      "Mesa decorada para o bolo",
-      "Apoio profissional na montagem",
-      "Coordenação no dia da festa"
+    schedules: [
+      "Manhã: 10h – 13h",
+      "Tarde: 16h – 19h"
+    ],
+    includes: [
+      "Utilização exclusiva do espaço",
+      "Insuflável, trampolim, piscina de bolas, brinquedos de imitação e outras atividades",
+      "Monitor/animador",
+      "Lanche para até 20 crianças",
+      "Decoração personalizada (tema à escolha)"
+    ],
+    extras: [
+      "Hora extra: +75€"
+    ],
+    notes: [
+      "É permitido trazer comida e bolo de aniversário",
+      "Reserva com pagamento de 20% do valor total",
+      "Restante pagamento no dia do evento"
     ],
     popular: true
   },
@@ -37,31 +53,89 @@ export const packages = [
     id: 3,
     name: "Pack Completo",
     price: "500€",
-    children: "Para Crianças e Adultos",
-    duration: "3 horas",
-    description: "A experiência completa sem preocupações!",
-    included: [
-      "Tudo do Pack com Decoração",
-      "Lanche completo para crianças",
-      "Animação infantil profissional",
-      "Monitores especializados",
-      "Lembranças personalizadas",
-      "Fotografia de recordação"
+    schedules: [
+      "Manhã: 10h – 13h",
+      "Tarde: 16h – 19h"
+    ],
+    includes: [
+      "Utilização exclusiva do espaço",
+      "Insuflável, trampolim, piscina de bolas, brinquedos de imitação e outras atividades",
+      "Monitor/animador",
+      "Decoração personalizada (tema à escolha)",
+      "Lanche para até 20 crianças",
+      "Catering para até 30 adultos"
+    ],
+    extras: [
+      "Bolo de aniversário (opcional): +50€"
+    ],
+    notes: [
+      "É permitido trazer comida e bolo de aniversário",
+      "Reserva com pagamento de 20% do valor total",
+      "Restante pagamento no dia do evento"
     ]
   },
   {
     id: 4,
     name: "Aluguer do Espaço",
     price: "160€",
-    children: "Máximo 50 Pessoas",
-    duration: "3 horas",
-    description: "Total liberdade para organizar à sua maneira",
-    included: [
-      "Espaço privado e seguro",
-      "Mesas e cadeiras",
-      "Cozinha totalmente equipada",
-      "Área exterior para brincadeiras",
-      "Flexibilidade total"
+    schedules: [
+      "Manhã: 10h – 13h",
+      "Tarde: 16h – 19h"
+    ],
+    includes: [
+      "Utilização exclusiva do espaço",
+      "Área para bolo e catering",
+      "Insuflável, trampolim, piscina de bolas, brinquedos de imitação e outras atividades",
+      "Lotação máxima: 50 pessoas"
+    ],
+    extras: [
+      "Hora extra: +75€"
+    ],
+    notes: [
+      "É permitido trazer comida, decoração e bolo de aniversário",
+      "Reserva com pagamento de 20% do valor total",
+      "Restante pagamento no dia do evento",
+      "Caução de 100€ (devolvida no final, caso não existam danos)"
+    ]
+  }
+];
+
+export const foodOptions = [
+  {
+    id: 1,
+    name: "Lanche Crianças",
+    includes: [
+      "Pães de leite com fiambre e queijo",
+      "Batatas fritas",
+      "Gomas",
+      "Pipocas",
+      "Gelatina",
+      "Bolo simples",
+      "Água e sumo à descrição",
+      "10 cápsulas de café"
+    ]
+  },
+  {
+    id: 2,
+    name: "Catering Adultos + Lanche Crianças",
+    subtitle: "Ideal até 20 crianças e 30 adultos",
+    includes: [
+      "Batatas fritas",
+      "Gomas",
+      "Pipocas",
+      "Gelatina",
+      "Bolo simples",
+      "Água e sumo à descrição",
+      "2 refrigerantes",
+      "10 cápsulas de café",
+      "Salgadinhos",
+      "Mini pizzas",
+      "Folhado misto XL",
+      "Mix frutos secos",
+      "Sandes variadas",
+      "Fruta laminada",
+      "Folhadinhos de chocolate",
+      "Mini pastelaria variada"
     ]
   }
 ];
