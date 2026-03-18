@@ -37,7 +37,7 @@ export const packages = [
   id: 3,
   name: "Pack Completo",
   price: "500€",
-  children: "Até 25 crianças",
+  children: "Para Crian\xE7as e Adultos",
   duration: "3 horas",
   description: "A experiência completa sem preocupações",
   included: [
