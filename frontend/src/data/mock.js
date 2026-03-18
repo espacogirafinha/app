@@ -22,7 +22,7 @@ export const packages = [
   price: "350€",
   children: "Ideal para 20 crian\xE7as",
   duration: "3 horas",
-  description: "Festa completa com decoração personalizada",
+  description: "Festa completa com decora\xE7\xE3o personalizada e lanche",
   included: [
   "Tudo do Pack Simples",
   "Decoração temática completa",
