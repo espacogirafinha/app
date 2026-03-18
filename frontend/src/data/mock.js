@@ -52,7 +52,7 @@ export const packages = [
 {
   id: 4,
   name: "Aluguer do Espaço",
-  price: "150€",
+  price: "160\u20AC",
   children: "M\xE1ximo 50 Pessoas",
   duration: "3 horas",
   description: "Total liberdade para organizar à sua maneira",
