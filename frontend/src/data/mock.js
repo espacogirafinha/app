@@ -1,21 +1,21 @@
 // Mock data para Espaço Girafinha
 
-export const packages = [
-{
-  id: 1,
-  name: "Pack Simples",
-  price: "220€",
-  children: "Ideal para 15 crian\xE7as",
-  duration: "3 horas",
-  description: "Ideal para festas pequenas focada nas crian\xE7as",
-  included: [
-  "Aluguer do espaço por 3 horas",
-  "Mesas e cadeiras incluídas",
-  "Frigorífico disponível",
-  "Acesso a área de brincadeiras",
-  "Cozinha equipada"]
+export const packages = ["\uD83D\uDCAC Saber disponibilidade",
 
-},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 {
   id: 2,
   name: "Pack com Decoração",
