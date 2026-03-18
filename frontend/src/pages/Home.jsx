@@ -74,8 +74,8 @@ const Home = () => {
         <img
           src="/hero-party.jpg"
           alt="Festa infantil no Espaço Girafinha"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
+          className="absolute inset-0 w-full h-full object-cover object-center" />
+
         
         {/* Dark Overlay for Text Readability */}
         <div className="absolute inset-0 bg-black/30"></div>
@@ -97,8 +97,8 @@ const Home = () => {
               <Button
                 size="lg"
                 className="bg-orange-600 hover:bg-orange-700 text-white text-lg md:text-xl px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transition-all font-bold"
-                onClick={openWhatsApp}
-              >
+                onClick={openWhatsApp}>
+
                 💬 Ver disponibilidade
               </Button>
             </div>
@@ -174,20 +174,20 @@ const Home = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {packages.map((pkg) => (
-              <Card 
-                key={pkg.id} 
-                className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
-                  pkg.popular 
-                    ? 'border-3 border-orange-500 shadow-xl bg-white' 
-                    : 'border border-gray-200 bg-white'
-                }`}
-              >
-                {pkg.popular && (
-                  <div className="absolute top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm font-bold">
+            {packages.map((pkg) =>
+            <Card
+              key={pkg.id}
+              className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
+              pkg.popular ?
+              'border-3 border-orange-500 shadow-xl bg-white' :
+              'border border-gray-200 bg-white'}`
+              }>
+
+                {pkg.popular &&
+              <div className="absolute top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm font-bold">
                     ⭐ MAIS POPULAR
                   </div>
-                )}
+              }
                 
                 <CardHeader className={pkg.popular ? 'pt-12' : 'pt-6'}>
                   {/* Package Name */}
@@ -234,29 +234,29 @@ const Home = () => {
                       O que está incluído:
                     </p>
                     <ul className="space-y-2.5">
-                      {pkg.included.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                      {pkg.included.map((item, index) =>
+                    <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
                           <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                           <span className="leading-tight">{item}</span>
                         </li>
-                      ))}
+                    )}
                     </ul>
                   </div>
                   
                   {/* CTA Button */}
-                  <Button 
-                    className={`w-full text-white rounded-full font-semibold py-6 ${
-                      pkg.popular 
-                        ? 'bg-orange-600 hover:bg-orange-700 shadow-lg' 
-                        : 'bg-orange-500 hover:bg-orange-600'
-                    }`}
-                    onClick={openWhatsApp}
-                  >
+                  <Button
+                  className="inline-flex items-center justify-center whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-9 w-full hover:bg-orange-700 text-sm font-semibold gap-2 px-4 py-6 rounded-full !shadow-lg text-white bg-orange-600"
+
+
+
+
+                  onClick={openWhatsApp}>
+
                     💬 Pedir Orçamento
                   </Button>
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
           
           {/* Additional Info */}
@@ -271,8 +271,8 @@ const Home = () => {
               <Button
                 variant="outline"
                 className="border-2 border-orange-500 text-orange-600 hover:bg-orange-50 font-semibold"
-                onClick={openWhatsApp}
-              >
+                onClick={openWhatsApp}>
+
                 Falar Connosco
               </Button>
             </div>
@@ -290,21 +290,21 @@ const Home = () => {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {galleryImages.map((image) => (
-              <div
-                key={image.id}
-                className="relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 aspect-square group cursor-pointer"
-              >
+            {galleryImages.map((image) =>
+            <div
+              key={image.id}
+              className="relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 aspect-square group cursor-pointer">
+
                 <img
-                  src={image.src}
-                  alt={image.alt}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
+                src={image.src}
+                alt={image.alt}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                   <p className="text-white text-sm font-semibold">{image.alt}</p>
                 </div>
               </div>
-            ))}
+            )}
           </div>
           
           <div className="text-center mt-12">
@@ -314,8 +314,8 @@ const Home = () => {
             <Button
               size="lg"
               className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 rounded-full font-semibold"
-              onClick={openWhatsApp}
-            >
+              onClick={openWhatsApp}>
+
               Reserve Já a Sua Data
             </Button>
           </div>
@@ -346,8 +346,8 @@ const Home = () => {
                       </div>
                     </div>
                   </CardHeader>
-                </Card>
-              );
+                </Card>);
+
             })}
           </div>
         </div>
@@ -363,20 +363,20 @@ const Home = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {testimonials.map((testimonial) => (
-              <Card key={testimonial.id} className="bg-white border-2 border-gray-100 hover:border-orange-200 hover:shadow-xl transition-all duration-300">
+            {testimonials.map((testimonial) =>
+            <Card key={testimonial.id} className="bg-white border-2 border-gray-100 hover:border-orange-200 hover:shadow-xl transition-all duration-300">
                 <CardHeader>
                   {/* Stars */}
                   <div className="flex gap-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className="w-5 h-5 fill-orange-500"
-                        viewBox="0 0 20 20"
-                      >
+                    {[...Array(testimonial.rating)].map((_, i) =>
+                  <svg
+                    key={i}
+                    className="w-5 h-5 fill-orange-500"
+                    viewBox="0 0 20 20">
+
                         <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                       </svg>
-                    ))}
+                  )}
                   </div>
                   
                   {/* Quote Icon */}
@@ -396,22 +396,22 @@ const Home = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
           
           {/* Google Reviews CTA */}
           <div className="text-center mt-12">
             <div className="inline-flex items-center gap-3 bg-orange-50 rounded-full px-6 py-3 border-2 border-orange-200">
               <div className="flex gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <svg
-                    key={i}
-                    className="w-5 h-5 fill-orange-500"
-                    viewBox="0 0 20 20"
-                  >
+                {[...Array(5)].map((_, i) =>
+                <svg
+                  key={i}
+                  className="w-5 h-5 fill-orange-500"
+                  viewBox="0 0 20 20">
+
                     <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                   </svg>
-                ))}
+                )}
               </div>
               <span className="text-gray-800 font-semibold">
                 5.0 no Google Reviews
@@ -452,12 +452,12 @@ const Home = () => {
                   <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                     <Instagram className="h-6 w-6 text-orange-600" />
                   </div>
-                  <a 
+                  <a
                     href={`https://instagram.com/${contactInfo.instagram}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-700 hover:text-orange-600 font-semibold"
-                  >
+                    className="text-gray-700 hover:text-orange-600 font-semibold">
+
                     @{contactInfo.instagram}
                   </a>
                 </div>
@@ -465,12 +465,12 @@ const Home = () => {
                   <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                     <Facebook className="h-6 w-6 text-orange-600" />
                   </div>
-                  <a 
+                  <a
                     href={contactInfo.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-700 hover:text-orange-600 font-semibold"
-                  >
+                    className="text-gray-700 hover:text-orange-600 font-semibold">
+
                     Girafinha Decoração
                   </a>
                 </div>
@@ -500,8 +500,8 @@ const Home = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-600 h-12"
-                  />
+                    className="border-orange-200 focus:border-orange-600 h-12" />
+
                 </div>
                 <div>
                   <Input
@@ -511,8 +511,8 @@ const Home = () => {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-600 h-12"
-                  />
+                    className="border-orange-200 focus:border-orange-600 h-12" />
+
                 </div>
                 <div>
                   <Input
@@ -522,8 +522,8 @@ const Home = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-600 h-12"
-                  />
+                    className="border-orange-200 focus:border-orange-600 h-12" />
+
                 </div>
                 <div>
                   <Textarea
@@ -533,13 +533,13 @@ const Home = () => {
                     value={formData.message}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-600"
-                  />
+                    className="border-orange-200 focus:border-orange-600" />
+
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-7 rounded-full text-lg font-bold shadow-xl hover:shadow-2xl"
-                >
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-7 rounded-full text-lg font-bold shadow-xl hover:shadow-2xl">
+
                   💬 Pedir Orçamento por WhatsApp
                 </Button>
                 <p className="text-xs text-center text-gray-500">
@@ -562,24 +562,24 @@ const Home = () => {
               href={`https://instagram.com/${contactInfo.instagram}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-orange-400 transition-colors"
-            >
+              className="hover:text-orange-400 transition-colors">
+
               <Instagram className="h-6 w-6" />
             </a>
             <a
               href={contactInfo.facebook}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-orange-400 transition-colors"
-            >
+              className="hover:text-orange-400 transition-colors">
+
               <Facebook className="h-6 w-6" />
             </a>
             <a
               href={`https://wa.me/${contactInfo.whatsapp.replace(/\+/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-orange-400 transition-colors"
-            >
+              className="hover:text-orange-400 transition-colors">
+
               <MessageCircle className="h-6 w-6" />
             </a>
           </div>
@@ -593,12 +593,12 @@ const Home = () => {
       <button
         onClick={openWhatsApp}
         className="fixed bottom-6 right-6 bg-green-600 hover:bg-green-700 text-white p-5 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-50 animate-pulse"
-        aria-label="Contactar via WhatsApp"
-      >
+        aria-label="Contactar via WhatsApp">
+
         <MessageCircle className="h-7 w-7" />
       </button>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Home;
