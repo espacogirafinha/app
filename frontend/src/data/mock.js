@@ -5,7 +5,7 @@ export const packages = [
   id: 1,
   name: "Pack Simples",
   price: "220€",
-  children: "Até 15 crianças",
+  children: "Ideal para 15 crian\xE7as",
   duration: "3 horas",
   description: "Ideal para festas pequenas e intimistas",
   included: [
