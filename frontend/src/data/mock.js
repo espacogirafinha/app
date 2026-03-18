@@ -141,25 +141,41 @@ export const foodOptions = [
 ];
 
 export const galleryImages = [
-  { id: 1, src: "/gallery/CZ3A3955.jpg", alt: "Festa infantil no Espaço Girafinha", category: "Espaço & Crianças felizes" },
-  { id: 2, src: "/gallery/CZ3A4103.jpg", alt: "Decoração de aniversário", category: "Decoração" },
-  { id: 3, src: "/gallery/CZ3A4118.jpg", alt: "Crianças brincando", category: "Espaço & Crianças felizes" },
-  { id: 4, src: "/gallery/IMG_5966.JPG", alt: "Mesa decorada", category: "Decoração" },
-  { id: 5, src: "/gallery/IMG_5972.JPG", alt: "Área de brincadeiras", category: "Espaço & Crianças felizes" },
-  { id: 6, src: "/gallery/IMG_5977.JPG", alt: "Festa temática", category: "Decoração" },
-  { id: 7, src: "/gallery/IMG_5978.JPG", alt: "Decoração personalizada", category: "Decoração" },
-  { id: 8, src: "/gallery/IMG_5987.JPG", alt: "Espaço para festas", category: "Espaço & Crianças felizes" },
-  { id: 9, src: "/gallery/IMG_6001.JPG", alt: "Aniversário infantil", category: "Espaço & Crianças felizes" },
-  { id: 10, src: "/gallery/CZ3A4121.jpg", alt: "Festa divertida", category: "Espaço & Crianças felizes" },
-  { id: 11, src: "/gallery/IMG_6063.JPG", alt: "Crianças felizes", category: "Espaço & Crianças felizes" },
-  { id: 12, src: "/gallery/IMG_6066.JPG", alt: "Decoração colorida", category: "Decoração" }
+  { 
+    id: 1, 
+    src: "/gallery/piscina-bolas-turquesa.jpg", 
+    alt: "Crianças brincando na piscina de bolas", 
+    category: "Espaço & Crianças felizes" 
+  },
+  { 
+    id: 2, 
+    src: "/gallery/cozinha-brincar.jpg", 
+    alt: "Crianças brincando na cozinha de brincar", 
+    category: "Espaço & Crianças felizes" 
+  },
+  { 
+    id: 3, 
+    src: "/gallery/festa-aniversario.jpg", 
+    alt: "Festa de aniversário com bolo", 
+    category: "Espaço & Crianças felizes" 
+  },
+  { 
+    id: 4, 
+    src: "/gallery/piscina-bolas-amarela.jpg", 
+    alt: "Criança feliz na piscina de bolas", 
+    category: "Espaço & Crianças felizes" 
+  },
+  { 
+    id: 5, 
+    src: "/gallery/castelo-insuflavel.jpg", 
+    alt: "Crianças brincando no castelo insuflável", 
+    category: "Espaço & Crianças felizes" 
+  }
 ];
 
 export const galleryCategories = [
   { id: "all", name: "Todos" },
-  { id: "espaco", name: "Espaço & Crianças felizes" },
-  { id: "catering", name: "Catering" },
-  { id: "decoracao", name: "Decoração" }
+  { id: "espaco", name: "Espaço & Crianças felizes" }
 ];
 
 export const features = [
