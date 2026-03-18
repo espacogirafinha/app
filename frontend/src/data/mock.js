@@ -1,6 +1,6 @@
 // Mock data para Espaço Girafinha
 
-export const packages = ["\uD83D\uDCAC Saber disponibilidade",
+export const packages = ["\uD83D\uDCAC Saber disponibilidade", "\uD83D\uDCAC Saber disponibilidade",
 
 
 
@@ -16,23 +16,23 @@ export const packages = ["\uD83D\uDCAC Saber disponibilidade",
 
 
 
-{
-  id: 2,
-  name: "Pack com Decoração",
-  price: "350€",
-  children: "Ideal para 20 crian\xE7as",
-  duration: "3 horas",
-  description: "Festa completa com decora\xE7\xE3o personalizada e lanche",
-  included: [
-  "Tudo do Pack Simples",
-  "Decoração temática completa",
-  "Balões e festões personalizados",
-  "Mesa decorada para o bolo",
-  "Apoio profissional na montagem",
-  "Coordenação no dia da festa"],
 
-  popular: true
-},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 {
   id: 3,
   name: "Pack Completo",
