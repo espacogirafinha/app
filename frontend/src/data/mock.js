@@ -1,6 +1,6 @@
 // Mock data para Espaço Girafinha
 
-export const packages = ["\uD83D\uDCAC Saber disponibilidade", "\uD83D\uDCAC Saber disponibilidade", "\uD83D\uDCAC Saber disponibilidade",
+export const packages = ["\uD83D\uDCAC Saber disponibilidade", "\uD83D\uDCAC Saber disponibilidade", "\uD83D\uDCAC Saber disponibilidade", "\uD83D\uDCAC Saber disponibilidade"];
 
 
 
@@ -49,21 +49,21 @@ export const packages = ["\uD83D\uDCAC Saber disponibilidade", "\uD83D\uDCAC Sab
 
 
 
-{
-  id: 4,
-  name: "Aluguer do Espaço",
-  price: "160\u20AC",
-  children: "M\xE1ximo 50 Pessoas",
-  duration: "3 horas",
-  description: "Total liberdade para organizar à sua maneira",
-  included: [
-  "Espaço privado e seguro",
-  "Mesas e cadeiras",
-  "Cozinha totalmente equipada",
-  "Área exterior para brincadeiras",
-  "Flexibilidade total"]
 
-}];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 export const galleryImages = [
