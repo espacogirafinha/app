@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import { Shield, Lock, PartyPopper, Heart, Phone, Instagram, Facebook, MapPin, Check, MessageCircle, Quote } from 'lucide-react';
-import { packages, galleryImages, features, contactInfo, testimonials, foodOptions } from '../data/mock';
+import { packages, galleryImages, galleryCategories, features, contactInfo, testimonials, foodOptions } from '../data/mock';
 
 const iconMap = {
   Shield: Shield,
@@ -21,6 +21,8 @@ const Home = () => {
     email: '',
     message: ''
   });
+  
+  const [activeCategory, setActiveCategory] = useState('all');
 
   const handleInputChange = (e) => {
     setFormData({
@@ -333,26 +335,58 @@ const Home = () => {
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Galeria de Momentos Felizes</h3>
             <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
-            <p className="text-xl text-gray-600">Fotos reais das festas realizadas no nosso espaço — momentos inesquecíveis!</p>
+            <p className="text-xl text-gray-600 mb-8">Fotos reais das festas realizadas no nosso espaço — momentos inesquecíveis!</p>
+            
+            {/* Category Filters */}
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
+              {galleryCategories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                    activeCategory === category.id
+                      ? 'bg-orange-600 text-white shadow-lg'
+                      : 'bg-white text-orange-600 border-2 border-orange-300 hover:border-orange-500 hover:bg-orange-50'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {galleryImages.map((image) =>
-            <div
-              key={image.id}
-              className="relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 aspect-square group cursor-pointer">
-
-                <img
-                src={image.src}
-                alt={image.alt}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                  <p className="text-white text-sm font-semibold">{image.alt}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            {galleryImages
+              .filter((image) => activeCategory === 'all' || image.category === galleryCategories.find(cat => cat.id === activeCategory)?.name)
+              .map((image) => (
+                <div
+                  key={image.id}
+                  className="relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 aspect-square group cursor-pointer"
+                >
+                  <img
+                    src={image.src}
+                    alt={image.alt}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                    <p className="text-white text-sm font-semibold">{image.alt}</p>
+                  </div>
+                  {/* Category Badge */}
+                  <div className="absolute top-3 left-3 bg-orange-600 text-white text-xs font-semibold px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {image.category}
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
           </div>
+          
+          {/* Show message if no images in category */}
+          {galleryImages.filter((image) => activeCategory === 'all' || image.category === galleryCategories.find(cat => cat.id === activeCategory)?.name).length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-lg">
+                Nenhuma imagem encontrada nesta categoria. Em breve adicionaremos mais fotos!
+              </p>
+            </div>
+          )}
           
           <div className="text-center mt-12">
             <p className="text-lg text-gray-600 mb-4">
@@ -361,8 +395,8 @@ const Home = () => {
             <Button
               size="lg"
               className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 rounded-full font-semibold"
-              onClick={openWhatsApp}>
-
+              onClick={openWhatsApp}
+            >
               Reserve Já a Sua Data
             </Button>
           </div>
