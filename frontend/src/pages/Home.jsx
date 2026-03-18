@@ -252,7 +252,7 @@ const Home = () => {
 
                   onClick={openWhatsApp}>
 
-                    💬 Pedir Orçamento
+                    💬 Saber disponibilidade
                   </Button>
                 </CardContent>
               </Card>
