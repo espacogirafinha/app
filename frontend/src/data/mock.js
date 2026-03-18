@@ -20,7 +20,7 @@ export const packages = [
   id: 2,
   name: "Pack com Decoração",
   price: "350€",
-  children: "Até 20 crianças",
+  children: "Ideal para 20 crian\xE7as",
   duration: "3 horas",
   description: "Festa completa com decoração personalizada",
   included: [
