@@ -7,7 +7,7 @@ export const packages = [
   price: "220€",
   children: "Ideal para 15 crian\xE7as",
   duration: "3 horas",
-  description: "Ideal para festas pequenas e intimistas",
+  description: "Ideal para festas pequenas focada nas crian\xE7as",
   included: [
   "Aluguer do espaço por 3 horas",
   "Mesas e cadeiras incluídas",
