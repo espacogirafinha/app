@@ -39,7 +39,7 @@ export const packages = [
   price: "500€",
   children: "Para Crian\xE7as e Adultos",
   duration: "3 horas",
-  description: "A experiência completa sem preocupações",
+  description: "A experi\xEAncia completa sem preocupa\xE7\xF5es!",
   included: [
   "Tudo do Pack com Decoração",
   "Lanche completo para crianças",
