@@ -215,13 +215,10 @@ const Home = () => {
                   {/* Pricing with Original + Discounted */}
                   <div className="mb-4">
                     {pkg.isPromotion && pkg.originalPrice && (
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="mb-2">
                         <span className="text-lg text-gray-400 line-through font-medium">
                           {pkg.originalPrice}
                         </span>
-                        <Badge className="bg-green-500 text-white text-xs font-bold">
-                          -{Math.round(((parseInt(pkg.originalPrice) - parseInt(pkg.price)) / parseInt(pkg.originalPrice)) * 100)}% OFF
-                        </Badge>
                       </div>
                     )}
                     <div className="text-4xl font-bold text-orange-600">
