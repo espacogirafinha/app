@@ -200,15 +200,38 @@ const Home = () => {
                   </div>
                 )}
                 
-                <CardHeader className={pkg.popular ? 'pt-12' : 'pt-6'}>
+                {/* Promotion Badge */}
+                {pkg.isPromotion && (
+                  <div className={`${pkg.popular ? 'mt-10' : 'mt-0'} bg-gradient-to-r from-orange-500 to-orange-600 text-white text-center py-2 px-4 text-sm font-bold`}>
+                    🎉 Promoção Especial de 1º Aniversário
+                  </div>
+                )}
+                
+                <CardHeader className={pkg.popular && pkg.isPromotion ? 'pt-4' : pkg.popular ? 'pt-12' : pkg.isPromotion ? 'pt-4' : 'pt-6'}>
                   <CardTitle className="text-2xl font-bold text-gray-900 mb-3">
                     {pkg.name}
                   </CardTitle>
                   
+                  {/* Pricing with Original + Discounted */}
                   <div className="mb-4">
+                    {pkg.isPromotion && pkg.originalPrice && (
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-lg text-gray-400 line-through font-medium">
+                          {pkg.originalPrice}
+                        </span>
+                        <Badge className="bg-green-500 text-white text-xs font-bold">
+                          -{Math.round(((parseInt(pkg.originalPrice) - parseInt(pkg.price)) / parseInt(pkg.originalPrice)) * 100)}% OFF
+                        </Badge>
+                      </div>
+                    )}
                     <div className="text-4xl font-bold text-orange-600">
                       {pkg.price}
                     </div>
+                    {pkg.isPromotion && (
+                      <p className="text-xs text-orange-600 font-semibold mt-2">
+                        ⏰ Aproveite esta oferta por tempo limitado
+                      </p>
+                    )}
                   </div>
                   
                   <div className="bg-orange-50 rounded-lg p-3 mb-4">

@@ -5,6 +5,8 @@ export const packages = [
     id: 1,
     name: "Pack Simples",
     price: "220€",
+    originalPrice: "250€",
+    isPromotion: true,
     schedules: [
       "Manhã: 10h – 13h",
       "Tarde: 16h – 19h"
@@ -28,6 +30,8 @@ export const packages = [
     id: 2,
     name: "Pack com Decoração",
     price: "350€",
+    originalPrice: "380€",
+    isPromotion: true,
     schedules: [
       "Manhã: 10h – 13h",
       "Tarde: 16h – 19h"
@@ -53,6 +57,8 @@ export const packages = [
     id: 3,
     name: "Pack Completo",
     price: "500€",
+    originalPrice: "600€",
+    isPromotion: true,
     schedules: [
       "Manhã: 10h – 13h",
       "Tarde: 16h – 19h"
@@ -78,6 +84,8 @@ export const packages = [
     id: 4,
     name: "Aluguer do Espaço",
     price: "160€",
+    originalPrice: "200€",
+    isPromotion: true,
     schedules: [
       "Manhã: 10h – 13h",
       "Tarde: 16h – 19h"
