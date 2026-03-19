@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Shield, Lock, PartyPopper, Heart, Phone, Instagram, Facebook, MapPin, Check, MessageCircle, Quote } from 'lucide-react';
+import { Shield, Lock, PartyPopper, Heart, Phone, Instagram, Facebook, MapPin, Check, MessageCircle, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { packages, galleryImages, features, contactInfo, testimonials, foodOptions } from '../data/mock';
 
 const iconMap = {
@@ -43,6 +43,17 @@ const Home = () => {
   const openWhatsApp = () => {
     const whatsappUrl = `https://wa.me/${contactInfo.whatsapp.replace(/\+/g, '')}?text=${encodeURIComponent(contactInfo.whatsappMessage)}`;
     window.open(whatsappUrl, '_blank');
+  };
+
+  const scrollCarousel = (direction, carouselId) => {
+    const carousel = document.getElementById(carouselId);
+    if (carousel) {
+      const scrollAmount = carousel.offsetWidth * 0.8;
+      carousel.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
   };
 
   return (
@@ -339,8 +350,26 @@ const Home = () => {
           {/* Espaço & Crianças felizes */}
           <div className="mb-16">
             <h4 className="text-2xl font-bold text-gray-900 mb-6 px-4">Espaço & Crianças felizes</h4>
-            <div className="relative">
-              <div className="overflow-x-auto scrollbar-hide">
+            <div className="relative group/carousel">
+              {/* Left Arrow */}
+              <button
+                onClick={() => scrollCarousel('left', 'carousel-espaco')}
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
+                aria-label="Anterior"
+              >
+                <ChevronLeft className="w-6 h-6 text-orange-600" />
+              </button>
+              
+              {/* Right Arrow */}
+              <button
+                onClick={() => scrollCarousel('right', 'carousel-espaco')}
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
+                aria-label="Próximo"
+              >
+                <ChevronRight className="w-6 h-6 text-orange-600" />
+              </button>
+              
+              <div id="carousel-espaco" className="overflow-x-auto scrollbar-hide">
                 <div className="flex gap-4 md:gap-6 px-4 md:px-0 snap-x snap-mandatory">
                   {galleryImages
                     .filter((image) => image.category === "Espaço & Crianças felizes")
@@ -369,8 +398,26 @@ const Home = () => {
           {/* Decoração */}
           <div className="mb-16">
             <h4 className="text-2xl font-bold text-gray-900 mb-6 px-4">Decoração</h4>
-            <div className="relative">
-              <div className="overflow-x-auto scrollbar-hide">
+            <div className="relative group/carousel">
+              {/* Left Arrow */}
+              <button
+                onClick={() => scrollCarousel('left', 'carousel-decoracao')}
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
+                aria-label="Anterior"
+              >
+                <ChevronLeft className="w-6 h-6 text-orange-600" />
+              </button>
+              
+              {/* Right Arrow */}
+              <button
+                onClick={() => scrollCarousel('right', 'carousel-decoracao')}
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
+                aria-label="Próximo"
+              >
+                <ChevronRight className="w-6 h-6 text-orange-600" />
+              </button>
+              
+              <div id="carousel-decoracao" className="overflow-x-auto scrollbar-hide">
                 <div className="flex gap-4 md:gap-6 px-4 md:px-0 snap-x snap-mandatory">
                   {galleryImages
                     .filter((image) => image.category === "Decoração")
@@ -399,8 +446,26 @@ const Home = () => {
           {/* Catering */}
           <div className="mb-12">
             <h4 className="text-2xl font-bold text-gray-900 mb-6 px-4">Catering</h4>
-            <div className="relative">
-              <div className="overflow-x-auto scrollbar-hide">
+            <div className="relative group/carousel">
+              {/* Left Arrow */}
+              <button
+                onClick={() => scrollCarousel('left', 'carousel-catering')}
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
+                aria-label="Anterior"
+              >
+                <ChevronLeft className="w-6 h-6 text-orange-600" />
+              </button>
+              
+              {/* Right Arrow */}
+              <button
+                onClick={() => scrollCarousel('right', 'carousel-catering')}
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
+                aria-label="Próximo"
+              >
+                <ChevronRight className="w-6 h-6 text-orange-600" />
+              </button>
+              
+              <div id="carousel-catering" className="overflow-x-auto scrollbar-hide">
                 <div className="flex gap-4 md:gap-6 px-4 md:px-0 snap-x snap-mandatory">
                   {galleryImages
                     .filter((image) => image.category === "Catering")
