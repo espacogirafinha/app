@@ -43,7 +43,7 @@ const Home = () => {
   };
 
   const openWhatsApp = () => {
-    const whatsappUrl = `https://wa.me/${contactInfo.whatsapp.replace(/\+/g, '')}?text=${encodeURIComponent(contactInfo.whatsappMessage)}`;
+    const whatsappUrl = `https://wa.me/${contactInfo.whatsapp.replace(/\+/g, '')}`;
     window.open(whatsappUrl, '_blank');
   };
 
