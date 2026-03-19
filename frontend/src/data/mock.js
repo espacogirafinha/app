@@ -170,12 +170,43 @@ export const galleryImages = [
     src: "/gallery/castelo-insuflavel.jpg", 
     alt: "Crianças brincando no castelo insuflável", 
     category: "Espaço & Crianças felizes" 
+  },
+  { 
+    id: 6, 
+    src: "/gallery/catering-folhado-fruta.jpg", 
+    alt: "Folhados e fruta fresca para catering", 
+    category: "Catering" 
+  },
+  { 
+    id: 7, 
+    src: "/gallery/catering-mini-pizzas-quiche.jpg", 
+    alt: "Mini pizzas e quiches variadas", 
+    category: "Catering" 
+  },
+  { 
+    id: 8, 
+    src: "/gallery/catering-charcutaria-queijos.jpg", 
+    alt: "Charcutaria e queijos selecionados", 
+    category: "Catering" 
+  },
+  { 
+    id: 9, 
+    src: "/gallery/catering-sandes-variadas.jpg", 
+    alt: "Sandes variadas para adultos", 
+    category: "Catering" 
+  },
+  { 
+    id: 10, 
+    src: "/gallery/catering-hotdogs-sandes.jpg", 
+    alt: "Hotdogs e sandes para festas", 
+    category: "Catering" 
   }
 ];
 
 export const galleryCategories = [
   { id: "all", name: "Todos" },
-  { id: "espaco", name: "Espaço & Crianças felizes" }
+  { id: "espaco", name: "Espaço & Crianças felizes" },
+  { id: "catering", name: "Catering" }
 ];
 
 export const features = [
