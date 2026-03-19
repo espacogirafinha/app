@@ -203,31 +203,31 @@ export const galleryImages = [
   },
   { 
     id: 11, 
+    src: "/gallery/decoracao-moranguinho.jpg", 
+    alt: "Decoração rosa tema Moranguinho", 
+    category: "Decoração" 
+  },
+  { 
+    id: 12, 
     src: "/gallery/decoracao-futebol.jpg", 
     alt: "Decoração tema futebol", 
     category: "Decoração" 
   },
   { 
-    id: 12, 
-    src: "/gallery/decoracao-festa-rosa.jpg", 
-    alt: "Decoração rosa com balões para festa de aniversário", 
-    category: "Decoração" 
-  },
-  { 
     id: 13, 
-    src: "/gallery/decoracao-baloes-preto-branco.jpg", 
-    alt: "Decoração elegante com balões preto, prata e branco", 
+    src: "/gallery/decoracao-festa-rosa.jpg", 
+    alt: "Festa rosa com balões e painel personalizado", 
     category: "Decoração" 
   },
   { 
     id: 14, 
-    src: "/gallery/decoracao-moranguinho.png", 
-    alt: "Decoração rosa com personagem Moranguinho", 
+    src: "/gallery/decoracao-preto-branco.jpg", 
+    alt: "Decoração elegante com balões preto, prata e branco", 
     category: "Decoração" 
   },
   { 
     id: 15, 
-    src: "/gallery/decoracao-bolo-rosa.jpg", 
+    src: "/gallery/decoracao-kpop.png", 
     alt: "Decoração colorida com personagens de desenho animado", 
     category: "Decoração" 
   }
