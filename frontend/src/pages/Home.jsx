@@ -143,12 +143,18 @@ const Home = () => {
   </Button>
 
   <Button
-    size="lg"
-    className="bg-white text-orange-600 text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
-    onClick={scrollToContact}
-  >
-    Ver preços e packs
-  </Button>
+size="lg"
+className="bg-white text-orange-600 text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
+onClick={() => {
+const section = document.getElementById('pacotes');
+if (section) {
+section.scrollIntoView({ behavior: 'smooth' });
+}
+}}
+
+>
+
+Ver preços e packs </Button>
 
 </div>
 ```
