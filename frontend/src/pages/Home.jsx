@@ -200,19 +200,25 @@ Ver preços e packs </Button>
               </p>
             </div>
             
-            <div className="grid grid-cols-3 gap-6 mt-10 text-center">
-              <div className="bg-white rounded-xl p-6 shadow-md">
-                <p className="text-4xl font-bold text-orange-600 mb-2">100+</p>
-                <p className="text-gray-700 font-semibold">Festas Realizadas</p>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-md">
-                <p className="text-4xl font-bold text-orange-600 mb-2">100%</p>
-                <p className="text-gray-700 font-semibold">Pais Satisfeitos</p>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-md">
-                <p className="text-4xl font-bold text-orange-600 mb-2">5★</p>
-                <p className="text-gray-700 font-semibold">Avaliação Google</p>
-              </div>
+            <div className="grid grid-cols-3 gap-4 mt-10 text-center">
+
+  <div className="bg-white rounded-2xl p-5 md:p-6 shadow-md">
+    <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">100+</p>
+    <p className="text-gray-700 text-sm md:text-base font-semibold">Festas Realizadas</p>
+  </div>
+
+  <div className="bg-white rounded-2xl p-5 md:p-6 shadow-md">
+    <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">100%</p>
+    <p className="text-gray-700 text-sm md:text-base font-semibold">Pais Satisfeitos</p>
+  </div>
+
+  <div className="bg-white rounded-2xl p-5 md:p-6 shadow-md">
+    <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">5★</p>
+    <p className="text-gray-700 text-sm md:text-base font-semibold">Avaliação Google</p>
+  </div>
+
+</div>
+</div>
             </div>
           </div>
         </div>
