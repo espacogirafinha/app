@@ -167,18 +167,19 @@ export const galleryImages = [
     alt: "Festa de aniversário com bolo", 
     category: "Espaço & Crianças felizes" 
   },
+   { 
+    id: 4, 
+    src: "/gallery/castelo-insuflavel.jpg", 
+    alt: "Crianças brincando no castelo insuflável", 
+    category: "Espaço & Crianças felizes" 
+  },
   { 
     id: 5, 
     src: "/gallery/piscina-bolas-amarela.jpg", 
     alt: "Criança feliz na piscina de bolas", 
     category: "Espaço & Crianças felizes" 
   },
-  { 
-    id: 4, 
-    src: "/gallery/castelo-insuflavel.jpg", 
-    alt: "Crianças brincando no castelo insuflável", 
-    category: "Espaço & Crianças felizes" 
-  },
+ 
   { 
     id: 6, 
     src: "/gallery/catering-folhado-fruta.jpg", 
