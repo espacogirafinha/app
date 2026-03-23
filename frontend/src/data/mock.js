@@ -223,13 +223,13 @@ export const galleryImages = [
   },
   { 
     id: 13, 
-    src: "/gallery/decoracao-moranguinho.jpg", 
-    alt: "Decoração festa Moranguinho", 
+    src: "/gallery/festafundodomargabby5anos.jpg", 
+    alt: "Decoração festa fundo do Mar Gabby", 
     category: "Decoração" 
   },
   { 
     id: 14, 
-    src: "/gallery/decoracao-barbie.jpg", 
+    src: "/gallery/Decoracaobarbie6anos.JPG", 
     alt: "Decoração festa 6 anos Barbie", 
     category: "Decoração" 
   },
