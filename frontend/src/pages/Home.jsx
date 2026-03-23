@@ -216,12 +216,7 @@ Ver preços e packs </Button>
     <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">5★</p>
     <p className="text-gray-700 text-sm md:text-base font-semibold">Avaliação Google</p>
   </div>
-
-</div>
-</div>
-            </div>
-          </div>
-        </div>
+  
       </section>
 
       {/* Packages Section */}
