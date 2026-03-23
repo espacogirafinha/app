@@ -167,9 +167,7 @@ Ver preços e packs </Button>
 
 </section>
 
-
-
-{/* About Section */}
+      {/* About Section */}
 <section id="sobre" className="py-20 px-4 bg-white">
   <div className="container mx-auto max-w-5xl">
     
@@ -232,6 +230,7 @@ Ver preços e packs </Button>
   </div> {/* fecha container */}
 
 </section>
+
 
       {/* Packages Section */}
       <section id="pacotes" className="py-20 px-4 bg-gradient-to-b from-yellow-50 to-orange-50">
