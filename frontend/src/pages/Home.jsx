@@ -200,7 +200,7 @@ Ver preços e packs </Button>
               </p>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 mt-10 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-10 text-center">
 
   <div className="bg-white rounded-2xl p-5 md:p-6 shadow-md">
     <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">100+</p>
@@ -216,7 +216,8 @@ Ver preços e packs </Button>
     <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">5★</p>
     <p className="text-gray-700 text-sm md:text-base font-semibold">Avaliação Google</p>
   </div>
-  </div>
+
+</div>
       </section>
 
       {/* Packages Section */}
