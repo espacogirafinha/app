@@ -124,7 +124,7 @@ Criar um website moderno, colorido e responsivo de página única para um espaç
 - Subheadline focada em benefícios: "Diversão garantida para crianças e tranquilidade para os pais"
 - Elemento de urgência destacado: "⚠️ Datas limitadas — reserve com antecedência"
 - Imagem de fundo com crianças felizes (maior impacto emocional)
-- Botões CTA maiores e com melhor contraste (orange-600/700)
+- Botões CTA maiores e com melhor contraste (teal-600/700)
 
 ✅ **About Section Emocional**
 - Título impactante: "Transformamos aniversários em memórias inesquecíveis! ✨"
@@ -139,11 +139,11 @@ Criar um website moderno, colorido e responsivo de página única para um espaç
 - **Urgência adicionada**: "⚠️ Disponibilidade limitada — garanta já a sua data!"
 - **Duração visível**: "3 horas" em todos os pacotes
 - Pack mais popular **visualmente destacado**:
-  * Borda laranja mais forte (border-orange-500)
+  * Borda laranja mais forte (border-teal-500)
   * Badge "⭐ Mais Popular"
   * Escala ligeiramente maior (scale-105)
   * Sombra mais proeminente
-  * Botão com cor mais forte (orange-600)
+  * Botão com cor mais forte (teal-600)
 - Descrições emocionalmente otimizadas
 - Lista de inclusões expandida e mais clara
 - Botão CTA melhorado: "💬 Pedir Informações"
@@ -283,8 +283,8 @@ Urgência implementada em 3 pontos estratégicos:
 
 ✅ **Pack Popular Visualmente Destacado**
 - Badge laranja no topo: "⭐ MAIS POPULAR"
-- Borda mais forte (border-3 border-orange-500)
-- Botão CTA com cor mais intensa (orange-600)
+- Borda mais forte (border-3 border-teal-500)
+- Botão CTA com cor mais intensa (teal-600)
 - Sombra mais proeminente
 
 ✅ **Scannable em < 5 Segundos**
@@ -312,7 +312,7 @@ Urgência implementada em 3 pontos estratégicos:
 - Transições suaves (duration-300)
 - Espaçamento consistente entre elementos
 - Tipografia bem definida (text-sm, text-base, text-2xl, text-4xl)
-- Cores consistentes com brand (orange-500/600, green-600, gray-700)
+- Cores consistentes com brand (teal-500/600, green-600, gray-700)
 
 **Resultado**: Secção de pacotes extremamente clara, fácil de comparar e otimizada para conversão mobile e desktop.
 
@@ -344,10 +344,10 @@ Urgência implementada em 3 pontos estratégicos:
 
 ✅ **Badge do Google Reviews**
 - **Centralizado** abaixo dos testemunhos
-- **Inline-flex** com fundo laranja suave (orange-50)
+- **Inline-flex** com fundo laranja suave (teal-50)
 - **5 estrelas laranjas** + texto "5.0 no Google Reviews"
 - Design arredondado (rounded-full)
-- Borda laranja (border-2 border-orange-200)
+- Borda laranja (border-2 border-teal-200)
 
 ✅ **Posicionamento Estratégico**
 - Colocada **DEPOIS** de "Why Choose Us"
@@ -408,7 +408,7 @@ Urgência implementada em 3 pontos estratégicos:
 ✅ **CTA Único e Direto**
 - **Botão único**: "💬 Pedir Orçamento" (removido segundo botão para simplificar)
 - **Ação direta**: Redireciona para WhatsApp
-- **Styling**: orange-600 hover:orange-700, py-7, shadow-2xl
+- **Styling**: teal-600 hover:teal-700, py-7, shadow-2xl
 - **Tamanho**: Grande e impactante (text-lg md:text-xl, px-10)
 
 ✅ **Layout e Responsividade**

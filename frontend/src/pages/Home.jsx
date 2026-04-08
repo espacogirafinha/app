@@ -80,7 +80,7 @@ const Home = () => {
   }, [currentTestimonial]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-yellow-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-b from-teal-50 via-yellow-50 to-green-50">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md shadow-sm z-50">
         <div className="container mx-auto px-4 py-4">
@@ -88,15 +88,15 @@ const Home = () => {
             <div className="flex items-center gap-3">
               <img src="/Logotipo girafinha  (1).png" alt="Espaço Girafinha" className="h-12 w-auto" />
               <div>
-                <h1 className="text-xl font-bold text-orange-600">Espaço Girafinha</h1>
+                <h1 className="text-xl font-bold text-teal-600">Espaço Girafinha</h1>
                 <p className="text-xs text-gray-600">Silves, Algarve</p>
               </div>
             </div>
             <nav className="hidden md:flex gap-6">
-              <a href="#sobre" className="text-gray-700 hover:text-orange-500 transition-colors">Sobre</a>
-              <a href="#pacotes" className="text-gray-700 hover:text-orange-500 transition-colors">Pacotes</a>
-              <a href="#galeria" className="text-gray-700 hover:text-orange-500 transition-colors">Galeria</a>
-              <a href="#contacto" className="text-gray-700 hover:text-orange-500 transition-colors">Contacto</a>
+              <a href="#sobre" className="text-gray-700 hover:text-teal-500 transition-colors">Sobre</a>
+              <a href="#pacotes" className="text-gray-700 hover:text-teal-500 transition-colors">Pacotes</a>
+              <a href="#galeria" className="text-gray-700 hover:text-teal-500 transition-colors">Galeria</a>
+              <a href="#contacto" className="text-gray-700 hover:text-teal-500 transition-colors">Contacto</a>
             </nav>
           </div>
         </div>
@@ -144,7 +144,7 @@ const Home = () => {
 
   <Button
 size="lg"
-className="bg-white text-orange-600 text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
+className="bg-white text-teal-600 text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
 onClick={() => {
 const section = document.getElementById('pacotes');
 if (section) {
@@ -175,10 +175,10 @@ Ver preços e packs </Button>
       <h3 className="text-4xl font-bold text-gray-900 mb-4">
         Sobre o Espaço Girafinha
       </h3>
-      <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full"></div>
+      <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full"></div>
     </div>
 
-    <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-3xl p-8 md:p-12 shadow-xl">
+    <div className="bg-gradient-to-br from-teal-50 to-yellow-50 rounded-3xl p-8 md:p-12 shadow-xl">
       
       <div className="prose prose-lg max-w-none text-gray-700">
         <p className="text-xl leading-relaxed mb-6 text-center font-semibold text-gray-800">
@@ -186,7 +186,7 @@ Ver preços e packs </Button>
         </p>
 
         <p className="text-lg leading-relaxed mb-6">
-          O <strong className="text-orange-600">Espaço Girafinha</strong> nasceu do sonho de criar o local perfeito para celebrar 
+          O <strong className="text-teal-600">Espaço Girafinha</strong> nasceu do sonho de criar o local perfeito para celebrar 
           momentos especiais com os mais pequenos. Localizado em <strong>Silves, Algarve</strong>, o nosso espaço oferece 
           um ambiente <strong>seguro, colorido e totalmente privado</strong>, onde as crianças podem brincar, 
           rir e criar memórias que vão guardar para sempre.
@@ -200,7 +200,7 @@ Ver preços e packs </Button>
         </p>
 
         <p className="text-lg leading-relaxed text-center">
-          <strong className="text-orange-600 text-xl">
+          <strong className="text-teal-600 text-xl">
             Mais do que um espaço de festas, somos parceiros na criação de sorrisos! 😊
           </strong>
         </p>
@@ -209,17 +209,17 @@ Ver preços e packs </Button>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-10 text-center">
 
         <div className="bg-white rounded-2xl p-5 md:p-6 shadow-md">
-          <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">100+</p>
+          <p className="text-3xl md:text-4xl font-bold text-teal-600 mb-2">100+</p>
           <p className="text-gray-700 text-sm md:text-base font-semibold">Festas Realizadas</p>
         </div>
 
         <div className="bg-white rounded-2xl p-5 md:p-6 shadow-md">
-          <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">100%</p>
+          <p className="text-3xl md:text-4xl font-bold text-teal-600 mb-2">100%</p>
           <p className="text-gray-700 text-sm md:text-base font-semibold">Pais Satisfeitos</p>
         </div>
 
         <div className="bg-white rounded-2xl p-5 md:p-6 shadow-md">
-          <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">5★</p>
+          <p className="text-3xl md:text-4xl font-bold text-teal-600 mb-2">5★</p>
           <p className="text-gray-700 text-sm md:text-base font-semibold">Avaliação Google</p>
         </div>
 
@@ -233,13 +233,13 @@ Ver preços e packs </Button>
 
 
       {/* Packages Section */}
-      <section id="pacotes" className="py-20 px-4 bg-gradient-to-b from-yellow-50 to-orange-50">
+      <section id="pacotes" className="py-20 px-4 bg-gradient-to-b from-yellow-50 to-teal-50">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Pacotes de Festas</h3>
-            <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
+            <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full mb-4"></div>
             <p className="text-xl text-gray-600 mb-2">Escolha o pacote perfeito para a festa do seu filho</p>
-            <p className="text-lg text-orange-600 font-bold animate-pulse mb-4">
+            <p className="text-lg text-teal-600 font-bold animate-pulse mb-4">
               ⚠️ Disponibilidade limitada — garanta já a sua data!
             </p>
             <p className="text-lg text-gray-700 font-semibold mb-2">
@@ -253,19 +253,19 @@ Ver preços e packs </Button>
                 key={pkg.id} 
                 className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
                   pkg.popular 
-                    ? 'border-3 border-orange-500 shadow-xl bg-white' 
+                    ? 'border-3 border-teal-500 shadow-xl bg-white' 
                     : 'border border-gray-200 bg-white'
                 }`}
               >
                 {pkg.popular && (
-                  <div className="absolute top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm font-bold">
+                  <div className="absolute top-0 left-0 right-0 bg-teal-500 text-white text-center py-2 text-sm font-bold">
                     ⭐ MAIS POPULAR
                   </div>
                 )}
                 
                 {/* Promotion Badge */}
                 {pkg.isPromotion && (
-                  <div className={`${pkg.popular ? 'mt-10' : 'mt-0'} bg-gradient-to-r from-orange-500 to-orange-600 text-white text-center py-2 px-4 text-sm font-bold`}>
+                  <div className={`${pkg.popular ? 'mt-10' : 'mt-0'} bg-gradient-to-r from-teal-500 to-teal-600 text-white text-center py-2 px-4 text-sm font-bold`}>
                     🎉 Promoção Especial de 1º Aniversário
                   </div>
                 )}
@@ -284,17 +284,17 @@ Ver preços e packs </Button>
                         </span>
                       </div>
                     )}
-                    <div className="text-4xl font-bold text-orange-600">
+                    <div className="text-4xl font-bold text-teal-600">
                       {pkg.price}
                     </div>
                     {pkg.isPromotion && (
-                      <p className="text-xs text-orange-600 font-semibold mt-2">
+                      <p className="text-xs text-teal-600 font-semibold mt-2">
                         ⏰ Aproveite esta oferta por tempo limitado
                       </p>
                     )}
                   </div>
                   
-                  <div className="bg-orange-50 rounded-lg p-3 mb-4">
+                  <div className="bg-teal-50 rounded-lg p-3 mb-4">
                     {pkg.schedules.map((schedule, index) => (
                       <p key={index} className="text-sm font-semibold text-gray-700">
                         {schedule}
@@ -353,8 +353,8 @@ Ver preços e packs </Button>
                   <Button 
                     className={`w-full text-white rounded-full font-semibold py-6 ${
                       pkg.popular 
-                        ? 'bg-orange-600 hover:bg-orange-700 shadow-lg' 
-                        : 'bg-orange-500 hover:bg-orange-600'
+                        ? 'bg-teal-600 hover:bg-teal-700 shadow-lg' 
+                        : 'bg-teal-500 hover:bg-teal-600'
                     }`}
                     onClick={openWhatsApp}
                   >
@@ -378,16 +378,16 @@ Ver preços e packs </Button>
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Opções de Lanche e Catering</h3>
-            <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full"></div>
+            <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full"></div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {foodOptions.map((option) => (
-              <Card key={option.id} className="border-2 border-orange-100 hover:shadow-xl transition-shadow duration-300">
+              <Card key={option.id} className="border-2 border-teal-100 hover:shadow-xl transition-shadow duration-300">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-orange-600 mb-2">{option.name}</CardTitle>
+                  <CardTitle className="text-2xl text-teal-600 mb-2">{option.name}</CardTitle>
                   {option.subtitle && (
-                    <p className="text-sm font-semibold text-gray-700 bg-orange-50 rounded-lg px-3 py-2 inline-block">
+                    <p className="text-sm font-semibold text-gray-700 bg-teal-50 rounded-lg px-3 py-2 inline-block">
                       {option.subtitle}
                     </p>
                   )}
@@ -412,7 +412,7 @@ Ver preços e packs </Button>
           <div className="text-center mt-12">
             <Button
               size="lg"
-              className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 rounded-full font-semibold"
+              className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 rounded-full font-semibold"
               onClick={openWhatsApp}
             >
               💬 Pedir Informações sobre Lanche e Catering
@@ -426,7 +426,7 @@ Ver preços e packs </Button>
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Galeria de Momentos Felizes</h3>
-            <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
+            <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full mb-4"></div>
             <p className="text-xl text-gray-600">Fotos reais das festas realizadas no nosso espaço — momentos inesquecíveis!</p>
           </div>
           
@@ -440,7 +440,7 @@ Ver preços e packs </Button>
                 className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
                 aria-label="Anterior"
               >
-                <ChevronLeft className="w-6 h-6 text-orange-600" />
+                <ChevronLeft className="w-6 h-6 text-teal-600" />
               </button>
               
               {/* Right Arrow */}
@@ -449,7 +449,7 @@ Ver preços e packs </Button>
                 className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
                 aria-label="Próximo"
               >
-                <ChevronRight className="w-6 h-6 text-orange-600" />
+                <ChevronRight className="w-6 h-6 text-teal-600" />
               </button>
               
               <div id="carousel-espaco" className="overflow-x-auto scrollbar-hide">
@@ -488,7 +488,7 @@ Ver preços e packs </Button>
                 className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
                 aria-label="Anterior"
               >
-                <ChevronLeft className="w-6 h-6 text-orange-600" />
+                <ChevronLeft className="w-6 h-6 text-teal-600" />
               </button>
               
               {/* Right Arrow */}
@@ -497,7 +497,7 @@ Ver preços e packs </Button>
                 className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
                 aria-label="Próximo"
               >
-                <ChevronRight className="w-6 h-6 text-orange-600" />
+                <ChevronRight className="w-6 h-6 text-teal-600" />
               </button>
               
               <div id="carousel-decoracao" className="overflow-x-auto scrollbar-hide">
@@ -536,7 +536,7 @@ Ver preços e packs </Button>
                 className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
                 aria-label="Anterior"
               >
-                <ChevronLeft className="w-6 h-6 text-orange-600" />
+                <ChevronLeft className="w-6 h-6 text-teal-600" />
               </button>
               
               {/* Right Arrow */}
@@ -545,7 +545,7 @@ Ver preços e packs </Button>
                 className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300"
                 aria-label="Próximo"
               >
-                <ChevronRight className="w-6 h-6 text-orange-600" />
+                <ChevronRight className="w-6 h-6 text-teal-600" />
               </button>
               
               <div id="carousel-catering" className="overflow-x-auto scrollbar-hide">
@@ -580,7 +580,7 @@ Ver preços e packs </Button>
             </p>
             <Button
               size="lg"
-              className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 rounded-full font-semibold"
+              className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 rounded-full font-semibold"
               onClick={openWhatsApp}
             >
               Reserve Já a Sua Data
@@ -594,18 +594,18 @@ Ver preços e packs </Button>
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Porque Escolher o Espaço Girafinha?</h3>
-            <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full"></div>
+            <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full"></div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {features.map((feature) => {
               const IconComponent = iconMap[feature.icon];
               return (
-                <Card key={feature.id} className="hover:shadow-xl transition-shadow duration-300 border-2 border-orange-100">
+                <Card key={feature.id} className="hover:shadow-xl transition-shadow duration-300 border-2 border-teal-100">
                   <CardHeader>
                     <div className="flex items-start gap-4">
-                      <div className="w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <IconComponent className="h-7 w-7 text-orange-600" />
+                      <div className="w-14 h-14 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <IconComponent className="h-7 w-7 text-teal-600" />
                       </div>
                       <div>
                         <CardTitle className="text-xl text-gray-900 mb-3">{feature.title}</CardTitle>
@@ -625,7 +625,7 @@ Ver preços e packs </Button>
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">O que dizem os pais</h3>
-            <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
+            <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full mb-4"></div>
             <p className="text-xl text-gray-600">Experiências reais de famílias que confiaram em nós</p>
           </div>
           
@@ -637,7 +637,7 @@ Ver preços e packs </Button>
               className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/testimonials:opacity-100 transition-opacity duration-300"
               aria-label="Anterior"
             >
-              <ChevronLeft className="w-6 h-6 text-orange-600" />
+              <ChevronLeft className="w-6 h-6 text-teal-600" />
             </button>
             
             {/* Right Arrow */}
@@ -646,7 +646,7 @@ Ver preços e packs </Button>
               className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 opacity-0 group-hover/testimonials:opacity-100 transition-opacity duration-300"
               aria-label="Próximo"
             >
-              <ChevronRight className="w-6 h-6 text-orange-600" />
+              <ChevronRight className="w-6 h-6 text-teal-600" />
             </button>
             
             <div 
@@ -665,8 +665,8 @@ Ver preços e packs </Button>
                   >
                     <Card className={`bg-white border-2 hover:shadow-2xl transition-all duration-500 h-full ${
                       index === currentTestimonial 
-                        ? 'border-orange-300 shadow-xl scale-105' 
-                        : 'border-gray-100 hover:border-orange-200'
+                        ? 'border-teal-300 shadow-xl scale-105' 
+                        : 'border-gray-100 hover:border-teal-200'
                     }`}>
                       <CardHeader>
                         {/* Stars */}
@@ -674,7 +674,7 @@ Ver preços e packs </Button>
                           {[...Array(testimonial.rating)].map((_, i) => (
                             <svg
                               key={i}
-                              className="w-5 h-5 fill-orange-500"
+                              className="w-5 h-5 fill-teal-500"
                               viewBox="0 0 20 20"
                             >
                               <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
@@ -683,7 +683,7 @@ Ver preços e packs </Button>
                         </div>
                         
                         {/* Quote Icon */}
-                        <Quote className="h-8 w-8 text-orange-200 mb-2" />
+                        <Quote className="h-8 w-8 text-teal-200 mb-2" />
                       </CardHeader>
                       
                       <CardContent>
@@ -712,8 +712,8 @@ Ver preços e packs </Button>
                   onClick={() => setCurrentTestimonial(index)}
                   className={`transition-all duration-300 rounded-full ${
                     index === currentTestimonial
-                      ? 'w-8 h-3 bg-orange-600'
-                      : 'w-3 h-3 bg-gray-300 hover:bg-orange-400'
+                      ? 'w-8 h-3 bg-teal-600'
+                      : 'w-3 h-3 bg-gray-300 hover:bg-teal-400'
                   }`}
                   aria-label={`Ir para avaliação ${index + 1}`}
                 />
@@ -723,12 +723,12 @@ Ver preços e packs </Button>
           
           {/* Google Reviews CTA */}
           <div className="text-center mt-12">
-            <div className="inline-flex items-center gap-3 bg-orange-50 rounded-full px-6 py-3 border-2 border-orange-200">
+            <div className="inline-flex items-center gap-3 bg-teal-50 rounded-full px-6 py-3 border-2 border-teal-200">
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <svg
                     key={i}
-                    className="w-5 h-5 fill-orange-500"
+                    className="w-5 h-5 fill-teal-500"
                     viewBox="0 0 20 20"
                   >
                     <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
@@ -748,9 +748,9 @@ Ver preços e packs </Button>
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Reserve a Festa dos Sonhos</h3>
-            <div className="w-24 h-1 bg-orange-500 mx-auto rounded-full mb-4"></div>
+            <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full mb-4"></div>
             <p className="text-xl text-gray-600 mb-2">Pronto para criar memórias inesquecíveis?</p>
-            <p className="text-lg text-orange-600 font-bold animate-pulse mb-2">
+            <p className="text-lg text-teal-600 font-bold animate-pulse mb-2">
               ⚠️ Vagas limitadas — garanta já a sua data preferida!
             </p>
             <p className="text-base text-green-600 font-semibold">
@@ -763,48 +763,48 @@ Ver preços e packs </Button>
               <h4 className="text-2xl font-bold text-gray-900 mb-6">Fale Connosco</h4>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Phone className="h-6 w-6 text-orange-600" />
+                  <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                    <Phone className="h-6 w-6 text-teal-600" />
                   </div>
-                  <a href={`tel:${contactInfo.phone}`} className="text-gray-700 hover:text-orange-600 font-semibold">
+                  <a href={`tel:${contactInfo.phone}`} className="text-gray-700 hover:text-teal-600 font-semibold">
                     {contactInfo.phone}
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Instagram className="h-6 w-6 text-orange-600" />
+                  <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                    <Instagram className="h-6 w-6 text-teal-600" />
                   </div>
                   <a
                     href={`https://instagram.com/${contactInfo.instagram}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-700 hover:text-orange-600 font-semibold">
+                    className="text-gray-700 hover:text-teal-600 font-semibold">
 
                     @{contactInfo.instagram}
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Facebook className="h-6 w-6 text-orange-600" />
+                  <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                    <Facebook className="h-6 w-6 text-teal-600" />
                   </div>
                   <a
                     href={contactInfo.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-700 hover:text-orange-600 font-semibold">
+                    className="text-gray-700 hover:text-teal-600 font-semibold">
 
                     Girafinha Decoração
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <MapPin className="h-6 w-6 text-orange-600" />
+                  <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                    <MapPin className="h-6 w-6 text-teal-600" />
                   </div>
                   <span className="text-gray-700 font-semibold">{contactInfo.address}</span>
                 </div>
               </div>
               
-              <div className="mt-8 p-6 bg-orange-50 rounded-xl border-2 border-orange-200">
+              <div className="mt-8 p-6 bg-teal-50 rounded-xl border-2 border-teal-200">
                 <p className="text-gray-800 font-semibold mb-2">💡 Resposta rápida garantida!</p>
                 <p className="text-gray-600 text-sm">
                   Respondemos a todas as mensagens em menos de 2 horas durante o horário comercial
@@ -822,7 +822,7 @@ Ver preços e packs </Button>
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-600 h-12" />
+                    className="border-teal-200 focus:border-teal-600 h-12" />
 
                 </div>
                 <div>
@@ -833,7 +833,7 @@ Ver preços e packs </Button>
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-600 h-12" />
+                    className="border-teal-200 focus:border-teal-600 h-12" />
 
                 </div>
                 <div>
@@ -844,7 +844,7 @@ Ver preços e packs </Button>
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-600 h-12" />
+                    className="border-teal-200 focus:border-teal-600 h-12" />
 
                 </div>
                 <div>
@@ -855,7 +855,7 @@ Ver preços e packs </Button>
                     value={formData.message}
                     onChange={handleInputChange}
                     required
-                    className="border-orange-200 focus:border-orange-600" />
+                    className="border-teal-200 focus:border-teal-600" />
 
                 </div>
                 <Button
@@ -884,7 +884,7 @@ Ver preços e packs </Button>
               href={`https://instagram.com/${contactInfo.instagram}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-orange-400 transition-colors">
+              className="hover:text-teal-400 transition-colors">
 
               <Instagram className="h-6 w-6" />
             </a>
@@ -892,7 +892,7 @@ Ver preços e packs </Button>
               href={contactInfo.facebook}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-orange-400 transition-colors">
+              className="hover:text-teal-400 transition-colors">
 
               <Facebook className="h-6 w-6" />
             </a>
@@ -900,7 +900,7 @@ Ver preços e packs </Button>
               href={`https://wa.me/${contactInfo.whatsapp.replace(/\+/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-orange-400 transition-colors">
+              className="hover:text-teal-400 transition-colors">
 
               <MessageCircle className="h-6 w-6" />
             </a>
