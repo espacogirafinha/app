@@ -6,7 +6,7 @@ Criar um website moderno, colorido e responsivo de página única para um espaç
 ## Informações do Cliente
 - **Nome**: Espaço Girafinha
 - **Localização**: Silves, Algarve, Portugal
-- **WhatsApp**: +351935541254
+- **WhatsApp**: +351930650082
 - **Instagram**: @espacogirafinha.silves
 - **Facebook**: Girafinha Decoração
 - **Público-alvo**: Pais que procuram um local para festas de aniversário infantis
@@ -113,7 +113,7 @@ Criar um website moderno, colorido e responsivo de página única para um espaç
 ✅ **Integração WhatsApp**
 - Formulário envia dados formatados via WhatsApp
 - Botão flutuante com mensagem pré-definida
-- Número: +351935541254
+- Número: +351930650082
 
 ### Data: 17 de Março de 2026 (Tarde) - MELHORIAS DE CONVERSÃO
 

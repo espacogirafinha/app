@@ -277,8 +277,8 @@ export const features = [
 ];
 
 export const contactInfo = {
-  phone: "+351935541254",
-  whatsapp: "+351935541254",
+  phone: "+351930650082",
+  whatsapp: "+351930650082",
   instagram: "espacogirafinha.silves",
   facebook: "https://www.facebook.com/p/Girafinha-decora%C3%A7%C3%A3o-61559630369569/",
   address: "Silves, Algarve, Portugal",
