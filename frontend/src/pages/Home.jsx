@@ -171,10 +171,10 @@ const Home = () => {
             ⚠️ Fins de semana esgotam rápido
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
               size="lg"
-              className="bg-green-600 hover:bg-green-700 text-white text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
+              className="w-auto bg-green-600 hover:bg-green-700 text-white text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
               onClick={openWhatsApp}
             >
               💬 Pedir Orçamento
@@ -182,7 +182,7 @@ const Home = () => {
 
             <Button
               size="lg"
-              className="bg-white text-teal-600 text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl hover:bg-gray-100"
+              className="w-auto bg-white text-teal-600 text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl hover:bg-gray-100"
               onClick={() => {
                 const section = document.getElementById('pacotes');
                 if (section) {
@@ -383,7 +383,7 @@ const Home = () => {
                     </p>
                     <ul className="space-y-2">
                       {pkg.includes.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                        <li key={index} className="flex items-start gap-2 text-xs md:text-sm text-gray-700">
                           <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                           <span className="leading-tight">{item}</span>
                         </li>
@@ -398,7 +398,7 @@ const Home = () => {
                       </p>
                       <ul className="space-y-1">
                         {pkg.extras.map((extra, index) => (
-                          <li key={index} className="text-sm text-gray-700 font-semibold">
+                          <li key={index} className="text-xs md:text-sm text-gray-700 font-semibold">
                             • {extra}
                           </li>
                         ))}

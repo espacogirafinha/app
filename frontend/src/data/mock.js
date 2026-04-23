@@ -13,7 +13,7 @@ export const packages = [
     ],
     includes: [
       "Utilização exclusiva do espaço",
-      "Insuflável, trampolim, piscina de bolas, brinquedos de imitação e outras atividades",
+      "Insuflável, trampolim, piscina de bolas e mais",
       "Monitor/animador",
       "Lanche para até 20 crianças"
     ],
@@ -38,7 +38,7 @@ export const packages = [
     ],
     includes: [
       "Utilização exclusiva do espaço",
-      "Insuflável, trampolim, piscina de bolas, brinquedos de imitação e outras atividades",
+      "Insuflável, trampolim, piscina de bolas e mais",
       "Monitor/animador",
       "Lanche para até 20 crianças",
       "Decoração personalizada (tema à escolha)"
@@ -65,7 +65,7 @@ export const packages = [
     ],
     includes: [
       "Utilização exclusiva do espaço",
-      "Insuflável, trampolim, piscina de bolas, brinquedos de imitação e outras atividades",
+      "Insuflável, trampolim, piscina de bolas e mais",
       "Monitor/animador",
       "Decoração personalizada (tema à escolha)",
       "Lanche para até 20 crianças",
