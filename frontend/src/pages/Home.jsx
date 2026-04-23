@@ -27,6 +27,9 @@ const Home = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showComplaintsModal, setShowComplaintsModal] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [currentGalleryEspaco, setCurrentGalleryEspaco] = useState(0);
+  const [currentGalleryDecoracao, setCurrentGalleryDecoracao] = useState(0);
+  const [currentGalleryCatering, setCurrentGalleryCatering] = useState(0);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -57,6 +60,17 @@ const Home = () => {
       const scrollAmount = carousel.offsetWidth * 0.8;
       carousel.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollGalleryToIndex = (carouselId, index, totalImages) => {
+    const carousel = document.getElementById(carouselId);
+    if (carousel) {
+      const cardWidth = carousel.scrollWidth / totalImages;
+      carousel.scrollTo({
+        left: cardWidth * index,
         behavior: 'smooth'
       });
     }
@@ -532,6 +546,27 @@ const Home = () => {
                     ))}
                 </div>
               </div>
+              
+              {/* Dots Indicator - Mobile Only */}
+              <div className="flex md:hidden justify-center gap-2 mt-4">
+                {galleryImages
+                  .filter((image) => image.category === "Espaço & Crianças felizes")
+                  .map((image, index) => (
+                    <button
+                      key={image.id}
+                      onClick={() => {
+                        setCurrentGalleryEspaco(index);
+                        scrollGalleryToIndex('carousel-espaco', index, 5);
+                      }}
+                      className={`transition-all duration-300 rounded-full ${
+                        index === currentGalleryEspaco
+                          ? 'w-6 h-2 bg-teal-600'
+                          : 'w-2 h-2 bg-gray-300'
+                      }`}
+                      aria-label={`Imagem ${index + 1}`}
+                    />
+                  ))}
+              </div>
             </div>
           </div>
 
@@ -580,6 +615,27 @@ const Home = () => {
                     ))}
                 </div>
               </div>
+              
+              {/* Dots Indicator - Mobile Only */}
+              <div className="flex md:hidden justify-center gap-2 mt-4">
+                {galleryImages
+                  .filter((image) => image.category === "Decoração")
+                  .map((image, index) => (
+                    <button
+                      key={image.id}
+                      onClick={() => {
+                        setCurrentGalleryDecoracao(index);
+                        scrollGalleryToIndex('carousel-decoracao', index, 5);
+                      }}
+                      className={`transition-all duration-300 rounded-full ${
+                        index === currentGalleryDecoracao
+                          ? 'w-6 h-2 bg-teal-600'
+                          : 'w-2 h-2 bg-gray-300'
+                      }`}
+                      aria-label={`Imagem ${index + 1}`}
+                    />
+                  ))}
+              </div>
             </div>
           </div>
 
@@ -627,6 +683,27 @@ const Home = () => {
                       </div>
                     ))}
                 </div>
+              </div>
+              
+              {/* Dots Indicator - Mobile Only */}
+              <div className="flex md:hidden justify-center gap-2 mt-4">
+                {galleryImages
+                  .filter((image) => image.category === "Catering")
+                  .map((image, index) => (
+                    <button
+                      key={image.id}
+                      onClick={() => {
+                        setCurrentGalleryCatering(index);
+                        scrollGalleryToIndex('carousel-catering', index, 5);
+                      }}
+                      className={`transition-all duration-300 rounded-full ${
+                        index === currentGalleryCatering
+                          ? 'w-6 h-2 bg-teal-600'
+                          : 'w-2 h-2 bg-gray-300'
+                      }`}
+                      aria-label={`Imagem ${index + 1}`}
+                    />
+                  ))}
               </div>
             </div>
           </div>
