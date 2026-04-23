@@ -261,15 +261,15 @@ const Home = () => {
       </div>
 
       {/* CTA Button */}
-      <div className="text-center mt-8">
+      <div className="flex justify-center mt-8">
         <Button
           size="lg"
           onClick={openWhatsApp}
-          className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 text-lg rounded-full font-semibold shadow-lg hover:shadow-xl transition-all">
+          className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-5 md:px-8 md:py-6 text-sm md:text-lg rounded-full font-semibold shadow-lg hover:shadow-xl transition-all whitespace-nowrap">
           📸 Marcar Visita sem Compromisso
         </Button>
-        <p className="text-sm text-gray-600 mt-3">Vem conhecer o espaço antes de reservar!</p>
       </div>
+      <p className="text-sm text-gray-600 mt-3 text-center">Vem conhecer o espaço antes de reservar!</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-10 text-center">
 
@@ -303,11 +303,11 @@ const Home = () => {
           <div className="text-center mb-16">
             <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Pacotes de Festas</h3>
             <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full mb-4"></div>
-            <p className="text-xl text-gray-600 mb-2">Escolha o pacote perfeito para a festa do seu filho</p>
-            <p className="text-lg text-teal-600 font-bold animate-pulse mb-4">
+            <p className="text-sm md:text-xl text-gray-600 mb-2 whitespace-nowrap">Escolha o pacote perfeito para a festa do seu filho</p>
+            <p className="text-xs md:text-lg text-teal-600 font-bold animate-pulse mb-4 whitespace-nowrap">
               ⚠️ Disponibilidade limitada — garanta já a sua data!
             </p>
-            <p className="text-lg text-gray-700 font-semibold mb-2">
+            <p className="text-xs md:text-lg text-gray-700 font-semibold mb-2 whitespace-nowrap">
               👇 Escolha o pack ideal para a festa do seu filho
             </p>
           </div>
@@ -383,7 +383,7 @@ const Home = () => {
                     </p>
                     <ul className="space-y-2">
                       {pkg.includes.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2 text-xs md:text-sm text-gray-700">
+                        <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
                           <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                           <span className="leading-tight">{item}</span>
                         </li>
@@ -398,7 +398,7 @@ const Home = () => {
                       </p>
                       <ul className="space-y-1">
                         {pkg.extras.map((extra, index) => (
-                          <li key={index} className="text-xs md:text-sm text-gray-700 font-semibold">
+                          <li key={index} className="text-sm text-gray-700 font-semibold">
                             • {extra}
                           </li>
                         ))}
