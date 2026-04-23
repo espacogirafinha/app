@@ -79,32 +79,6 @@ export const packages = [
       "Reserva com pagamento de 20% do valor total",
       "Restante pagamento no dia do evento"
     ]
-  },
-  {
-    id: 4,
-    name: "Aluguer do Espaço",
-    price: "160€",
-    originalPrice: "200€",
-    isPromotion: true,
-    schedules: [
-      "Manhã: 10h – 13h",
-      "Tarde: 16h – 19h"
-    ],
-    includes: [
-      "Utilização exclusiva do espaço",
-      "Área para bolo e catering",
-      "Insuflável, trampolim, piscina de bolas, brinquedos de imitação e outras atividades",
-      "Lotação máxima: 50 pessoas"
-    ],
-    extras: [
-      "Hora extra: +75€"
-    ],
-    notes: [
-      "É permitido trazer comida, decoração e bolo de aniversário",
-      "Reserva com pagamento de 20% do valor total",
-      "Restante pagamento no dia do evento",
-      "Caução de 100€ (devolvida no final, caso não existam danos)"
-    ]
   }
 ];
 
