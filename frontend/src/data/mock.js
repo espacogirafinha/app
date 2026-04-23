@@ -296,3 +296,46 @@ export const testimonials = [
     rating: 5
   }
 ];
+
+export const faqs = [
+  {
+    id: 1,
+    question: "Qual a idade ideal das crianças?",
+    answer: "O nosso espaço é perfeito para crianças desde 1 ano até aos 10 anos."
+  },
+  {
+    id: 2,
+    question: "Posso trazer a minha própria decoração?",
+    answer: "Pode trazer sempre o que quiser, desde o bolo e comida à decoração. Mas o nosso objetivo é deixar isso connosco para que não tenha trabalho e não gaste dinheiro desnecessário."
+  },
+  {
+    id: 3,
+    question: "Com quanto tempo de antecedência devo reservar?",
+    answer: "Recomendamos reservar com pelo menos 5 semanas de antecedência."
+  },
+  {
+    id: 4,
+    question: "Posso visitar o espaço antes de reservar?",
+    answer: "Claro! Agenda uma visita sem compromisso pelo WhatsApp."
+  },
+  {
+    id: 5,
+    question: "Quantas pessoas podem ficar no espaço?",
+    answer: "O espaço tem capacidade para 50 pessoas (adultos e crianças)."
+  },
+  {
+    id: 6,
+    question: "O que acontece se precisar cancelar?",
+    answer: "O depósito de reserva de data não é reembolsável."
+  },
+  {
+    id: 7,
+    question: "O espaço tem ar condicionado?",
+    answer: "Sim, temos ar condicionado em todo o espaço."
+  },
+  {
+    id: 8,
+    question: "Posso trazer animação externa (palhaços, mágicos)?",
+    answer: "Sim, só terá que avisar antes."
+  }
+];

@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import { Shield, Lock, PartyPopper, Heart, Phone, Instagram, Facebook, MapPin, Check, MessageCircle, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
-import { packages, galleryImages, features, contactInfo, testimonials, foodOptions } from '../data/mock';
+import { packages, galleryImages, features, contactInfo, testimonials, foodOptions, faqs } from '../data/mock';
 
 const iconMap = {
   Shield: Shield,
@@ -26,6 +26,7 @@ const Home = () => {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showComplaintsModal, setShowComplaintsModal] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -82,6 +83,17 @@ const Home = () => {
     }
   }, [currentTestimonial]);
 
+  // Show tooltip after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTooltip(true);
+      // Hide tooltip after 5 seconds
+      setTimeout(() => setShowTooltip(false), 5000);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 via-yellow-50 to-green-50">
       {/* Header */}
@@ -107,64 +119,69 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-20 px-4 overflow-hidden min-h-[600px] md:min-h-[700px] flex items-center">
+        
+        {/* Imagem de fundo */}
+        <img
+          src="/hero-party.jpg"
+          alt="Festa infantil no Espaço Girafinha"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
 
-{/* Imagem de fundo */} <img
- src="/hero-party.jpg"
- alt="Festa infantil no Espaço Girafinha"
- className="absolute inset-0 w-full h-full object-cover object-center"
-/>
+        {/* Overlay escuro */}
+        <div className="absolute inset-0 bg-black/40"></div>
 
-{/* Overlay escuro */}
+        {/* Conteúdo */}
+        <div className="container mx-auto relative z-10 text-center max-w-4xl">
+          
+          {/* Desktop Title */}
+          <h2 className="hidden md:block text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+            🎉 A festa perfeita para o seu filho — sem stress para si
+          </h2>
 
-  <div className="absolute inset-0 bg-black/40"></div>
+          {/* Mobile Title (Simplified) */}
+          <h2 className="block md:hidden text-4xl font-bold text-white mb-4 leading-tight">
+            🎉 A Festa Perfeita <br/>Sem Stress
+          </h2>
 
-{/* Conteúdo */}
+          {/* Desktop Subtitle */}
+          <p className="hidden md:block text-xl md:text-2xl text-white mb-4 font-semibold">
+            Espaço privado em Silves com decoração, animação e catering incluído
+          </p>
 
-  <div className="container mx-auto relative z-10 text-center max-w-4xl">
+          {/* Mobile Subtitle (Simplified) */}
+          <p className="block md:hidden text-lg text-white mb-3 font-semibold">
+            Espaço privado em Silves
+          </p>
 
-```
-<h2 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-  🎉 A festa perfeita para o seu filho — sem stress para si
-</h2>
+          <p className="text-lg md:text-xl text-yellow-300 font-bold mb-8">
+            ⚠️ Fins de semana esgotam rápido
+          </p>
 
-<p className="text-xl md:text-2xl text-white mb-4 font-semibold">
-  Espaço privado em Silves com decoração, animação e catering incluído
-</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              size="lg"
+              className="bg-green-600 hover:bg-green-700 text-white text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
+              onClick={openWhatsApp}
+            >
+              💬 Pedir Orçamento
+            </Button>
 
-<p className="text-lg md:text-xl text-yellow-300 font-bold mb-8">
-  ⚠️ Fins de semana esgotam com semanas de antecedência
-</p>
+            <Button
+              size="lg"
+              className="bg-white text-teal-600 text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl hover:bg-gray-100"
+              onClick={() => {
+                const section = document.getElementById('pacotes');
+                if (section) {
+                  section.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
+              Ver Preços
+            </Button>
+          </div>
+        </div>
 
-<div className="flex flex-col sm:flex-row gap-4 justify-center">
-
-  <Button
-    size="lg"
-    className="bg-green-600 hover:bg-green-700 text-white text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
-    onClick={openWhatsApp}
-  >
-    💬 Pedir orçamento por WhatsApp
-  </Button>
-
-  <Button
-size="lg"
-className="bg-white text-teal-600 text-lg md:text-xl px-8 py-6 rounded-full font-bold shadow-xl"
-onClick={() => {
-const section = document.getElementById('pacotes');
-if (section) {
-section.scrollIntoView({ behavior: 'smooth' });
-}
-}}
-
->
-
-Ver preços e packs </Button>
-
-</div>
-```
-
-  </div>
-
-{/* Gradiente inferior */}
+        {/* Gradiente inferior */}
 
   <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent z-10"></div>
 
@@ -207,6 +224,37 @@ Ver preços e packs </Button>
             Mais do que um espaço de festas, somos parceiros na criação de sorrisos! 😊
           </strong>
         </p>
+      </div>
+
+      {/* Trust Badges */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 mb-8">
+        <div className="bg-white rounded-xl p-4 shadow-md text-center">
+          <div className="text-3xl mb-2">✅</div>
+          <p className="text-xs md:text-sm font-semibold text-gray-700">Licença de Funcionamento</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-md text-center">
+          <div className="text-3xl mb-2">🛡️</div>
+          <p className="text-xs md:text-sm font-semibold text-gray-700">Seguro de Responsabilidade</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-md text-center">
+          <div className="text-3xl mb-2">🧼</div>
+          <p className="text-xs md:text-sm font-semibold text-gray-700">Higienizado Diariamente</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-md text-center">
+          <div className="text-3xl mb-2">👨‍👩‍👧</div>
+          <p className="text-xs md:text-sm font-semibold text-gray-700">Ambiente Familiar</p>
+        </div>
+      </div>
+
+      {/* CTA Button */}
+      <div className="text-center mt-8">
+        <Button
+          size="lg"
+          onClick={openWhatsApp}
+          className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 text-lg rounded-full font-semibold shadow-lg hover:shadow-xl transition-all">
+          📸 Marcar Visita sem Compromisso
+        </Button>
+        <p className="text-sm text-gray-600 mt-3">Vem conhecer o espaço antes de reservar!</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-10 text-center">
@@ -303,6 +351,12 @@ Ver preços e packs </Button>
                         {schedule}
                       </p>
                     ))}
+                  </div>
+                  
+                  {/* Flexible Booking Badge */}
+                  <div className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-4">
+                    <span className="text-green-700 font-bold text-sm">✅ Reserva Flexível</span>
+                    <span className="text-green-600 text-xs">• Sinal de apenas 20%</span>
                   </div>
                 </CardHeader>
                 
@@ -726,7 +780,11 @@ Ver preços e packs </Button>
           
           {/* Google Reviews CTA */}
           <div className="text-center mt-12">
-            <div className="inline-flex items-center gap-3 bg-teal-50 rounded-full px-6 py-3 border-2 border-teal-200">
+            <a
+              href="https://share.google/WJZdIImo9oEzcB9ny"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 bg-teal-50 hover:bg-teal-100 rounded-full px-6 py-3 border-2 border-teal-200 hover:border-teal-300 transition-all duration-300 hover:shadow-lg">
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <svg
@@ -739,10 +797,79 @@ Ver preços e packs </Button>
                 ))}
               </div>
               <span className="text-gray-800 font-semibold">
-                5.0 no Google Reviews
+                5.0 • 17 Avaliações no Google
               </span>
-            </div>
+            </a>
+            <p className="text-sm text-gray-600 mt-3">⭐ Lê mais avaliações no Google Reviews</p>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 px-4 bg-gradient-to-b from-yellow-50 to-white">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-12">
+            <h3 className="text-4xl font-bold text-gray-900 mb-4">Perguntas Frequentes</h3>
+            <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full mb-4"></div>
+            <p className="text-xl text-gray-600">Esclarecemos as suas dúvidas</p>
+          </div>
+          
+          <div className="space-y-4">
+            {faqs.map((faq) => (
+              <div key={faq.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                <details className="group">
+                  <summary className="flex justify-between items-center cursor-pointer p-6 hover:bg-teal-50 transition-colors">
+                    <h4 className="font-bold text-lg text-gray-900">{faq.question}</h4>
+                    <span className="text-teal-600 text-2xl group-open:rotate-45 transition-transform">+</span>
+                  </summary>
+                  <div className="px-6 pb-6 pt-2 text-gray-700 leading-relaxed">
+                    {faq.answer}
+                  </div>
+                </details>
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-center mt-10">
+            <p className="text-gray-600 mb-4">Ainda tens dúvidas?</p>
+            <Button
+              size="lg"
+              onClick={openWhatsApp}
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold">
+              💬 Fala Connosco pelo WhatsApp
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Instagram Section */}
+      <section className="py-20 px-4 bg-gradient-to-b from-white to-teal-50">
+        <div className="container mx-auto max-w-4xl text-center">
+          <div className="mb-8">
+            <h3 className="text-4xl font-bold text-gray-900 mb-4">Segue-nos no Instagram</h3>
+            <div className="w-24 h-1 bg-teal-500 mx-auto rounded-full mb-4"></div>
+            <p className="text-xl text-gray-600">Vê as festas mais recentes e inspira-te!</p>
+          </div>
+          
+          <a
+            href={`https://instagram.com/${contactInfo.instagram}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-block">
+            <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-1 rounded-3xl hover:shadow-2xl transition-all duration-300">
+              <div className="bg-white rounded-3xl p-8 group-hover:scale-105 transition-transform duration-300">
+                <Instagram className="h-16 w-16 text-gray-800 mx-auto mb-4" />
+                <p className="text-2xl font-bold text-gray-900 mb-2">@{contactInfo.instagram}</p>
+                <p className="text-gray-600 mb-4">Festas • Decoração • Momentos Felizes</p>
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold">
+                  <Instagram className="h-5 w-5" />
+                  Seguir no Instagram
+                </div>
+              </div>
+            </div>
+          </a>
+          
+          <p className="text-gray-600 mt-6">📸 Vê vídeos e fotos das nossas festas</p>
         </div>
       </section>
 
@@ -1098,13 +1225,22 @@ Ver preços e packs </Button>
       )}
 
       {/* Floating WhatsApp Button */}
-      <button
-        onClick={openWhatsApp}
-        className="fixed bottom-6 right-6 bg-green-600 hover:bg-green-700 text-white p-5 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-50 animate-pulse"
-        aria-label="Contactar via WhatsApp">
-
-        <MessageCircle className="h-7 w-7" />
-      </button>
+      <div className="fixed bottom-6 right-6 z-50">
+        {/* Tooltip */}
+        {showTooltip && (
+          <div className="absolute bottom-full right-0 mb-2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-xl whitespace-nowrap animate-bounce">
+            💬 Dúvidas? Fala connosco!
+            <div className="absolute bottom-0 right-8 transform translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900"></div>
+          </div>
+        )}
+        
+        <button
+          onClick={openWhatsApp}
+          className="bg-green-600 hover:bg-green-700 text-white p-5 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 animate-pulse"
+          aria-label="Contactar via WhatsApp">
+          <MessageCircle className="h-7 w-7" />
+        </button>
+      </div>
     </div>);
 
 };
