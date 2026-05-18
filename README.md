@@ -22,6 +22,8 @@ Login demo local:
 - Projeto Supabase da app: `Espaco Girafinha Reservas`
 - Supabase project ref: `xxtyrjarnnmihrkseteo`
 - Host da base de dados: `db.xxtyrjarnnmihrkseteo.supabase.co`
+- Projeto Vercel da app: `app`
+- Vercel project id: `prj_iTPDDaIx9bPQAmkuImroPElgiWdF`
 - Subdominio pretendido: `reservas.espacogirafinha.pt`
 
 Variaveis necessarias em producao:
