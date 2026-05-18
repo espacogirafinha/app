@@ -12,20 +12,32 @@ const ADMIN_PASSWORD = process.env["ADMIN_PASSWORD"];
 if (!SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable is required");
 }
-if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-  throw new Error(
-    "ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required",
-  );
-}
 
-export const ADMIN_EMAIL_NORMALIZED = ADMIN_EMAIL.trim().toLowerCase();
-const ADMIN_PASSWORD_HASH = bcrypt.hashSync(ADMIN_PASSWORD, 12);
+export const ADMIN_EMAIL_NORMALIZED = ADMIN_EMAIL?.trim().toLowerCase() ?? null;
+const ADMIN_PASSWORD_HASH = ADMIN_PASSWORD ? bcrypt.hashSync(ADMIN_PASSWORD, 12) : null;
 
 export async function verifyCredentials(
   email: string,
   password: string,
 ): Promise<boolean> {
-  const emailMatches = email.trim().toLowerCase() === ADMIN_EMAIL_NORMALIZED;
+  const normalizedEmail = email.trim().toLowerCase();
+
+  try {
+    const { rows } = await pool.query<{ password_hash: string }>(
+      "select password_hash from app_users where lower(email) = $1 and active = true limit 1",
+      [normalizedEmail],
+    );
+    const user = rows[0];
+    if (user) {
+      return bcrypt.compare(password, user.password_hash);
+    }
+  } catch (err) {
+    logger.warn({ err }, "Unable to verify app user from database");
+  }
+
+  if (!ADMIN_EMAIL_NORMALIZED || !ADMIN_PASSWORD_HASH) return false;
+
+  const emailMatches = normalizedEmail === ADMIN_EMAIL_NORMALIZED;
   const passwordMatches = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
   return emailMatches && passwordMatches;
 }
