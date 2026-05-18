@@ -8,6 +8,8 @@ import { logger } from "./logger";
 const SESSION_SECRET = process.env["SESSION_SECRET"];
 const ADMIN_EMAIL = process.env["ADMIN_EMAIL"];
 const ADMIN_PASSWORD = process.env["ADMIN_PASSWORD"];
+const SUPABASE_URL = process.env["SUPABASE_URL"];
+const SUPABASE_ANON_KEY = process.env["SUPABASE_ANON_KEY"] ?? process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"];
 
 if (!SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable is required");
@@ -40,6 +42,27 @@ export async function verifyCredentials(
   const emailMatches = normalizedEmail === ADMIN_EMAIL_NORMALIZED;
   const passwordMatches = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
   return emailMatches && passwordMatches;
+}
+
+async function verifySupabaseBearerToken(token: string): Promise<string | null> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+
+  try {
+    const response = await fetch(`${SUPABASE_URL.replace(/\/+$/, "")}/auth/v1/user`, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as { email?: unknown };
+    return typeof data.email === "string" ? data.email : null;
+  } catch (err) {
+    logger.warn({ err }, "Unable to verify Supabase bearer token");
+    return null;
+  }
 }
 
 const PgStore = connectPgSimple(session);
@@ -76,6 +99,28 @@ export const requireAuth: RequestHandler = (req, res, next) => {
     next();
     return;
   }
+
+  const header = req.get("authorization");
+  const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+
+  if (token) {
+    verifySupabaseBearerToken(token)
+      .then((email) => {
+        if (email) {
+          req.session.userEmail = email;
+          next();
+          return;
+        }
+
+        res.status(401).json({ error: "Unauthorized" });
+      })
+      .catch((err: unknown) => {
+        logger.warn({ err }, "Failed to authorize Supabase token");
+        res.status(401).json({ error: "Unauthorized" });
+      });
+    return;
+  }
+
   res.status(401).json({ error: "Unauthorized" });
 };
 

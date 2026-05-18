@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-
-const API_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api`;
+import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { supabase } from "@/lib/supabase";
 
 type AuthState = {
   status: "loading" | "authenticated" | "unauthenticated";
@@ -18,60 +18,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    let cancelled = false;
-    fetch(`${API_BASE}/auth/me`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        if (data?.email) {
-          setEmail(data.email);
-          setStatus("authenticated");
-        } else {
-          setStatus("unauthenticated");
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setStatus("unauthenticated");
-      });
+    setAuthTokenGetter(async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token ?? null;
+    });
+
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setEmail(data.session?.user.email ?? null);
+      setStatus(data.session ? "authenticated" : "unauthenticated");
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEmail(session?.user.email ?? null);
+      setStatus(session ? "authenticated" : "unauthenticated");
+      queryClient.clear();
+    });
+
     return () => {
-      cancelled = true;
+      mounted = false;
+      subscription.unsubscribe();
+      setAuthTokenGetter(null);
     };
-  }, []);
+  }, [queryClient]);
 
   const login: AuthState["login"] = async (emailInput, password) => {
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailInput, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        return { ok: false, error: data?.error ?? "Credenciais inválidas" };
-      }
-      const data = await res.json();
-      setEmail(data.email);
-      setStatus("authenticated");
-      queryClient.invalidateQueries();
-      return { ok: true };
-    } catch {
-      return { ok: false, error: "Erro de ligação. Tente novamente." };
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: emailInput.trim(),
+      password,
+    });
+
+    if (error || !data.session) {
+      return { ok: false, error: "Credenciais invalidas" };
     }
+
+    setEmail(data.user.email ?? null);
+    setStatus("authenticated");
+    queryClient.invalidateQueries();
+    return { ok: true };
   };
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch {
-      // ignore network failure
+      await supabase.auth.signOut();
+    } finally {
+      setEmail(null);
+      setStatus("unauthenticated");
+      queryClient.clear();
     }
-    setEmail(null);
-    setStatus("unauthenticated");
-    queryClient.clear();
   };
 
   return (
