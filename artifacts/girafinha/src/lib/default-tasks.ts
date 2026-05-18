@@ -1,0 +1,83 @@
+export const DEFAULT_TASKS_BY_PACK: Record<string, string[]> = {
+  "Aluguer do Espaço": [
+    "Confirmar sinal",
+    "Confirmar caução",
+    "Preparar espaço",
+    "Limpeza final",
+  ],
+  "Pack Simples": [
+    "Confirmar sinal",
+    "Confirmar número de crianças",
+    "Preparar lanche",
+    "Preparar espaço e brinquedos",
+  ],
+  "Pack com Decoração": [
+    "Confirmar sinal",
+    "Definir tema e cores",
+    "Preparar materiais de decoração",
+    "Montar decoração",
+    "Preparar lanche",
+  ],
+  "Pack Completo": [
+    "Confirmar sinal",
+    "Definir tema e cores",
+    "Preparar decoração",
+    "Preparar lanche crianças",
+    "Preparar catering adultos",
+    "Confirmar bolo/aniversário",
+  ],
+  "Decoração Externa": [
+    "Confirmar local e horário de montagem",
+    "Definir tema e cores",
+    "Preparar materiais",
+    "Montar decoração no local",
+  ],
+  "Catering / Brunch": [
+    "Confirmar número de pessoas",
+    "Definir menu",
+    "Lista de compras",
+    "Preparar entrega/montagem",
+  ],
+  "Animação": [
+    "Confirmar atividades",
+    "Preparar materiais",
+    "Confirmar horário e local",
+  ],
+  "Aluguer de Insuflável": [
+    "Confirmar local de montagem",
+    "Confirmar transporte",
+    "Verificar equipamento",
+    "Agendar recolha",
+  ],
+  "Workshop Balões Nível 1": [
+    "Confirmar número mínimo de participantes",
+    "Preparar materiais",
+    "Preparar coffee break",
+    "Preparar certificados",
+  ],
+  "Workshop Balões + Kit Inicial": [
+    "Confirmar número mínimo de participantes",
+    "Preparar materiais",
+    "Preparar kits iniciais",
+    "Preparar coffee break",
+    "Preparar certificados",
+  ],
+  "Só Espaço": [
+    "Lista de compras",
+    "Convites enviados",
+    "Preparar lanche",
+  ],
+  "Espaço + Lanche": [
+    "Lista de compras",
+    "Convites enviados",
+    "Preparar lanche",
+    "Decoração (balões, etc.)",
+  ],
+  "Espaço + Decoração": [
+    "Lista de compras",
+    "Convites enviados",
+    "Displays do tema",
+    "Pintar painéis",
+    "Decoração (balões, etc.)",
+  ],
+};
