@@ -212,6 +212,15 @@ export function ReservationModal({
   }, [computedTotalPrice, extraLines, form]);
 
   const onSubmit = (data: FormValues) => {
+    const onError = (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Tente novamente dentro de momentos.";
+      toast({
+        title: reservation ? "Não foi possível atualizar a reserva" : "Não foi possível guardar a reserva",
+        description: message,
+        variant: "destructive",
+      });
+    };
+
     const onSuccess = () => {
       queryClient.invalidateQueries({ queryKey: getListReservationsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetDashboardStatsQueryKey() });
@@ -245,12 +254,12 @@ export function ReservationModal({
     if (reservation) {
       updateReservation.mutate(
         { id: reservation.id, data: { ...data, extras: data.extras || null, notes: data.notes || null } as any },
-        { onSuccess }
+        { onSuccess, onError }
       );
     } else {
       createReservation.mutate(
         { data: { ...data, extras: data.extras || null, notes: data.notes || null } as any },
-        { onSuccess }
+        { onSuccess, onError }
       );
     }
   };
