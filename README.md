@@ -11,10 +11,7 @@ corepack pnpm --filter @workspace/girafinha run dev
 
 A app abre em `http://localhost:5173/`.
 
-Login demo local:
-
-- Email: `admin@espacogirafinha.pt`
-- Palavra-passe: `girafinha2026`
+O login em producao usa Supabase Auth. Em desenvolvimento local, garante que as variaveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estao configuradas se quiseres testar o mesmo fluxo de login.
 
 ## Producao
 
@@ -29,9 +26,10 @@ Login demo local:
 Variaveis necessarias em producao:
 
 - `DATABASE_URL`
-- `SESSION_SECRET`
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
 O ficheiro `.env.example` mostra o formato esperado. A password da base de dados deve ser obtida/definida no painel Supabase, nunca guardada no repositorio.
 
