@@ -217,6 +217,10 @@ function json(res: ServerResponse, status: number, body?: unknown) {
   res.end(body === undefined ? "" : JSON.stringify(body));
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function readBody(req: IncomingMessage) {
   return new Promise<Record<string, unknown>>((resolve) => {
     let raw = "";
@@ -237,8 +241,47 @@ function isAuthed(req: IncomingMessage) {
   return req.headers.cookie?.includes(`${SESSION_COOKIE}=1`) ?? false;
 }
 
-function requireAuth(req: IncomingMessage, res: ServerResponse) {
+function getBearerToken(req: IncomingMessage) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return "";
+  return header.slice("Bearer ".length).trim();
+}
+
+async function verifySupabaseBearerToken(token: string) {
+  if (!token) return false;
+
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn("[girafinha-dev-api] Missing SUPABASE_URL/SUPABASE_ANON_KEY for local auth.");
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl.replace(/\/+$/, "")}/auth/v1/user`, {
+      headers: {
+        apikey: supabaseAnonKey,
+        authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[girafinha-dev-api] Supabase token rejected with ${response.status}.`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("[girafinha-dev-api] Could not verify Supabase token.", error);
+    return false;
+  }
+}
+
+async function requireAuth(req: IncomingMessage, res: ServerResponse) {
   if (isAuthed(req)) return true;
+  if (await verifySupabaseBearerToken(getBearerToken(req))) return true;
+
   json(res, 401, { error: "Unauthorized" });
   return false;
 }
@@ -373,11 +416,12 @@ export function devApiPlugin(): Plugin {
     apply: "serve",
     configureServer(server) {
       server.middlewares.use("/api", async (req, res, next) => {
-        if (!req.url || !req.method) return next();
+        try {
+          if (!req.url || !req.method) return next();
 
-        const url = new URL(req.url, "http://localhost");
-        const method = req.method.toUpperCase();
-        const path = url.pathname;
+          const url = new URL(req.url, "http://localhost");
+          const method = req.method.toUpperCase();
+          const path = url.pathname;
 
         if (path === "/auth/me") {
           if (!isAuthed(req)) return json(res, 401, { error: "Não autenticado" });
@@ -401,7 +445,7 @@ export function devApiPlugin(): Plugin {
         }
 
         if (path === "/healthz") return json(res, 200, { ok: true });
-        if (!requireAuth(req, res)) return;
+        if (!(await requireAuth(req, res))) return;
 
         if (path === "/dashboard/stats") return json(res, 200, stats());
         if (path === "/dashboard/upcoming") {
@@ -519,7 +563,18 @@ export function devApiPlugin(): Plugin {
           return json(res, 204);
         }
 
-        return json(res, 404, { error: "Not found" });
+          return json(res, 404, { error: "Not found" });
+        } catch (error) {
+          console.error("[girafinha-dev-api] Request failed", {
+            method: req.method,
+            url: req.url,
+            error,
+          });
+          return json(res, 500, {
+            error: "Local dev API request failed",
+            message: errorMessage(error),
+          });
+        }
       });
     },
   };

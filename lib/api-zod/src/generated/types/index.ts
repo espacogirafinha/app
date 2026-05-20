@@ -31,6 +31,8 @@ export * from "./reportsDataSelectedMonth";
 export * from "./reservation";
 export * from "./reservationPack";
 export * from "./reservationPaymentStatus";
+export * from "./reservationStatus";
+export * from "./reservationType";
 export * from "./serviceType";
 export * from "./serviceTypeStats";
 export * from "./task";

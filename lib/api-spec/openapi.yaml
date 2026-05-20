@@ -370,6 +370,14 @@ components:
       type: string
       enum: ["Festas no espaço", "Serviços externos", "Workshops"]
 
+    ReservationType:
+      type: string
+      enum: [venue_party, external_service, workshop]
+
+    ReservationStatus:
+      type: string
+      enum: [draft, confirmed, completed, cancelled]
+
     Reservation:
       type: object
       properties:
@@ -400,6 +408,53 @@ components:
           type: number
         amountPaid:
           type: number
+        reservationType:
+          $ref: "#/components/schemas/ReservationType"
+        customerEmail:
+          type: ["string", "null"]
+        customerNif:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        reservationSource:
+          type: ["string", "null"]
+        reservationStatus:
+          $ref: "#/components/schemas/ReservationStatus"
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringOption:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - type: string
+              enum: [rosto_visivel, rosto_tapado, nao_autorizo]
+            - type: "null"
+        termsAccepted:
+          type: ["boolean", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: ["integer", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        externalServiceNotes:
+          type: ["string", "null"]
+        workshopName:
+          type: ["string", "null"]
+        participantCount:
+          type: ["integer", "null"]
+        workshopNotes:
+          type: ["string", "null"]
         remainingBalance:
           type: number
         paymentStatus:
@@ -454,6 +509,53 @@ components:
           type: number
         amountPaid:
           type: number
+        reservationType:
+          $ref: "#/components/schemas/ReservationType"
+        customerEmail:
+          type: ["string", "null"]
+        customerNif:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        reservationSource:
+          type: ["string", "null"]
+        reservationStatus:
+          $ref: "#/components/schemas/ReservationStatus"
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringOption:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - type: string
+              enum: [rosto_visivel, rosto_tapado, nao_autorizo]
+            - type: "null"
+        termsAccepted:
+          type: ["boolean", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: ["integer", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        externalServiceNotes:
+          type: ["string", "null"]
+        workshopName:
+          type: ["string", "null"]
+        participantCount:
+          type: ["integer", "null"]
+        workshopNotes:
+          type: ["string", "null"]
       required:
         - customerName
         - phone
@@ -493,6 +595,53 @@ components:
           type: number
         amountPaid:
           type: number
+        reservationType:
+          $ref: "#/components/schemas/ReservationType"
+        customerEmail:
+          type: ["string", "null"]
+        customerNif:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        reservationSource:
+          type: ["string", "null"]
+        reservationStatus:
+          $ref: "#/components/schemas/ReservationStatus"
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringOption:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - type: string
+              enum: [rosto_visivel, rosto_tapado, nao_autorizo]
+            - type: "null"
+        termsAccepted:
+          type: ["boolean", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: ["integer", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        externalServiceNotes:
+          type: ["string", "null"]
+        workshopName:
+          type: ["string", "null"]
+        participantCount:
+          type: ["integer", "null"]
+        workshopNotes:
+          type: ["string", "null"]
 
     DashboardStats:
       type: object

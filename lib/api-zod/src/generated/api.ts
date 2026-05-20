@@ -56,6 +56,37 @@ export const ListReservationsResponseItem = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
   createdAt: zod.string(),
@@ -95,6 +126,37 @@ export const CreateReservationBody = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
 });
 
 /**
@@ -132,6 +194,37 @@ export const GetReservationResponse = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
   createdAt: zod.string(),
@@ -176,6 +269,37 @@ export const UpdateReservationBody = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number().optional(),
   amountPaid: zod.number().optional(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
 });
 
 export const UpdateReservationResponse = zod.object({
@@ -206,6 +330,37 @@ export const UpdateReservationResponse = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
   createdAt: zod.string(),
@@ -264,6 +419,37 @@ export const GetUpcomingReservationsResponseItem = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
   createdAt: zod.string(),
@@ -470,6 +656,37 @@ export const GetCalendarReservationsResponseItem = zod.object({
       notes: zod.string().nullish(),
       totalPrice: zod.number(),
       amountPaid: zod.number(),
+      reservationType: zod
+        .enum(["venue_party", "external_service", "workshop"])
+        .optional(),
+      customerEmail: zod.string().nullish(),
+      customerNif: zod.string().nullish(),
+      paymentMethod: zod.string().nullish(),
+      reservationSource: zod.string().nullish(),
+      reservationStatus: zod
+        .enum(["draft", "confirmed", "completed", "cancelled"])
+        .optional(),
+      birthdayChildName: zod.string().nullish(),
+      birthdayChildAge: zod.number().nullish(),
+      partyTheme: zod.string().nullish(),
+      decorationNotes: zod.string().nullish(),
+      cateringOption: zod.string().nullish(),
+      allergies: zod.string().nullish(),
+      imageAuthorization: zod
+        .union([
+          zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+          zod.null(),
+        ])
+        .optional(),
+      termsAccepted: zod.boolean().nullish(),
+      eventLocation: zod.string().nullish(),
+      guestCount: zod.number().nullish(),
+      eventType: zod.string().nullish(),
+      eventTheme: zod.string().nullish(),
+      externalServiceNotes: zod.string().nullish(),
+      workshopName: zod.string().nullish(),
+      participantCount: zod.number().nullish(),
+      workshopNotes: zod.string().nullish(),
       remainingBalance: zod.number(),
       paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
       createdAt: zod.string(),
