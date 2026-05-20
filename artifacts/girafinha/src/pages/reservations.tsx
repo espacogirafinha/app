@@ -53,7 +53,6 @@ import { StatusBadge, PaymentSummary } from "@/components/status-badge";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { SERVICE_TYPE_OPTIONS, type ServiceType } from "@/lib/constants";
 import {
   getGetDashboardStatsQueryKey,
   getGetUpcomingReservationsQueryKey,
@@ -64,26 +63,24 @@ import {
 } from "@workspace/api-client-react";
 import type { ListReservationsStatus, Reservation, TaskSummary } from "@workspace/api-client-react";
 
-type QuickFilter = "all" | "upcoming" | "today" | "pending" | "paid" | "workshops" | "external";
+type TypeFilter = "all" | "venue_party" | "external_service" | "workshop";
+type ReservationStatusFilter = "all" | "draft" | "confirmed" | "completed" | "cancelled";
 type DateFilter = "all" | "week" | "month" | "nextMonth";
 type SortKey = "eventDate" | "customerName" | "remainingBalance" | "paymentStatus";
 type SortDirection = "asc" | "desc";
 
-const QUICK_FILTERS: Array<{ value: QuickFilter; label: string }> = [
+const TYPE_FILTERS: Array<{ value: TypeFilter; label: string }> = [
   { value: "all", label: "Todas" },
-  { value: "upcoming", label: "Próximas" },
-  { value: "today", label: "Hoje" },
-  { value: "pending", label: "Pendentes" },
-  { value: "paid", label: "Pagas" },
-  { value: "workshops", label: "Workshops" },
-  { value: "external", label: "Serviços externos" },
+  { value: "venue_party", label: "Festas no espaço" },
+  { value: "external_service", label: "Serviços no exterior" },
+  { value: "workshop", label: "Workshops/Formações" },
 ];
 
 export default function Reservations() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ListReservationsStatus | "all">("all");
-  const [serviceTypeFilter, setServiceTypeFilter] = useState<ServiceType | "all">("all");
-  const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [reservationStatusFilter, setReservationStatusFilter] = useState<ReservationStatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("eventDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -94,7 +91,6 @@ export default function Reservations() {
   const queryParams = {
     ...(searchTerm ? { search: searchTerm } : {}),
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-    ...(serviceTypeFilter !== "all" ? { serviceType: serviceTypeFilter } : {}),
   };
 
   const { data: reservations, isLoading } = useListReservations(queryParams);
@@ -105,27 +101,29 @@ export default function Reservations() {
 
   const visibleReservations = useMemo(() => {
     return [...(reservations ?? [])]
-      .filter((reservation) => matchesQuickFilter(reservation, quickFilter))
+      .filter((reservation) => matchesTypeFilter(reservation, typeFilter))
+      .filter((reservation) => matchesReservationStatusFilter(reservation, reservationStatusFilter))
       .filter((reservation) => matchesDateFilter(reservation, dateFilter))
       .sort((a, b) => compareReservations(a, b, sortKey, sortDirection));
-  }, [dateFilter, quickFilter, reservations, sortDirection, sortKey]);
+  }, [dateFilter, reservations, reservationStatusFilter, sortDirection, sortKey, typeFilter]);
 
   const taskSummaries = useReservationTaskSummaries(visibleReservations.map((r) => r.id));
   const selectedReservations = visibleReservations.filter((reservation) => selectedIds.includes(reservation.id));
   const allVisibleSelected = visibleReservations.length > 0 && visibleReservations.every((reservation) => selectedIds.includes(reservation.id));
 
   const summary = useMemo(() => {
-    return visibleReservations.reduce(
+    return (reservations ?? []).reduce(
       (acc, reservation) => {
-        acc.total += 1;
+        const type = getReservationType(reservation);
+        if (type === "venue_party") acc.venueParty += 1;
+        if (type === "external_service") acc.externalService += 1;
+        if (type === "workshop") acc.workshop += 1;
         acc.pending += reservation.remainingBalance;
-        if (reservation.paymentStatus === "paid") acc.paidCount += 1;
-        if (reservation.paymentStatus !== "paid") acc.pendingCount += 1;
         return acc;
       },
-      { total: 0, pending: 0, paidCount: 0, pendingCount: 0 },
+      { venueParty: 0, externalService: 0, workshop: 0, pending: 0 },
     );
-  }, [visibleReservations]);
+  }, [reservations]);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListReservationsQueryKey() });
@@ -246,30 +244,32 @@ export default function Reservations() {
         </div>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {TYPE_FILTERS.map((filter) => (
+          <Button
+            key={filter.value}
+            type="button"
+            variant={typeFilter === filter.value ? "default" : "outline"}
+            onClick={() => setTypeFilter(filter.value)}
+            className="min-h-[48px] justify-between rounded-xl px-4"
+          >
+            <span>{filter.label}</span>
+            <Badge variant={typeFilter === filter.value ? "secondary" : "outline"} className="rounded-full">
+              {filter.value === "all" ? reservations?.length ?? 0 : getTypeCount(summary, filter.value)}
+            </Badge>
+          </Button>
+        ))}
+      </div>
+
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <SummaryCard label="Total filtrado" value={summary.total.toString()} />
+        <SummaryCard label="Festas no espaço" value={summary.venueParty.toString()} />
+        <SummaryCard label="Serviços no exterior" value={summary.externalService.toString()} />
+        <SummaryCard label="Workshops" value={summary.workshop.toString()} />
         <SummaryCard label="Por receber" value={`€${summary.pending.toFixed(2)}`} tone="danger" />
-        <SummaryCard label="Pagas" value={summary.paidCount.toString()} tone="success" />
-        <SummaryCard label="Pendentes" value={summary.pendingCount.toString()} tone="warning" />
       </div>
 
       <div className="space-y-3 bg-card p-3 md:p-4 rounded-xl shadow-sm border border-border">
-        <div className="flex gap-2 overflow-x-auto">
-          {QUICK_FILTERS.map((filter) => (
-            <Button
-              key={filter.value}
-              type="button"
-              variant={quickFilter === filter.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setQuickFilter(filter.value)}
-              className="rounded-full whitespace-nowrap"
-            >
-              {filter.label}
-            </Button>
-          ))}
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-[1fr_180px_220px_200px_190px]">
+        <div className="grid gap-3 md:grid-cols-[1fr_180px_190px_190px_190px]">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -292,29 +292,28 @@ export default function Reservations() {
             </SelectContent>
           </Select>
 
-          <Select value={serviceTypeFilter} onValueChange={(val) => setServiceTypeFilter(val as ServiceType | "all")}>
-            <SelectTrigger className="min-h-[44px]">
-              <SelectValue placeholder="Tipo de serviço" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os serviços</SelectItem>
-              {SERVICE_TYPE_OPTIONS.map((serviceType) => (
-                <SelectItem key={serviceType} value={serviceType}>
-                  {serviceType}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as ListReservationsStatus | "all")}>
             <SelectTrigger className="min-h-[44px]">
               <SelectValue placeholder="Pagamento" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os estados</SelectItem>
+              <SelectItem value="all">Todos os pagamentos</SelectItem>
               <SelectItem value="paid">Pago</SelectItem>
               <SelectItem value="partial">Sinal</SelectItem>
               <SelectItem value="unpaid">Pendente</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={reservationStatusFilter} onValueChange={(val) => setReservationStatusFilter(val as ReservationStatusFilter)}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue placeholder="Estado da reserva" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os estados</SelectItem>
+              <SelectItem value="draft">Em preparação</SelectItem>
+              <SelectItem value="confirmed">Confirmada</SelectItem>
+              <SelectItem value="completed">Concluída</SelectItem>
+              <SelectItem value="cancelled">Cancelada</SelectItem>
             </SelectContent>
           </Select>
 
@@ -387,9 +386,9 @@ export default function Reservations() {
                   </TableHead>
                   <SortableHead label="Data / Hora" active={sortKey === "eventDate"} direction={sortDirection} onClick={() => updateSort("eventDate")} />
                   <SortableHead label="Cliente" active={sortKey === "customerName"} direction={sortDirection} onClick={() => updateSort("customerName")} />
-                  <TableHead>Tipo / Pack</TableHead>
+                  <TableHead>Reserva</TableHead>
+                  <TableHead>Detalhes</TableHead>
                   <TableHead>Checklist</TableHead>
-                  <TableHead>Alertas</TableHead>
                   <SortableHead label="Pagamento" active={sortKey === "remainingBalance"} direction={sortDirection} onClick={() => updateSort("remainingBalance")} align="right" />
                   <TableHead className="text-center">Ações</TableHead>
                 </TableRow>
@@ -452,32 +451,32 @@ function ReservationTableRows({
         <TableCell>
           <div className="font-bold text-foreground">{reservation.customerName}</div>
           <div className="text-xs text-muted-foreground">{reservation.phone}</div>
+          <div className="mt-1">
+            <ReservationStatusBadge status={reservation.reservationStatus} />
+          </div>
         </TableCell>
         <TableCell className="max-w-[260px]">
-          <span className="text-sm font-medium">{reservation.pack}</span>
-          <div className="mt-1 flex items-center gap-1 flex-wrap">
-            <Badge variant="secondary" className="rounded-md text-[11px] font-medium">
-              {reservation.serviceType}
-            </Badge>
-            <span className="text-xs text-muted-foreground">{reservation.numChildren} participantes</span>
-          </div>
+          <ReservationKindBadge reservation={reservation} />
+          <p className="mt-1 text-sm font-semibold text-foreground">{getReservationTitle(reservation)}</p>
+          <p className="text-xs text-muted-foreground">{getReservationSubtitle(reservation)}</p>
+        </TableCell>
+        <TableCell className="max-w-[300px]">
+          <ReservationDetailList reservation={reservation} compact />
         </TableCell>
         <TableCell className="min-w-[150px]">
           <ChecklistProgressBar summary={taskSummary} />
         </TableCell>
-        <TableCell>
-          <div className="flex flex-wrap gap-1.5">
-            {alerts.length > 0 ? alerts.map((alert) => (
-              <Badge key={alert} variant="outline" className="rounded-md border-amber-200 bg-amber-50 text-amber-800">
-                {alert}
-              </Badge>
-            )) : (
-              <span className="text-xs text-muted-foreground">Sem alertas</span>
-            )}
-          </div>
-        </TableCell>
         <TableCell className="text-right whitespace-nowrap">
           <StatusBadge status={reservation.paymentStatus} />
+          {alerts.length > 0 && (
+            <div className="mt-1 flex justify-end gap-1">
+              {alerts.slice(0, 2).map((alert) => (
+                <Badge key={alert} variant="outline" className="rounded-md border-amber-200 bg-amber-50 text-amber-800 text-[10px]">
+                  {alert}
+                </Badge>
+              ))}
+            </div>
+          )}
           <div className="mt-1">
             <PaymentSummary
               totalPrice={reservation.totalPrice}
@@ -500,6 +499,7 @@ function ReservationTableRows({
         <TableRow className="bg-muted/20">
           <TableCell colSpan={8}>
             <div className="grid gap-3 p-3 md:grid-cols-3">
+              <DetailBlock title="Informação da reserva" value={getReservationDetailsText(reservation)} />
               <DetailBlock title="Extras" value={reservation.extras || "Sem extras registados"} />
               <DetailBlock title="Notas" value={reservation.notes || "Sem notas internas"} />
               <div className="rounded-lg border border-border bg-background p-3">
@@ -608,6 +608,7 @@ function MobileReservationCard({
   onMarkPaid: (reservation: Reservation) => void;
   taskSummary?: TaskSummary;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const date = parseISO(reservation.eventDate);
   const dateDisplay = format(date, "dd 'de' MMM", { locale: ptBR });
   const alerts = getReservationAlerts(reservation, taskSummary);
@@ -635,15 +636,17 @@ function MobileReservationCard({
                 {reservation.numChildren}
               </span>
             </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <ReservationKindBadge reservation={reservation} />
+              <ReservationStatusBadge status={reservation.reservationStatus} />
+            </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between gap-3 text-sm">
           <div className="min-w-0">
-            <p className="font-medium truncate">{reservation.pack}</p>
-            <Badge variant="secondary" className="mt-1 rounded-md text-[11px] font-medium">
-              {reservation.serviceType}
-            </Badge>
+            <p className="font-semibold truncate">{getReservationTitle(reservation)}</p>
+            <p className="text-xs text-muted-foreground truncate">{getReservationSubtitle(reservation)}</p>
           </div>
           <span className="text-muted-foreground">{reservation.phone}</span>
         </div>
@@ -673,12 +676,85 @@ function MobileReservationCard({
 
         <ChecklistProgressBar summary={taskSummary} />
 
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setExpanded((value) => !value)}
+          className="w-full min-h-[40px] rounded-xl"
+        >
+          {expanded ? "Esconder detalhes" : "Detalhes"}
+        </Button>
+
+        {expanded && (
+          <div className="rounded-lg border border-border bg-background p-3">
+            <ReservationDetailList reservation={reservation} />
+            <div className="mt-3 grid gap-2">
+              <DetailBlock title="Extras" value={reservation.extras || "Sem extras registados"} />
+              <DetailBlock title="Notas" value={reservation.notes || "Sem notas internas"} />
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 flex-wrap pt-1">
           <RowActions reservation={reservation} onMarkPaid={onMarkPaid} onDelete={onDelete} />
           <ChecklistButton reservation={reservation} summary={taskSummary} variant="compact" />
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ReservationKindBadge({ reservation }: { reservation: Reservation }) {
+  const type = getReservationType(reservation);
+  const label = type === "external_service" ? "Serviço exterior" : type === "workshop" ? "Workshop/Formação" : "Festa no espaço";
+  const className = type === "external_service"
+    ? "bg-sky-100 text-sky-800 hover:bg-sky-100"
+    : type === "workshop"
+      ? "bg-violet-100 text-violet-800 hover:bg-violet-100"
+      : "bg-pink-100 text-pink-800 hover:bg-pink-100";
+
+  return (
+    <Badge className={`rounded-md border-none text-[11px] font-semibold ${className}`}>
+      {label}
+    </Badge>
+  );
+}
+
+function ReservationStatusBadge({ status }: { status?: Reservation["reservationStatus"] | null }) {
+  const value = status ?? "confirmed";
+  const labels: Record<Exclude<ReservationStatusFilter, "all">, string> = {
+    draft: "Em preparação",
+    confirmed: "Confirmada",
+    completed: "Concluída",
+    cancelled: "Cancelada",
+  };
+  const className = value === "draft"
+    ? "bg-slate-100 text-slate-700"
+    : value === "completed"
+      ? "bg-emerald-100 text-emerald-800"
+      : value === "cancelled"
+        ? "bg-rose-100 text-rose-800"
+        : "bg-blue-100 text-blue-800";
+
+  return (
+    <Badge className={`rounded-full border-none text-[11px] font-semibold ${className}`}>
+      {labels[value]}
+    </Badge>
+  );
+}
+
+function ReservationDetailList({ reservation, compact = false }: { reservation: Reservation; compact?: boolean }) {
+  const details = getReservationDetails(reservation).slice(0, compact ? 4 : undefined);
+  return (
+    <div className="space-y-1.5 text-sm">
+      {details.map((detail) => (
+        <div key={detail.label} className="flex gap-2">
+          <span className="min-w-[86px] text-xs font-semibold text-muted-foreground">{detail.label}</span>
+          <span className="min-w-0 flex-1 truncate text-foreground">{detail.value}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -726,15 +802,88 @@ function DetailBlock({ title, value }: { title: string; value: string }) {
   );
 }
 
-function matchesQuickFilter(reservation: Reservation, quickFilter: QuickFilter) {
-  const today = format(new Date(), "yyyy-MM-dd");
-  if (quickFilter === "upcoming") return reservation.eventDate >= today;
-  if (quickFilter === "today") return isToday(parseISO(reservation.eventDate));
-  if (quickFilter === "pending") return reservation.paymentStatus !== "paid";
-  if (quickFilter === "paid") return reservation.paymentStatus === "paid";
-  if (quickFilter === "workshops") return reservation.serviceType === "Workshops";
-  if (quickFilter === "external") return reservation.serviceType === "Serviços externos";
-  return true;
+function getTypeCount(summary: { venueParty: number; externalService: number; workshop: number }, filter: TypeFilter) {
+  if (filter === "venue_party") return summary.venueParty;
+  if (filter === "external_service") return summary.externalService;
+  if (filter === "workshop") return summary.workshop;
+  return summary.venueParty + summary.externalService + summary.workshop;
+}
+
+function getReservationType(reservation: Reservation): Exclude<TypeFilter, "all"> {
+  if (reservation.reservationType === "external_service" || reservation.serviceType?.toLowerCase().includes("extern")) {
+    return "external_service";
+  }
+  if (reservation.reservationType === "workshop" || reservation.serviceType?.toLowerCase().includes("workshop")) {
+    return "workshop";
+  }
+  return "venue_party";
+}
+
+function getReservationTitle(reservation: Reservation) {
+  const type = getReservationType(reservation);
+  if (type === "external_service") return reservation.pack || reservation.eventType || "Serviço no exterior";
+  if (type === "workshop") return reservation.workshopName || reservation.pack || "Workshop/Formação";
+  return reservation.birthdayChildName ? `${reservation.pack} · ${reservation.birthdayChildName}` : reservation.pack;
+}
+
+function getReservationSubtitle(reservation: Reservation) {
+  const type = getReservationType(reservation);
+  if (type === "external_service") return reservation.eventLocation || reservation.eventType || "Serviço exterior";
+  if (type === "workshop") return `${reservation.participantCount ?? reservation.numChildren ?? 0} participante(s)`;
+  return reservation.partyTheme ? `Tema: ${reservation.partyTheme}` : `${reservation.numChildren} criança(s)`;
+}
+
+function getReservationDetails(reservation: Reservation) {
+  const type = getReservationType(reservation);
+  const details: Array<{ label: string; value: string }> = [];
+
+  if (type === "external_service") {
+    addDetail(details, "Serviço", reservation.pack);
+    addDetail(details, "Morada", reservation.eventLocation);
+    addDetail(details, "Pessoas", formatCount(reservation.guestCount ?? reservation.numChildren));
+    addDetail(details, "Evento", reservation.eventType);
+    addDetail(details, "Tema", reservation.eventTheme);
+    return details;
+  }
+
+  if (type === "workshop") {
+    addDetail(details, "Workshop", reservation.workshopName || reservation.pack);
+    addDetail(details, "Pessoas", formatCount(reservation.participantCount ?? reservation.numChildren));
+    addDetail(details, "Notas", reservation.workshopNotes);
+    return details;
+  }
+
+  addDetail(details, "Pack", reservation.pack);
+  addDetail(details, "Anivers.", reservation.birthdayChildName);
+  addDetail(details, "Idade", reservation.birthdayChildAge ? `${reservation.birthdayChildAge} anos` : undefined);
+  addDetail(details, "Crianças", formatCount(reservation.numChildren));
+  addDetail(details, "Tema", reservation.partyTheme);
+  return details;
+}
+
+function getReservationDetailsText(reservation: Reservation) {
+  const details = getReservationDetails(reservation);
+  return details.length ? details.map((detail) => `${detail.label}: ${detail.value}`).join("\n") : "Sem detalhes específicos registados.";
+}
+
+function addDetail(details: Array<{ label: string; value: string }>, label: string, value?: string | number | null) {
+  if (value === undefined || value === null || value === "") return;
+  details.push({ label, value: String(value) });
+}
+
+function formatCount(value?: number | null) {
+  if (value === undefined || value === null) return undefined;
+  return String(value);
+}
+
+function matchesTypeFilter(reservation: Reservation, typeFilter: TypeFilter) {
+  if (typeFilter === "all") return true;
+  return getReservationType(reservation) === typeFilter;
+}
+
+function matchesReservationStatusFilter(reservation: Reservation, statusFilter: ReservationStatusFilter) {
+  if (statusFilter === "all") return true;
+  return (reservation.reservationStatus ?? "confirmed") === statusFilter;
 }
 
 function matchesDateFilter(reservation: Reservation, dateFilter: DateFilter) {
