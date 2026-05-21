@@ -18,21 +18,25 @@ import type {
 
 import type {
   CalendarDay,
+  CreateExternalEventBody,
   CreateReservationBody,
   CreateTaskBody,
   CreateVenueEventBody,
   DashboardStats,
   ErrorResponse,
+  ExternalEvent,
   GetCalendarReservationsParams,
   GetReportsDataParams,
   GetTasksSummaryParams,
   HealthStatus,
+  ListExternalEventsParams,
   ListReservationsParams,
   ListVenueEventsParams,
   ReportsData,
   Reservation,
   Task,
   TaskSummary,
+  UpdateExternalEventBody,
   UpdateReservationBody,
   UpdateTaskBody,
   UpdateVenueEventBody,
@@ -1001,6 +1005,447 @@ export const useDeleteVenueEvent = <
   TContext
 > => {
   return useMutation(getDeleteVenueEventMutationOptions(options));
+};
+
+/**
+ * @summary List external events
+ */
+export const getListExternalEventsUrl = (params?: ListExternalEventsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/external-events?${stringifiedParams}`
+    : `/api/external-events`;
+};
+
+export const listExternalEvents = async (
+  params?: ListExternalEventsParams,
+  options?: RequestInit,
+): Promise<ExternalEvent[]> => {
+  return customFetch<ExternalEvent[]>(getListExternalEventsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListExternalEventsQueryKey = (
+  params?: ListExternalEventsParams,
+) => {
+  return [`/api/external-events`, ...(params ? [params] : [])] as const;
+};
+
+export const getListExternalEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listExternalEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListExternalEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listExternalEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListExternalEventsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listExternalEvents>>
+  > = ({ signal }) => listExternalEvents(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listExternalEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListExternalEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listExternalEvents>>
+>;
+export type ListExternalEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List external events
+ */
+
+export function useListExternalEvents<
+  TData = Awaited<ReturnType<typeof listExternalEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListExternalEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listExternalEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListExternalEventsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create an external event with services
+ */
+export const getCreateExternalEventUrl = () => {
+  return `/api/external-events`;
+};
+
+export const createExternalEvent = async (
+  createExternalEventBody: CreateExternalEventBody,
+  options?: RequestInit,
+): Promise<ExternalEvent> => {
+  return customFetch<ExternalEvent>(getCreateExternalEventUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createExternalEventBody),
+  });
+};
+
+export const getCreateExternalEventMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExternalEvent>>,
+    TError,
+    { data: BodyType<CreateExternalEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createExternalEvent>>,
+  TError,
+  { data: BodyType<CreateExternalEventBody> },
+  TContext
+> => {
+  const mutationKey = ["createExternalEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createExternalEvent>>,
+    { data: BodyType<CreateExternalEventBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createExternalEvent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateExternalEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createExternalEvent>>
+>;
+export type CreateExternalEventMutationBody = BodyType<CreateExternalEventBody>;
+export type CreateExternalEventMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create an external event with services
+ */
+export const useCreateExternalEvent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExternalEvent>>,
+    TError,
+    { data: BodyType<CreateExternalEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createExternalEvent>>,
+  TError,
+  { data: BodyType<CreateExternalEventBody> },
+  TContext
+> => {
+  return useMutation(getCreateExternalEventMutationOptions(options));
+};
+
+/**
+ * @summary Get an external event by ID
+ */
+export const getGetExternalEventUrl = (id: string) => {
+  return `/api/external-events/${id}`;
+};
+
+export const getExternalEvent = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ExternalEvent> => {
+  return customFetch<ExternalEvent>(getGetExternalEventUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetExternalEventQueryKey = (id: string) => {
+  return [`/api/external-events/${id}`] as const;
+};
+
+export const getGetExternalEventQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExternalEvent>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getExternalEvent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetExternalEventQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getExternalEvent>>
+  > = ({ signal }) => getExternalEvent(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getExternalEvent>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetExternalEventQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExternalEvent>>
+>;
+export type GetExternalEventQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get an external event by ID
+ */
+
+export function useGetExternalEvent<
+  TData = Awaited<ReturnType<typeof getExternalEvent>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getExternalEvent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetExternalEventQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update an external event and optionally replace services
+ */
+export const getUpdateExternalEventUrl = (id: string) => {
+  return `/api/external-events/${id}`;
+};
+
+export const updateExternalEvent = async (
+  id: string,
+  updateExternalEventBody: UpdateExternalEventBody,
+  options?: RequestInit,
+): Promise<ExternalEvent> => {
+  return customFetch<ExternalEvent>(getUpdateExternalEventUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateExternalEventBody),
+  });
+};
+
+export const getUpdateExternalEventMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateExternalEvent>>,
+    TError,
+    { id: string; data: BodyType<UpdateExternalEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateExternalEvent>>,
+  TError,
+  { id: string; data: BodyType<UpdateExternalEventBody> },
+  TContext
+> => {
+  const mutationKey = ["updateExternalEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateExternalEvent>>,
+    { id: string; data: BodyType<UpdateExternalEventBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateExternalEvent(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateExternalEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateExternalEvent>>
+>;
+export type UpdateExternalEventMutationBody = BodyType<UpdateExternalEventBody>;
+export type UpdateExternalEventMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update an external event and optionally replace services
+ */
+export const useUpdateExternalEvent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateExternalEvent>>,
+    TError,
+    { id: string; data: BodyType<UpdateExternalEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateExternalEvent>>,
+  TError,
+  { id: string; data: BodyType<UpdateExternalEventBody> },
+  TContext
+> => {
+  return useMutation(getUpdateExternalEventMutationOptions(options));
+};
+
+/**
+ * @summary Delete an external event
+ */
+export const getDeleteExternalEventUrl = (id: string) => {
+  return `/api/external-events/${id}`;
+};
+
+export const deleteExternalEvent = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteExternalEventUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteExternalEventMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteExternalEvent>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteExternalEvent>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteExternalEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteExternalEvent>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteExternalEvent(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteExternalEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteExternalEvent>>
+>;
+
+export type DeleteExternalEventMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete an external event
+ */
+export const useDeleteExternalEvent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteExternalEvent>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteExternalEvent>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteExternalEventMutationOptions(options));
 };
 
 /**

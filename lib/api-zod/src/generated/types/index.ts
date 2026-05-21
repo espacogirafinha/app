@@ -7,17 +7,26 @@
  */
 
 export * from "./calendarDay";
+export * from "./createExternalEventBody";
 export * from "./createReservationBody";
 export * from "./createReservationBodyPack";
 export * from "./createTaskBody";
 export * from "./createVenueEventBody";
 export * from "./dashboardStats";
 export * from "./errorResponse";
+export * from "./externalEvent";
+export * from "./externalEventPaymentStatus";
+export * from "./externalEventService";
+export * from "./externalEventServiceInput";
+export * from "./externalEventServiceStatus";
+export * from "./externalEventServiceType";
+export * from "./externalEventStatus";
 export * from "./extraStats";
 export * from "./getCalendarReservationsParams";
 export * from "./getReportsDataParams";
 export * from "./getTasksSummaryParams";
 export * from "./healthStatus";
+export * from "./listExternalEventsParams";
 export * from "./listReservationsParams";
 export * from "./listReservationsStatus";
 export * from "./listVenueEventsParams";
@@ -39,6 +48,7 @@ export * from "./serviceType";
 export * from "./serviceTypeStats";
 export * from "./task";
 export * from "./taskSummary";
+export * from "./updateExternalEventBody";
 export * from "./updateReservationBody";
 export * from "./updateReservationBodyPack";
 export * from "./updateTaskBody";

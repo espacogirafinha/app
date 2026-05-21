@@ -587,6 +587,287 @@ export const DeleteVenueEventParams = zod.object({
 });
 
 /**
+ * @summary List external events
+ */
+export const ListExternalEventsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+});
+
+export const ListExternalEventsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      externalEventId: zod.string().uuid(),
+      serviceType: zod.enum([
+        "decoracao",
+        "catering",
+        "organizacao_evento",
+        "animacao",
+        "insuflavel",
+        "baloes",
+        "outro",
+      ]),
+      serviceLabel: zod.string(),
+      price: zod.number(),
+      status: zod.enum(["planned", "in_progress", "completed", "cancelled"]),
+      notes: zod.string().nullish(),
+      sortOrder: zod.number(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListExternalEventsResponse = zod.array(
+  ListExternalEventsResponseItem,
+);
+
+/**
+ * @summary Create an external event with services
+ */
+
+export const CreateExternalEventBody = zod.object({
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().optional(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod
+    .array(
+      zod.object({
+        serviceType: zod.enum([
+          "decoracao",
+          "catering",
+          "organizacao_evento",
+          "animacao",
+          "insuflavel",
+          "baloes",
+          "outro",
+        ]),
+        serviceLabel: zod.string(),
+        price: zod.number().optional(),
+        status: zod
+          .enum(["planned", "in_progress", "completed", "cancelled"])
+          .optional(),
+        notes: zod.string().nullish(),
+        sortOrder: zod.number().optional(),
+      }),
+    )
+    .min(1),
+});
+
+/**
+ * @summary Get an external event by ID
+ */
+export const GetExternalEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetExternalEventResponse = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      externalEventId: zod.string().uuid(),
+      serviceType: zod.enum([
+        "decoracao",
+        "catering",
+        "organizacao_evento",
+        "animacao",
+        "insuflavel",
+        "baloes",
+        "outro",
+      ]),
+      serviceLabel: zod.string(),
+      price: zod.number(),
+      status: zod.enum(["planned", "in_progress", "completed", "cancelled"]),
+      notes: zod.string().nullish(),
+      sortOrder: zod.number(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Update an external event and optionally replace services
+ */
+export const UpdateExternalEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateExternalEventBody = zod.object({
+  customerName: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string().optional(),
+  startTime: zod.string().optional(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().optional(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number().optional(),
+  amountPaid: zod.number().optional(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod
+    .array(
+      zod.object({
+        serviceType: zod.enum([
+          "decoracao",
+          "catering",
+          "organizacao_evento",
+          "animacao",
+          "insuflavel",
+          "baloes",
+          "outro",
+        ]),
+        serviceLabel: zod.string(),
+        price: zod.number().optional(),
+        status: zod
+          .enum(["planned", "in_progress", "completed", "cancelled"])
+          .optional(),
+        notes: zod.string().nullish(),
+        sortOrder: zod.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+export const UpdateExternalEventResponse = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      externalEventId: zod.string().uuid(),
+      serviceType: zod.enum([
+        "decoracao",
+        "catering",
+        "organizacao_evento",
+        "animacao",
+        "insuflavel",
+        "baloes",
+        "outro",
+      ]),
+      serviceLabel: zod.string(),
+      price: zod.number(),
+      status: zod.enum(["planned", "in_progress", "completed", "cancelled"]),
+      notes: zod.string().nullish(),
+      sortOrder: zod.number(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete an external event
+ */
+export const DeleteExternalEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
  * @summary Get dashboard statistics
  */
 export const GetDashboardStatsResponse = zod.object({

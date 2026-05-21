@@ -72,6 +72,46 @@ type VenueEvent = {
   updatedAt: string;
 };
 
+type ExternalEventService = {
+  id: string;
+  externalEventId: string;
+  serviceType: "decoracao" | "catering" | "organizacao_evento" | "animacao" | "insuflavel" | "baloes" | "outro";
+  serviceLabel: string;
+  price: number;
+  status: "planned" | "in_progress" | "completed" | "cancelled";
+  notes: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ExternalEvent = {
+  id: string;
+  customerName: string;
+  phone: string;
+  email: string | null;
+  nif: string | null;
+  eventDate: string;
+  startTime: string;
+  endTime: string | null;
+  status: "draft" | "confirmed" | "completed" | "cancelled";
+  paymentStatus: "unpaid" | "partial" | "paid";
+  source: string | null;
+  eventLocation: string | null;
+  guestCount: number;
+  eventType: string | null;
+  eventTheme: string | null;
+  setupNotes: string | null;
+  teardownNotes: string | null;
+  accessNotes: string | null;
+  totalPrice: number;
+  amountPaid: number;
+  paymentMethod: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const ADMIN_EMAIL = "admin@espacogirafinha.pt";
 const ADMIN_PASSWORD = "girafinha2026";
 const SESSION_COOKIE = "girafinha_dev_session";
@@ -196,6 +236,8 @@ let tasks: Task[] = [
 ];
 
 let venueEvents: VenueEvent[] = [];
+let externalEvents: ExternalEvent[] = [];
+let externalEventServices: ExternalEventService[] = [];
 
 const DEFAULT_TASKS_BY_PACK: Record<string, string[]> = {
   "Aluguer do Espaço": ["Confirmar sinal", "Confirmar caução", "Preparar espaço", "Limpeza final"],
@@ -254,6 +296,24 @@ function computeVenuePaymentStatus(totalPrice: number, amountPaid: number): Venu
 function formatVenueEvent(event: VenueEvent) {
   return {
     ...event,
+    remainingBalance: Math.max(0, event.totalPrice - event.amountPaid),
+  };
+}
+
+function computeExternalPaymentStatus(totalPrice: number, amountPaid: number): ExternalEvent["paymentStatus"] {
+  if (amountPaid >= totalPrice) return "paid";
+  if (amountPaid > 0) return "partial";
+  return "unpaid";
+}
+
+function formatExternalEvent(event: ExternalEvent) {
+  const services = externalEventServices
+    .filter((service) => service.externalEventId === event.id)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  return {
+    ...event,
+    services,
     remainingBalance: Math.max(0, event.totalPrice - event.amountPaid),
   };
 }
@@ -601,6 +661,119 @@ export function devApiPlugin(): Plugin {
         if (venueEventMatch && method === "DELETE") {
           const id = venueEventMatch[1];
           venueEvents = venueEvents.filter((event) => event.id !== id);
+          return json(res, 204);
+        }
+
+        if (path === "/external-events" && method === "GET") {
+          const search = url.searchParams.get("search")?.toLowerCase();
+          const status = url.searchParams.get("status");
+          const paymentStatusFilter = url.searchParams.get("paymentStatus");
+          const dateFrom = url.searchParams.get("dateFrom");
+          const dateTo = url.searchParams.get("dateTo");
+          const result = externalEvents
+            .map(formatExternalEvent)
+            .filter((event) => !search || event.customerName.toLowerCase().includes(search) || event.phone.includes(search) || event.eventLocation?.toLowerCase().includes(search))
+            .filter((event) => !status || event.status === status)
+            .filter((event) => !paymentStatusFilter || event.paymentStatus === paymentStatusFilter)
+            .filter((event) => !dateFrom || event.eventDate >= dateFrom)
+            .filter((event) => !dateTo || event.eventDate <= dateTo)
+            .sort((a, b) => `${a.eventDate} ${a.startTime}`.localeCompare(`${b.eventDate} ${b.startTime}`));
+          return json(res, 200, result);
+        }
+
+        if (path === "/external-events" && method === "POST") {
+          const body = await readBody(req);
+          const services = Array.isArray(body.services) ? body.services as Record<string, unknown>[] : [];
+          const totalPrice = Number(body.totalPrice ?? 0);
+          const amountPaid = Number(body.amountPaid ?? 0);
+          const event: ExternalEvent = {
+            id: randomUUID(),
+            customerName: String(body.customerName ?? ""),
+            phone: String(body.phone ?? ""),
+            email: body.email ? String(body.email) : null,
+            nif: body.nif ? String(body.nif) : null,
+            eventDate: String(body.eventDate ?? ""),
+            startTime: String(body.startTime ?? ""),
+            endTime: body.endTime ? String(body.endTime) : null,
+            status: (body.status as ExternalEvent["status"]) ?? "draft",
+            paymentStatus: computeExternalPaymentStatus(totalPrice, amountPaid),
+            source: body.source ? String(body.source) : null,
+            eventLocation: body.eventLocation ? String(body.eventLocation) : null,
+            guestCount: Number(body.guestCount ?? 0),
+            eventType: body.eventType ? String(body.eventType) : null,
+            eventTheme: body.eventTheme ? String(body.eventTheme) : null,
+            setupNotes: body.setupNotes ? String(body.setupNotes) : null,
+            teardownNotes: body.teardownNotes ? String(body.teardownNotes) : null,
+            accessNotes: body.accessNotes ? String(body.accessNotes) : null,
+            totalPrice,
+            amountPaid,
+            paymentMethod: body.paymentMethod ? String(body.paymentMethod) : null,
+            notes: body.notes ? String(body.notes) : null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          externalEvents.push(event);
+          externalEventServices.push(...services.map((service, index) => ({
+            id: randomUUID(),
+            externalEventId: event.id,
+            serviceType: service.serviceType as ExternalEventService["serviceType"],
+            serviceLabel: String(service.serviceLabel ?? ""),
+            price: Number(service.price ?? 0),
+            status: (service.status as ExternalEventService["status"]) ?? "planned",
+            notes: service.notes ? String(service.notes) : null,
+            sortOrder: Number(service.sortOrder ?? index + 1),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })));
+          return json(res, 201, formatExternalEvent(event));
+        }
+
+        const externalEventMatch = path.match(/^\/external-events\/([0-9a-f-]+)$/i);
+        if (externalEventMatch && method === "GET") {
+          const event = externalEvents.find((item) => item.id === externalEventMatch[1]);
+          if (!event) return json(res, 404, { error: "External event not found" });
+          return json(res, 200, formatExternalEvent(event));
+        }
+        if (externalEventMatch && method === "PATCH") {
+          const id = externalEventMatch[1];
+          const body = await readBody(req);
+          const current = externalEvents.find((event) => event.id === id);
+          if (!current) return json(res, 404, { error: "External event not found" });
+          const totalPrice = body.totalPrice !== undefined ? Number(body.totalPrice) : current.totalPrice;
+          const amountPaid = body.amountPaid !== undefined ? Number(body.amountPaid) : current.amountPaid;
+          externalEvents = externalEvents.map((event) =>
+            event.id === id
+              ? {
+                  ...event,
+                  ...body,
+                  totalPrice,
+                  amountPaid,
+                  paymentStatus: computeExternalPaymentStatus(totalPrice, amountPaid),
+                  updatedAt: new Date().toISOString(),
+                } as ExternalEvent
+              : event,
+          );
+          if (Array.isArray(body.services)) {
+            externalEventServices = externalEventServices.filter((service) => service.externalEventId !== id);
+            externalEventServices.push(...(body.services as Record<string, unknown>[]).map((service, index) => ({
+              id: randomUUID(),
+              externalEventId: id,
+              serviceType: service.serviceType as ExternalEventService["serviceType"],
+              serviceLabel: String(service.serviceLabel ?? ""),
+              price: Number(service.price ?? 0),
+              status: (service.status as ExternalEventService["status"]) ?? "planned",
+              notes: service.notes ? String(service.notes) : null,
+              sortOrder: Number(service.sortOrder ?? index + 1),
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            })));
+          }
+          return json(res, 200, formatExternalEvent(externalEvents.find((event) => event.id === id)!));
+        }
+        if (externalEventMatch && method === "DELETE") {
+          const id = externalEventMatch[1];
+          externalEvents = externalEvents.filter((event) => event.id !== id);
+          externalEventServices = externalEventServices.filter((service) => service.externalEventId !== id);
           return json(res, 204);
         }
 

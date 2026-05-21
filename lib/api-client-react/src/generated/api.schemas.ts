@@ -68,6 +68,48 @@ export const VenueEventImageAuthorization = {
   nao_autorizo: "nao_autorizo",
 } as const;
 
+export type ExternalEventStatus =
+  (typeof ExternalEventStatus)[keyof typeof ExternalEventStatus];
+
+export const ExternalEventStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type ExternalEventPaymentStatus =
+  (typeof ExternalEventPaymentStatus)[keyof typeof ExternalEventPaymentStatus];
+
+export const ExternalEventPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+} as const;
+
+export type ExternalEventServiceType =
+  (typeof ExternalEventServiceType)[keyof typeof ExternalEventServiceType];
+
+export const ExternalEventServiceType = {
+  decoracao: "decoracao",
+  catering: "catering",
+  organizacao_evento: "organizacao_evento",
+  animacao: "animacao",
+  insuflavel: "insuflavel",
+  baloes: "baloes",
+  outro: "outro",
+} as const;
+
+export type ExternalEventServiceStatus =
+  (typeof ExternalEventServiceStatus)[keyof typeof ExternalEventServiceStatus];
+
+export const ExternalEventServiceStatus = {
+  planned: "planned",
+  in_progress: "in_progress",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
 export type ReservationPack =
   (typeof ReservationPack)[keyof typeof ReservationPack];
 
@@ -439,6 +481,146 @@ export interface UpdateVenueEventBody {
   notes?: string | null;
 }
 
+export interface ExternalEventService {
+  id: string;
+  externalEventId: string;
+  serviceType: ExternalEventServiceType;
+  serviceLabel: string;
+  price: number;
+  status: ExternalEventServiceStatus;
+  /** @nullable */
+  notes?: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExternalEventServiceInput {
+  serviceType: ExternalEventServiceType;
+  serviceLabel: string;
+  price?: number;
+  status?: ExternalEventServiceStatus;
+  /** @nullable */
+  notes?: string | null;
+  sortOrder?: number;
+}
+
+export interface ExternalEvent {
+  id: string;
+  customerName: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  status: ExternalEventStatus;
+  paymentStatus: ExternalEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  guestCount: number;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  setupNotes?: string | null;
+  /** @nullable */
+  teardownNotes?: string | null;
+  /** @nullable */
+  accessNotes?: string | null;
+  totalPrice: number;
+  amountPaid: number;
+  remainingBalance: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  services: ExternalEventService[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExternalEventBody {
+  customerName: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  status?: ExternalEventStatus;
+  paymentStatus?: ExternalEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  guestCount?: number;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  setupNotes?: string | null;
+  /** @nullable */
+  teardownNotes?: string | null;
+  /** @nullable */
+  accessNotes?: string | null;
+  totalPrice: number;
+  amountPaid: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @minItems 1 */
+  services: ExternalEventServiceInput[];
+}
+
+export interface UpdateExternalEventBody {
+  customerName?: string;
+  phone?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate?: string;
+  startTime?: string;
+  /** @nullable */
+  endTime?: string | null;
+  status?: ExternalEventStatus;
+  paymentStatus?: ExternalEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  guestCount?: number;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  setupNotes?: string | null;
+  /** @nullable */
+  teardownNotes?: string | null;
+  /** @nullable */
+  accessNotes?: string | null;
+  totalPrice?: number;
+  amountPaid?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  services?: ExternalEventServiceInput[];
+}
+
 export interface DashboardStats {
   totalReservations: number;
   totalRevenue: number;
@@ -587,6 +769,14 @@ export type ListVenueEventsParams = {
   search?: string;
   status?: VenueEventStatus;
   paymentStatus?: VenueEventPaymentStatus;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type ListExternalEventsParams = {
+  search?: string;
+  status?: ExternalEventStatus;
+  paymentStatus?: ExternalEventPaymentStatus;
   dateFrom?: string;
   dateTo?: string;
 };
