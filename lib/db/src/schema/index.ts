@@ -19,3 +19,4 @@
 
 export * from "./reservations";
 export * from "./tasks";
+export * from "./venue-events";

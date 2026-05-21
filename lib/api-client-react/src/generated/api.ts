@@ -20,6 +20,7 @@ import type {
   CalendarDay,
   CreateReservationBody,
   CreateTaskBody,
+  CreateVenueEventBody,
   DashboardStats,
   ErrorResponse,
   GetCalendarReservationsParams,
@@ -27,12 +28,15 @@ import type {
   GetTasksSummaryParams,
   HealthStatus,
   ListReservationsParams,
+  ListVenueEventsParams,
   ReportsData,
   Reservation,
   Task,
   TaskSummary,
   UpdateReservationBody,
   UpdateTaskBody,
+  UpdateVenueEventBody,
+  VenueEvent,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -559,6 +563,444 @@ export const useDeleteReservation = <
   TContext
 > => {
   return useMutation(getDeleteReservationMutationOptions(options));
+};
+
+/**
+ * @summary List venue events
+ */
+export const getListVenueEventsUrl = (params?: ListVenueEventsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/venue-events?${stringifiedParams}`
+    : `/api/venue-events`;
+};
+
+export const listVenueEvents = async (
+  params?: ListVenueEventsParams,
+  options?: RequestInit,
+): Promise<VenueEvent[]> => {
+  return customFetch<VenueEvent[]>(getListVenueEventsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListVenueEventsQueryKey = (params?: ListVenueEventsParams) => {
+  return [`/api/venue-events`, ...(params ? [params] : [])] as const;
+};
+
+export const getListVenueEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listVenueEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListVenueEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVenueEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListVenueEventsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listVenueEvents>>> = ({
+    signal,
+  }) => listVenueEvents(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listVenueEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListVenueEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listVenueEvents>>
+>;
+export type ListVenueEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List venue events
+ */
+
+export function useListVenueEvents<
+  TData = Awaited<ReturnType<typeof listVenueEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListVenueEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVenueEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListVenueEventsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a venue event
+ */
+export const getCreateVenueEventUrl = () => {
+  return `/api/venue-events`;
+};
+
+export const createVenueEvent = async (
+  createVenueEventBody: CreateVenueEventBody,
+  options?: RequestInit,
+): Promise<VenueEvent> => {
+  return customFetch<VenueEvent>(getCreateVenueEventUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createVenueEventBody),
+  });
+};
+
+export const getCreateVenueEventMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createVenueEvent>>,
+    TError,
+    { data: BodyType<CreateVenueEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createVenueEvent>>,
+  TError,
+  { data: BodyType<CreateVenueEventBody> },
+  TContext
+> => {
+  const mutationKey = ["createVenueEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createVenueEvent>>,
+    { data: BodyType<CreateVenueEventBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createVenueEvent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateVenueEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createVenueEvent>>
+>;
+export type CreateVenueEventMutationBody = BodyType<CreateVenueEventBody>;
+export type CreateVenueEventMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a venue event
+ */
+export const useCreateVenueEvent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createVenueEvent>>,
+    TError,
+    { data: BodyType<CreateVenueEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createVenueEvent>>,
+  TError,
+  { data: BodyType<CreateVenueEventBody> },
+  TContext
+> => {
+  return useMutation(getCreateVenueEventMutationOptions(options));
+};
+
+/**
+ * @summary Get a venue event by ID
+ */
+export const getGetVenueEventUrl = (id: string) => {
+  return `/api/venue-events/${id}`;
+};
+
+export const getVenueEvent = async (
+  id: string,
+  options?: RequestInit,
+): Promise<VenueEvent> => {
+  return customFetch<VenueEvent>(getGetVenueEventUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetVenueEventQueryKey = (id: string) => {
+  return [`/api/venue-events/${id}`] as const;
+};
+
+export const getGetVenueEventQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVenueEvent>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVenueEvent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetVenueEventQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getVenueEvent>>> = ({
+    signal,
+  }) => getVenueEvent(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getVenueEvent>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetVenueEventQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVenueEvent>>
+>;
+export type GetVenueEventQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a venue event by ID
+ */
+
+export function useGetVenueEvent<
+  TData = Awaited<ReturnType<typeof getVenueEvent>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVenueEvent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetVenueEventQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a venue event
+ */
+export const getUpdateVenueEventUrl = (id: string) => {
+  return `/api/venue-events/${id}`;
+};
+
+export const updateVenueEvent = async (
+  id: string,
+  updateVenueEventBody: UpdateVenueEventBody,
+  options?: RequestInit,
+): Promise<VenueEvent> => {
+  return customFetch<VenueEvent>(getUpdateVenueEventUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateVenueEventBody),
+  });
+};
+
+export const getUpdateVenueEventMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateVenueEvent>>,
+    TError,
+    { id: string; data: BodyType<UpdateVenueEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateVenueEvent>>,
+  TError,
+  { id: string; data: BodyType<UpdateVenueEventBody> },
+  TContext
+> => {
+  const mutationKey = ["updateVenueEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateVenueEvent>>,
+    { id: string; data: BodyType<UpdateVenueEventBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateVenueEvent(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateVenueEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateVenueEvent>>
+>;
+export type UpdateVenueEventMutationBody = BodyType<UpdateVenueEventBody>;
+export type UpdateVenueEventMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a venue event
+ */
+export const useUpdateVenueEvent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateVenueEvent>>,
+    TError,
+    { id: string; data: BodyType<UpdateVenueEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateVenueEvent>>,
+  TError,
+  { id: string; data: BodyType<UpdateVenueEventBody> },
+  TContext
+> => {
+  return useMutation(getUpdateVenueEventMutationOptions(options));
+};
+
+/**
+ * @summary Delete a venue event
+ */
+export const getDeleteVenueEventUrl = (id: string) => {
+  return `/api/venue-events/${id}`;
+};
+
+export const deleteVenueEvent = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteVenueEventUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteVenueEventMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVenueEvent>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteVenueEvent>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteVenueEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteVenueEvent>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteVenueEvent(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteVenueEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteVenueEvent>>
+>;
+
+export type DeleteVenueEventMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a venue event
+ */
+export const useDeleteVenueEvent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVenueEvent>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteVenueEvent>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteVenueEventMutationOptions(options));
 };
 
 /**

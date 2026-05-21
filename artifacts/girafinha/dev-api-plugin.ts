@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { randomUUID } from "node:crypto";
 import type { Plugin } from "vite";
 
 type Reservation = {
@@ -38,6 +39,37 @@ type Task = {
   completed: boolean;
   sortOrder: number;
   createdAt: string;
+};
+
+type VenueEvent = {
+  id: string;
+  customerName: string;
+  phone: string;
+  email: string | null;
+  nif: string | null;
+  eventDate: string;
+  startTime: string;
+  endTime: string | null;
+  status: "draft" | "confirmed" | "completed" | "cancelled";
+  paymentStatus: "unpaid" | "partial" | "paid";
+  source: string | null;
+  packName: string;
+  birthdayChildName: string | null;
+  birthdayChildAge: number | null;
+  childrenCount: number;
+  childrenAges: string | null;
+  partyTheme: string | null;
+  decorationNotes: string | null;
+  cateringNotes: string | null;
+  allergies: string | null;
+  imageAuthorization: "rosto_visivel" | "rosto_tapado" | "nao_autorizo" | null;
+  termsAccepted: boolean;
+  totalPrice: number;
+  amountPaid: number;
+  paymentMethod: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const ADMIN_EMAIL = "admin@espacogirafinha.pt";
@@ -163,6 +195,8 @@ let tasks: Task[] = [
   { id: 12, reservationId: 5, title: "Preparar materiais de decoração", completed: false, sortOrder: 2, createdAt: now },
 ];
 
+let venueEvents: VenueEvent[] = [];
+
 const DEFAULT_TASKS_BY_PACK: Record<string, string[]> = {
   "Aluguer do Espaço": ["Confirmar sinal", "Confirmar caução", "Preparar espaço", "Limpeza final"],
   "Pack Simples": ["Confirmar sinal", "Confirmar número de crianças", "Confirmar menu", "Lista de compras", "Preparar lanche", "Preparar espaço e brinquedos"],
@@ -208,6 +242,19 @@ function formatReservation(reservation: Reservation) {
     serviceType: getServiceType(reservation.pack),
     remainingBalance,
     paymentStatus: paymentStatus(reservation),
+  };
+}
+
+function computeVenuePaymentStatus(totalPrice: number, amountPaid: number): VenueEvent["paymentStatus"] {
+  if (amountPaid >= totalPrice) return "paid";
+  if (amountPaid > 0) return "partial";
+  return "unpaid";
+}
+
+function formatVenueEvent(event: VenueEvent) {
+  return {
+    ...event,
+    remainingBalance: Math.max(0, event.totalPrice - event.amountPaid),
   };
 }
 
@@ -467,6 +514,94 @@ export function devApiPlugin(): Plugin {
 
         if (path === "/reports") {
           return json(res, 200, reportFor(Number(url.searchParams.get("year")), Number(url.searchParams.get("month"))));
+        }
+
+        if (path === "/venue-events" && method === "GET") {
+          const search = url.searchParams.get("search")?.toLowerCase();
+          const status = url.searchParams.get("status");
+          const paymentStatusFilter = url.searchParams.get("paymentStatus");
+          const dateFrom = url.searchParams.get("dateFrom");
+          const dateTo = url.searchParams.get("dateTo");
+          const result = venueEvents
+            .map(formatVenueEvent)
+            .filter((event) => !search || event.customerName.toLowerCase().includes(search) || event.phone.includes(search))
+            .filter((event) => !status || event.status === status)
+            .filter((event) => !paymentStatusFilter || event.paymentStatus === paymentStatusFilter)
+            .filter((event) => !dateFrom || event.eventDate >= dateFrom)
+            .filter((event) => !dateTo || event.eventDate <= dateTo)
+            .sort((a, b) => `${a.eventDate} ${a.startTime}`.localeCompare(`${b.eventDate} ${b.startTime}`));
+          return json(res, 200, result);
+        }
+
+        if (path === "/venue-events" && method === "POST") {
+          const body = await readBody(req);
+          const totalPrice = Number(body.totalPrice ?? 0);
+          const amountPaid = Number(body.amountPaid ?? 0);
+          const event: VenueEvent = {
+            id: randomUUID(),
+            customerName: String(body.customerName ?? ""),
+            phone: String(body.phone ?? ""),
+            email: body.email ? String(body.email) : null,
+            nif: body.nif ? String(body.nif) : null,
+            eventDate: String(body.eventDate ?? ""),
+            startTime: String(body.startTime ?? ""),
+            endTime: body.endTime ? String(body.endTime) : null,
+            status: (body.status as VenueEvent["status"]) ?? "draft",
+            paymentStatus: computeVenuePaymentStatus(totalPrice, amountPaid),
+            source: body.source ? String(body.source) : null,
+            packName: String(body.packName ?? ""),
+            birthdayChildName: body.birthdayChildName ? String(body.birthdayChildName) : null,
+            birthdayChildAge: body.birthdayChildAge === null || body.birthdayChildAge === undefined ? null : Number(body.birthdayChildAge),
+            childrenCount: Number(body.childrenCount ?? 0),
+            childrenAges: body.childrenAges ? String(body.childrenAges) : null,
+            partyTheme: body.partyTheme ? String(body.partyTheme) : null,
+            decorationNotes: body.decorationNotes ? String(body.decorationNotes) : null,
+            cateringNotes: body.cateringNotes ? String(body.cateringNotes) : null,
+            allergies: body.allergies ? String(body.allergies) : null,
+            imageAuthorization: (body.imageAuthorization as VenueEvent["imageAuthorization"]) ?? null,
+            termsAccepted: Boolean(body.termsAccepted),
+            totalPrice,
+            amountPaid,
+            paymentMethod: body.paymentMethod ? String(body.paymentMethod) : null,
+            notes: body.notes ? String(body.notes) : null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          venueEvents.push(event);
+          return json(res, 201, formatVenueEvent(event));
+        }
+
+        const venueEventMatch = path.match(/^\/venue-events\/([0-9a-f-]+)$/i);
+        if (venueEventMatch && method === "GET") {
+          const event = venueEvents.find((item) => item.id === venueEventMatch[1]);
+          if (!event) return json(res, 404, { error: "Venue event not found" });
+          return json(res, 200, formatVenueEvent(event));
+        }
+        if (venueEventMatch && method === "PATCH") {
+          const id = venueEventMatch[1];
+          const body = await readBody(req);
+          const current = venueEvents.find((event) => event.id === id);
+          if (!current) return json(res, 404, { error: "Venue event not found" });
+          const totalPrice = body.totalPrice !== undefined ? Number(body.totalPrice) : current.totalPrice;
+          const amountPaid = body.amountPaid !== undefined ? Number(body.amountPaid) : current.amountPaid;
+          venueEvents = venueEvents.map((event) =>
+            event.id === id
+              ? {
+                  ...event,
+                  ...body,
+                  totalPrice,
+                  amountPaid,
+                  paymentStatus: computeVenuePaymentStatus(totalPrice, amountPaid),
+                  updatedAt: new Date().toISOString(),
+                } as VenueEvent
+              : event,
+          );
+          return json(res, 200, formatVenueEvent(venueEvents.find((event) => event.id === id)!));
+        }
+        if (venueEventMatch && method === "DELETE") {
+          const id = venueEventMatch[1];
+          venueEvents = venueEvents.filter((event) => event.id !== id);
+          return json(res, 204);
         }
 
         if (path === "/reservations" && method === "GET") {

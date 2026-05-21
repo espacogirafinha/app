@@ -40,6 +40,34 @@ export const ReservationStatus = {
   cancelled: "cancelled",
 } as const;
 
+export type VenueEventStatus =
+  (typeof VenueEventStatus)[keyof typeof VenueEventStatus];
+
+export const VenueEventStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type VenueEventPaymentStatus =
+  (typeof VenueEventPaymentStatus)[keyof typeof VenueEventPaymentStatus];
+
+export const VenueEventPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+} as const;
+
+export type VenueEventImageAuthorization =
+  (typeof VenueEventImageAuthorization)[keyof typeof VenueEventImageAuthorization];
+
+export const VenueEventImageAuthorization = {
+  rosto_visivel: "rosto_visivel",
+  rosto_tapado: "rosto_tapado",
+  nao_autorizo: "nao_autorizo",
+} as const;
+
 export type ReservationPack =
   (typeof ReservationPack)[keyof typeof ReservationPack];
 
@@ -285,6 +313,132 @@ export interface UpdateReservationBody {
   workshopNotes?: string | null;
 }
 
+export interface VenueEvent {
+  id: string;
+  customerName: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  status: VenueEventStatus;
+  paymentStatus: VenueEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  packName: string;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  childrenCount: number;
+  /** @nullable */
+  childrenAges?: string | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringNotes?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: VenueEventImageAuthorization | null;
+  termsAccepted: boolean;
+  totalPrice: number;
+  amountPaid: number;
+  remainingBalance: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateVenueEventBody {
+  customerName: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  status?: VenueEventStatus;
+  /** @nullable */
+  source?: string | null;
+  packName: string;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  childrenCount?: number;
+  /** @nullable */
+  childrenAges?: string | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringNotes?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: VenueEventImageAuthorization | null;
+  termsAccepted?: boolean;
+  totalPrice: number;
+  amountPaid: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface UpdateVenueEventBody {
+  customerName?: string;
+  phone?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate?: string;
+  startTime?: string;
+  /** @nullable */
+  endTime?: string | null;
+  status?: VenueEventStatus;
+  paymentStatus?: VenueEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  packName?: string;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  childrenCount?: number;
+  /** @nullable */
+  childrenAges?: string | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringNotes?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: VenueEventImageAuthorization | null;
+  termsAccepted?: boolean;
+  totalPrice?: number;
+  amountPaid?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export interface DashboardStats {
   totalReservations: number;
   totalRevenue: number;
@@ -428,6 +582,14 @@ export const ListReservationsStatus = {
   partial: "partial",
   unpaid: "unpaid",
 } as const;
+
+export type ListVenueEventsParams = {
+  search?: string;
+  status?: VenueEventStatus;
+  paymentStatus?: VenueEventPaymentStatus;
+  dateFrom?: string;
+  dateTo?: string;
+};
 
 export type GetTasksSummaryParams = {
   /**

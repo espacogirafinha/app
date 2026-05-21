@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: reservations
     description: Reservation management
+  - name: venue-events
+    description: Venue event management
   - name: dashboard
     description: Dashboard and analytics
 
@@ -156,6 +158,144 @@ paths:
           required: true
           schema:
             type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /venue-events:
+    get:
+      operationId: listVenueEvents
+      tags: [venue-events]
+      summary: List venue events
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/VenueEventStatus"
+        - name: paymentStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/VenueEventPaymentStatus"
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of venue events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VenueEvent"
+
+    post:
+      operationId: createVenueEvent
+      tags: [venue-events]
+      summary: Create a venue event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVenueEventBody"
+      responses:
+        "201":
+          description: Venue event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenueEvent"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /venue-events/{id}:
+    get:
+      operationId: getVenueEvent
+      tags: [venue-events]
+      summary: Get a venue event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Venue event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenueEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateVenueEvent
+      tags: [venue-events]
+      summary: Update a venue event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVenueEventBody"
+      responses:
+        "200":
+          description: Updated venue event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenueEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteVenueEvent
+      tags: [venue-events]
+      summary: Delete a venue event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         "204":
           description: Deleted
@@ -377,6 +517,18 @@ components:
     ReservationStatus:
       type: string
       enum: [draft, confirmed, completed, cancelled]
+
+    VenueEventStatus:
+      type: string
+      enum: [draft, confirmed, completed, cancelled]
+
+    VenueEventPaymentStatus:
+      type: string
+      enum: [unpaid, partial, paid]
+
+    VenueEventImageAuthorization:
+      type: string
+      enum: [rosto_visivel, rosto_tapado, nao_autorizo]
 
     Reservation:
       type: object
@@ -641,6 +793,205 @@ components:
         participantCount:
           type: ["integer", "null"]
         workshopNotes:
+          type: ["string", "null"]
+
+    VenueEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/VenueEventStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/VenueEventPaymentStatus"
+        source:
+          type: ["string", "null"]
+        packName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        childrenCount:
+          type: integer
+        childrenAges:
+          type: ["string", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringNotes:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - $ref: "#/components/schemas/VenueEventImageAuthorization"
+            - type: "null"
+        termsAccepted:
+          type: boolean
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        remainingBalance:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - customerName
+        - phone
+        - eventDate
+        - startTime
+        - status
+        - paymentStatus
+        - packName
+        - childrenCount
+        - termsAccepted
+        - totalPrice
+        - amountPaid
+        - remainingBalance
+        - createdAt
+        - updatedAt
+
+    CreateVenueEventBody:
+      type: object
+      properties:
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/VenueEventStatus"
+        source:
+          type: ["string", "null"]
+        packName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        childrenCount:
+          type: integer
+        childrenAges:
+          type: ["string", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringNotes:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - $ref: "#/components/schemas/VenueEventImageAuthorization"
+            - type: "null"
+        termsAccepted:
+          type: boolean
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - customerName
+        - phone
+        - eventDate
+        - startTime
+        - packName
+        - totalPrice
+        - amountPaid
+
+    UpdateVenueEventBody:
+      type: object
+      properties:
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/VenueEventStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/VenueEventPaymentStatus"
+        source:
+          type: ["string", "null"]
+        packName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        childrenCount:
+          type: integer
+        childrenAges:
+          type: ["string", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringNotes:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - $ref: "#/components/schemas/VenueEventImageAuthorization"
+            - type: "null"
+        termsAccepted:
+          type: boolean
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
           type: ["string", "null"]
 
     DashboardStats:
