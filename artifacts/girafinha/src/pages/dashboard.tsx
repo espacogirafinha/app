@@ -401,7 +401,7 @@ function AreaSummaryCard({ area, loading }: { area: AreaSummary; loading: boolea
         )}
 
         <Button asChild variant="outline" className="w-full rounded-xl">
-          <Link href={`/reservations?type=${area.type}`}>
+          <Link href={getAreaHref(area.type)}>
             {area.type === "venue_party" ? "Ver festas" : area.type === "external_service" ? "Ver serviços" : "Ver workshops"}
           </Link>
         </Button>
@@ -489,6 +489,12 @@ function getBusinessAreaLabel(type: BusinessArea) {
   if (type === "external_service") return "Serviço externo";
   if (type === "workshop") return "Workshop/Formação";
   return "Festa no espaço";
+}
+
+function getAreaHref(type: BusinessArea) {
+  if (type === "external_service") return "/external-events";
+  if (type === "workshop") return "/workshops";
+  return "/venue-events";
 }
 
 function getBusinessAreaBadgeClass(type: BusinessArea) {

@@ -11,9 +11,12 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Reservations = lazy(() => import("@/pages/reservations"));
+const VenueEventsPage = lazy(() => import("@/pages/venue-events"));
+const ExternalEventsPage = lazy(() => import("@/pages/external-events"));
 const CalendarPage = lazy(() => import("@/pages/calendar"));
 const ReportsPage = lazy(() => import("@/pages/reports"));
 const WorkshopsPage = lazy(() => import("@/pages/workshops"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,10 +37,14 @@ function AuthedRoutes() {
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/venue-events" component={VenueEventsPage} />
+          <Route path="/external-events" component={ExternalEventsPage} />
           <Route path="/reservations" component={Reservations} />
           <Route path="/calendar" component={CalendarPage} />
           <Route path="/workshops" component={WorkshopsPage} />
           <Route path="/reports" component={ReportsPage} />
+          <Route path="/settings" component={SettingsPage} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>

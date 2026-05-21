@@ -1,16 +1,26 @@
 import { Link, useLocation } from "wouter";
-import { Calendar, GraduationCap, LayoutDashboard, MapPin, PartyPopper, BarChart3, LogOut } from "lucide-react";
+import {
+  BarChart3,
+  Calendar,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  MapPin,
+  PartyPopper,
+  Settings,
+} from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/reservations?type=venue_party", label: "Festas no Espaço", icon: PartyPopper },
-  { href: "/reservations?type=external_service", label: "Serviços Externos", icon: MapPin },
-  { href: "/reservations?type=workshop", label: "Workshops", icon: GraduationCap },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/venue-events", label: "Festas no Espaço", icon: PartyPopper },
+  { href: "/external-events", label: "Serviços Externos", icon: MapPin },
+  { href: "/workshops", label: "Workshops/Formações", icon: GraduationCap },
   { href: "/calendar", label: "Calendário", icon: Calendar },
   { href: "/reports", label: "Relatórios", icon: BarChart3 },
+  { href: "/settings", label: "Definições", icon: Settings },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -23,7 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {!isMobile && (
         <aside className="hidden w-64 flex-col border-r border-border bg-card md:flex">
           <div className="flex h-16 items-center border-b border-border px-6">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
+            <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-primary">
               Espaço Girafinha
             </Link>
           </div>
@@ -64,7 +74,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {isMobile && (
           <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
             <span className="w-9" />
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary">
+            <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg text-primary">
               Espaço Girafinha
             </Link>
             <Button
@@ -85,7 +95,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </main>
 
         {isMobile && (
-          <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-card shadow-lg safe-area-bottom">
+          <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around overflow-x-auto border-t border-border bg-card shadow-lg safe-area-bottom">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = isNavItemActive(location, item.href);
@@ -93,12 +103,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex flex-col items-center gap-1 px-2 py-3 min-h-[56px] min-w-[56px] transition-colors ${
+                  className={`flex min-h-[56px] min-w-[64px] flex-col items-center gap-1 px-2 py-3 transition-colors ${
                     isActive ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="text-[10px] font-medium leading-tight text-center">{item.label}</span>
+                  <span className="text-center text-[10px] font-medium leading-tight">{item.label}</span>
                 </Link>
               );
             })}
@@ -110,13 +120,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function isNavItemActive(location: string, href: string) {
-  const [hrefPath, hrefQuery] = href.split("?");
-  const [locationPath, locationQuery] = location.split("?");
+  const [locationPath] = location.split("?");
 
-  if (href === "/") return locationPath === "/";
-  if (hrefPath !== "/reservations") return locationPath === hrefPath || locationPath.startsWith(`${hrefPath}/`);
-  if (!hrefQuery) return locationPath === "/reservations";
+  if (href === "/dashboard") return locationPath === "/" || locationPath === "/dashboard";
 
-  return locationPath === "/reservations" && locationQuery === hrefQuery;
+  return locationPath === href || locationPath.startsWith(`${href}/`);
 }
-
