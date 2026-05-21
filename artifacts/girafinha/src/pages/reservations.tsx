@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { addDays, addMonths, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -76,9 +77,10 @@ const TYPE_FILTERS: Array<{ value: TypeFilter; label: string }> = [
 ];
 
 export default function Reservations() {
+  const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ListReservationsStatus | "all">("all");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>(() => getTypeFilterFromLocation(location));
   const [reservationStatusFilter, setReservationStatusFilter] = useState<ReservationStatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("eventDate");
@@ -86,6 +88,10 @@ export default function Reservations() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    setTypeFilter(getTypeFilterFromLocation(location));
+  }, [location]);
 
   const queryParams = {
     ...(searchTerm ? { search: searchTerm } : {}),
@@ -832,6 +838,13 @@ function getTypeCount(summary: { venueParty: number; externalService: number; wo
   if (filter === "external_service") return summary.externalService;
   if (filter === "workshop") return summary.workshop;
   return summary.venueParty + summary.externalService + summary.workshop;
+}
+
+function getTypeFilterFromLocation(location: string): TypeFilter {
+  const params = new URLSearchParams(location.split("?")[1] ?? "");
+  const type = params.get("type");
+  if (type === "venue_party" || type === "external_service" || type === "workshop") return type;
+  return "all";
 }
 
 function getReservationType(reservation: Reservation): Exclude<TypeFilter, "all"> {

@@ -10,7 +10,11 @@ import {
   Plus,
   Search,
   Users,
+  GraduationCap,
+  MapPin,
+  PartyPopper,
 } from "lucide-react";
+import { Link } from "wouter";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -104,6 +108,27 @@ export default function Dashboard() {
 
   const nextReservation = upcoming?.[0];
   const pendingSoonTotal = pendingPaymentSoon.reduce((sum, reservation) => sum + reservation.remainingBalance, 0);
+  const areaSummaries = useMemo(
+    () => [
+      buildAreaSummary("venue_party", "Festas no Espaço", "Próximas festas no espaço", PartyPopper, upcoming ?? []),
+      buildAreaSummary("external_service", "Serviços Externos", "Decoração, catering, animação e insufláveis", MapPin, upcoming ?? []),
+      buildAreaSummary("workshop", "Workshops/Formações", "Inscrições e formações marcadas", GraduationCap, upcoming ?? []),
+    ],
+    [upcoming],
+  );
+
+  return (
+    <DashboardOverview
+      stats={stats}
+      statsLoading={statsLoading}
+      upcoming={upcoming ?? []}
+      upcomingLoading={upcomingLoading}
+      todayCount={todayReservations.length}
+      nextSevenDaysCount={nextSevenDays.length}
+      areaSummaries={areaSummaries}
+      taskSummaries={taskSummaries}
+    />
+  );
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -222,6 +247,268 @@ export default function Dashboard() {
       </section>
     </div>
   );
+}
+
+type BusinessArea = "venue_party" | "external_service" | "workshop";
+
+type DashboardStats = {
+  totalPending: number;
+  totalPaid: number;
+};
+
+type AreaSummary = {
+  type: BusinessArea;
+  title: string;
+  description: string;
+  count: number;
+  pending: number;
+  icon: typeof PartyPopper;
+};
+
+function DashboardOverview({
+  stats,
+  statsLoading,
+  upcoming,
+  upcomingLoading,
+  todayCount,
+  nextSevenDaysCount,
+  areaSummaries,
+  taskSummaries,
+}: {
+  stats?: DashboardStats;
+  statsLoading: boolean;
+  upcoming: Reservation[];
+  upcomingLoading: boolean;
+  todayCount: number;
+  nextSevenDaysCount: number;
+  areaSummaries: AreaSummary[];
+  taskSummaries: Map<number, TaskSummary>;
+}) {
+  return (
+    <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Painel de gestão</h1>
+          <p className="mt-1 text-sm md:text-base text-muted-foreground">
+            Festas, serviços externos e workshops num só lugar.
+          </p>
+        </div>
+        <ReservationModal
+          trigger={
+            <Button className="min-h-[42px] rounded-full bg-primary px-5 text-primary-foreground shadow-md hover:bg-primary/90">
+              <Plus className="h-4 w-4" />
+              Nova Reserva
+            </Button>
+          }
+        />
+      </div>
+
+      <section className="grid gap-2 grid-cols-2 lg:grid-cols-4">
+        <MetricCard title="Hoje" value={String(todayCount)} helper="Eventos marcados" loading={upcomingLoading} />
+        <MetricCard title="Próximos 7 dias" value={String(nextSevenDaysCount)} helper="Festas, serviços e workshops" loading={upcomingLoading} />
+        <MetricCard
+          title="Por receber"
+          value={`€${stats?.totalPending.toFixed(2) || "0.00"}`}
+          helper="Total pendente"
+          loading={statsLoading}
+          tone="danger"
+        />
+        <MetricCard
+          title="Recebido"
+          value={`€${stats?.totalPaid.toFixed(2) || "0.00"}`}
+          helper="Pagamentos registados"
+          loading={statsLoading}
+          tone="success"
+        />
+      </section>
+
+      <section className="grid gap-3 lg:grid-cols-3">
+        {areaSummaries.map((area) => (
+          <AreaSummaryCard key={area.type} area={area} loading={upcomingLoading} />
+        ))}
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <QuickAction title="Nova Festa no Espaço" description="Criar uma reserva para o espaço." />
+        <QuickAction title="Novo Serviço Externo" description="Registar decoração, catering ou animação fora." />
+        <QuickAction title="Novo Workshop/Formação" description="Criar uma inscrição ou formação." />
+      </section>
+
+      <section>
+        <Card className="overflow-hidden border-border/70 shadow-sm">
+          <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
+            <CardTitle className="text-lg md:text-xl">Agenda operacional</CardTitle>
+            <CardDescription>Próximos itens por ordem de data, separados visualmente por área.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {upcomingLoading ? (
+              <div className="flex justify-center p-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+              </div>
+            ) : upcoming.length > 0 ? (
+              <div className="divide-y divide-border/60">
+                {upcoming.slice(0, 8).map((reservation) => (
+                  <AgendaItem
+                    key={reservation.id}
+                    reservation={reservation}
+                    taskSummary={taskSummaries.get(reservation.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center p-10 text-center text-muted-foreground">
+                <CalendarIcon className="mb-3 h-12 w-12 text-muted-foreground/30" />
+                <p>Nenhuma reserva futura encontrada.</p>
+                <p className="mt-1 text-sm">Crie uma nova reserva para começar a preencher a agenda.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </div>
+  );
+}
+
+function AreaSummaryCard({ area, loading }: { area: AreaSummary; loading: boolean }) {
+  const Icon = area.icon;
+
+  return (
+    <Card className="border-border/70 shadow-sm">
+      <CardContent className="space-y-4 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-base font-bold text-foreground">{area.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{area.description}</p>
+          </div>
+          <div className="rounded-full bg-primary/10 p-2 text-primary">
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+
+        {loading ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-border bg-background p-3">
+              <p className="text-xs text-muted-foreground">Próximos</p>
+              <p className="mt-1 text-xl font-bold">{area.count}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-background p-3">
+              <p className="text-xs text-muted-foreground">Por receber</p>
+              <p className="mt-1 text-xl font-bold text-rose-700">€{area.pending.toFixed(2)}</p>
+            </div>
+          </div>
+        )}
+
+        <Button asChild variant="outline" className="w-full rounded-xl">
+          <Link href={`/reservations?type=${area.type}`}>
+            {area.type === "venue_party" ? "Ver festas" : area.type === "external_service" ? "Ver serviços" : "Ver workshops"}
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickAction({ title, description }: { title: string; description: string }) {
+  return (
+    <ReservationModal
+      trigger={
+        <Button variant="outline" className="h-auto min-h-[72px] justify-start rounded-xl border-primary/20 bg-primary/5 p-4 text-left hover:bg-primary/10">
+          <div>
+            <p className="font-bold text-foreground">{title}</p>
+            <p className="mt-1 text-xs font-normal text-muted-foreground">{description}</p>
+          </div>
+        </Button>
+      }
+    />
+  );
+}
+
+function AgendaItem({ reservation, taskSummary }: { reservation: Reservation; taskSummary?: TaskSummary }) {
+  const date = parseISO(reservation.eventDate);
+  const area = getReservationType(reservation);
+  const label = getBusinessAreaLabel(area);
+
+  return (
+    <div className="grid gap-3 p-4 md:grid-cols-[88px_1fr_auto] md:items-center">
+      <div className="flex items-center justify-between rounded-xl bg-primary/10 px-3 py-2 text-primary md:flex-col md:justify-center">
+        <span className="text-xs font-semibold uppercase">{format(date, "MMM", { locale: ptBR })}</span>
+        <span className="text-xl font-bold leading-none">{format(date, "dd")}</span>
+      </div>
+
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge className={getBusinessAreaBadgeClass(area)}>{label}</Badge>
+          <StatusBadge status={reservation.paymentStatus} />
+          <span className="text-sm font-semibold text-foreground">{reservation.customerName}</span>
+        </div>
+        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{reservation.eventTime}</span>
+          <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{getParticipantCount(reservation)}</span>
+          <span className="truncate">{getReservationTitle(reservation)}</span>
+        </div>
+        <ChecklistProgressBar summary={taskSummary} />
+      </div>
+
+      <div className="text-sm md:min-w-[120px] md:text-right">
+        <p className="text-xs text-muted-foreground">Por receber</p>
+        <p className={reservation.remainingBalance > 0 ? "font-bold text-rose-700" : "font-bold text-emerald-700"}>
+          €{reservation.remainingBalance.toFixed(2)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function buildAreaSummary(
+  type: BusinessArea,
+  title: string,
+  description: string,
+  icon: typeof PartyPopper,
+  reservations: Reservation[],
+): AreaSummary {
+  const rows = reservations.filter((reservation) => getReservationType(reservation) === type);
+  return {
+    type,
+    title,
+    description,
+    icon,
+    count: rows.length,
+    pending: rows.reduce((sum, reservation) => sum + reservation.remainingBalance, 0),
+  };
+}
+
+function getReservationType(reservation: Reservation): BusinessArea {
+  if (reservation.reservationType === "external_service" || reservation.serviceType?.toLowerCase().includes("extern")) return "external_service";
+  if (reservation.reservationType === "workshop" || reservation.serviceType?.toLowerCase().includes("workshop")) return "workshop";
+  return "venue_party";
+}
+
+function getBusinessAreaLabel(type: BusinessArea) {
+  if (type === "external_service") return "Serviço externo";
+  if (type === "workshop") return "Workshop/Formação";
+  return "Festa no espaço";
+}
+
+function getBusinessAreaBadgeClass(type: BusinessArea) {
+  if (type === "external_service") return "rounded-md border-none bg-sky-100 text-sky-800 hover:bg-sky-100";
+  if (type === "workshop") return "rounded-md border-none bg-violet-100 text-violet-800 hover:bg-violet-100";
+  return "rounded-md border-none bg-pink-100 text-pink-800 hover:bg-pink-100";
+}
+
+function getReservationTitle(reservation: Reservation) {
+  const type = getReservationType(reservation);
+  if (type === "external_service") return reservation.pack || reservation.eventType || "Serviço no exterior";
+  if (type === "workshop") return reservation.workshopName || reservation.pack || "Workshop/Formação";
+  return reservation.birthdayChildName ? `${reservation.pack} · ${reservation.birthdayChildName}` : reservation.pack;
+}
+
+function getParticipantCount(reservation: Reservation) {
+  const type = getReservationType(reservation);
+  if (type === "external_service") return reservation.guestCount ?? reservation.numChildren ?? 0;
+  if (type === "workshop") return reservation.participantCount ?? reservation.numChildren ?? 0;
+  return reservation.numChildren ?? 0;
 }
 
 function matchesQuickFilter(reservation: Reservation, quickFilter: QuickFilter) {
