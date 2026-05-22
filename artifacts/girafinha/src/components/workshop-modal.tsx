@@ -133,7 +133,7 @@ export function WorkshopModal({
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Workshop" : "Novo Workshop"}</DialogTitle>
-          <DialogDescription>Crie a formação primeiro. A gestão de participantes entra na próxima fase.</DialogDescription>
+          <DialogDescription>Defina os dados gerais do workshop e acompanhe depois as inscrições no painel de participantes.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">

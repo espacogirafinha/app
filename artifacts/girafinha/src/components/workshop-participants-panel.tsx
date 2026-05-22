@@ -1,4 +1,5 @@
 import { Loader2, MessageCircle, Pencil, Trash2, UserX, Users } from "lucide-react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -39,7 +40,8 @@ export function WorkshopParticipantsPanel({
   workshop: Workshop;
   trigger: React.ReactNode;
 }) {
-  const query = useGetWorkshop(workshop.id);
+  const [open, setOpen] = useState(false);
+  const query = useGetWorkshop(workshop.id, { query: { enabled: open, queryKey: getGetWorkshopQueryKey(workshop.id) } });
   const fullWorkshop = query.data ?? workshop;
   const participants = fullWorkshop.participants ?? [];
   const updateParticipant = useUpdateWorkshopParticipant();
@@ -83,7 +85,7 @@ export function WorkshopParticipantsPanel({
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader>

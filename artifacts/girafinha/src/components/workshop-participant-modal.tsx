@@ -116,10 +116,14 @@ export function WorkshopParticipantModal({
         });
         setOpen(false);
       },
-      onError: () => {
+      onError: (error: unknown) => {
+        const message = error instanceof Error ? error.message : "";
+        const isCapacityError = message.toLowerCase().includes("capacity");
         toast({
-          title: "Não foi possível guardar o participante",
-          description: "Confirme os dados e se ainda existem vagas disponíveis.",
+          title: isCapacityError ? "Workshop sem vagas disponíveis" : "Não foi possível guardar o participante",
+          description: isCapacityError
+            ? "Este workshop já atingiu a capacidade. Cancele uma inscrição ou aumente o número de vagas."
+            : "Confirme os dados e se ainda existem vagas disponíveis.",
           variant: "destructive",
         });
       },
