@@ -21,3 +21,4 @@ export * from "./reservations";
 export * from "./tasks";
 export * from "./venue-events";
 export * from "./external-events";
+export * from "./workshops";
