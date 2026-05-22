@@ -868,6 +868,299 @@ export const DeleteExternalEventParams = zod.object({
 });
 
 /**
+ * @summary List workshops with participant aggregates
+ */
+export const ListWorkshopsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  status: zod
+    .enum(["draft", "open", "full", "completed", "cancelled"])
+    .optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+});
+
+export const ListWorkshopsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  date: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number(),
+  price: zod.number(),
+  kitIncluded: zod.boolean(),
+  status: zod.enum(["draft", "open", "full", "completed", "cancelled"]),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  participantsCount: zod.number(),
+  activeParticipantsCount: zod.number(),
+  availableSeats: zod.number(),
+  totalReceived: zod.number(),
+  totalPending: zod.number(),
+  participants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        workshopId: zod.string().uuid(),
+        name: zod.string(),
+        phone: zod.string(),
+        email: zod.string().nullish(),
+        nif: zod.string().nullish(),
+        amountPaid: zod.number(),
+        amountDue: zod.number(),
+        paymentMethod: zod.string().nullish(),
+        paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+        status: zod.enum(["registered", "confirmed", "attended", "cancelled"]),
+        notes: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListWorkshopsResponse = zod.array(ListWorkshopsResponseItem);
+
+/**
+ * @summary Create a workshop
+ */
+export const createWorkshopBodyCapacityMin = 0;
+
+export const createWorkshopBodyPriceMin = 0;
+
+export const CreateWorkshopBody = zod.object({
+  name: zod.string(),
+  description: zod.string().nullish(),
+  date: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number().min(createWorkshopBodyCapacityMin),
+  price: zod.number().min(createWorkshopBodyPriceMin),
+  kitIncluded: zod.boolean().optional(),
+  status: zod
+    .enum(["draft", "open", "full", "completed", "cancelled"])
+    .optional(),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Get a workshop by ID with participants
+ */
+export const GetWorkshopParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetWorkshopResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  date: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number(),
+  price: zod.number(),
+  kitIncluded: zod.boolean(),
+  status: zod.enum(["draft", "open", "full", "completed", "cancelled"]),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  participantsCount: zod.number(),
+  activeParticipantsCount: zod.number(),
+  availableSeats: zod.number(),
+  totalReceived: zod.number(),
+  totalPending: zod.number(),
+  participants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        workshopId: zod.string().uuid(),
+        name: zod.string(),
+        phone: zod.string(),
+        email: zod.string().nullish(),
+        nif: zod.string().nullish(),
+        amountPaid: zod.number(),
+        amountDue: zod.number(),
+        paymentMethod: zod.string().nullish(),
+        paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+        status: zod.enum(["registered", "confirmed", "attended", "cancelled"]),
+        notes: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Update a workshop
+ */
+export const UpdateWorkshopParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateWorkshopBodyCapacityMin = 0;
+
+export const updateWorkshopBodyPriceMin = 0;
+
+export const UpdateWorkshopBody = zod.object({
+  name: zod.string().optional(),
+  description: zod.string().nullish(),
+  date: zod.string().optional(),
+  startTime: zod.string().optional(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number().min(updateWorkshopBodyCapacityMin).optional(),
+  price: zod.number().min(updateWorkshopBodyPriceMin).optional(),
+  kitIncluded: zod.boolean().optional(),
+  status: zod
+    .enum(["draft", "open", "full", "completed", "cancelled"])
+    .optional(),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateWorkshopResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  date: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number(),
+  price: zod.number(),
+  kitIncluded: zod.boolean(),
+  status: zod.enum(["draft", "open", "full", "completed", "cancelled"]),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  participantsCount: zod.number(),
+  activeParticipantsCount: zod.number(),
+  availableSeats: zod.number(),
+  totalReceived: zod.number(),
+  totalPending: zod.number(),
+  participants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        workshopId: zod.string().uuid(),
+        name: zod.string(),
+        phone: zod.string(),
+        email: zod.string().nullish(),
+        nif: zod.string().nullish(),
+        amountPaid: zod.number(),
+        amountDue: zod.number(),
+        paymentMethod: zod.string().nullish(),
+        paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+        status: zod.enum(["registered", "confirmed", "attended", "cancelled"]),
+        notes: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete a workshop
+ */
+export const DeleteWorkshopParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Add a participant to a workshop
+ */
+export const CreateWorkshopParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const createWorkshopParticipantBodyAmountPaidMin = 0;
+
+export const createWorkshopParticipantBodyAmountDueMin = 0;
+
+export const CreateWorkshopParticipantBody = zod.object({
+  name: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  amountPaid: zod
+    .number()
+    .min(createWorkshopParticipantBodyAmountPaidMin)
+    .optional(),
+  amountDue: zod
+    .number()
+    .min(createWorkshopParticipantBodyAmountDueMin)
+    .optional(),
+  paymentMethod: zod.string().nullish(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  status: zod
+    .enum(["registered", "confirmed", "attended", "cancelled"])
+    .optional(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Update a workshop participant
+ */
+export const UpdateWorkshopParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  participantId: zod.coerce.string().uuid(),
+});
+
+export const updateWorkshopParticipantBodyAmountPaidMin = 0;
+
+export const updateWorkshopParticipantBodyAmountDueMin = 0;
+
+export const UpdateWorkshopParticipantBody = zod.object({
+  name: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  amountPaid: zod
+    .number()
+    .min(updateWorkshopParticipantBodyAmountPaidMin)
+    .optional(),
+  amountDue: zod
+    .number()
+    .min(updateWorkshopParticipantBodyAmountDueMin)
+    .optional(),
+  paymentMethod: zod.string().nullish(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  status: zod
+    .enum(["registered", "confirmed", "attended", "cancelled"])
+    .optional(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateWorkshopParticipantResponse = zod.object({
+  id: zod.string().uuid(),
+  workshopId: zod.string().uuid(),
+  name: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  amountPaid: zod.number(),
+  amountDue: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  status: zod.enum(["registered", "confirmed", "attended", "cancelled"]),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete a workshop participant
+ */
+export const DeleteWorkshopParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  participantId: zod.coerce.string().uuid(),
+});
+
+/**
  * @summary Get dashboard statistics
  */
 export const GetDashboardStatsResponse = zod.object({

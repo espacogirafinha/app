@@ -16,6 +16,8 @@ tags:
     description: Venue event management
   - name: external-events
     description: External event management
+  - name: workshops
+    description: Workshop and participant management
   - name: dashboard
     description: Dashboard and analytics
 
@@ -446,6 +448,243 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /workshops:
+    get:
+      operationId: listWorkshops
+      tags: [workshops]
+      summary: List workshops with participant aggregates
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/WorkshopStatus"
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of workshops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workshop"
+
+    post:
+      operationId: createWorkshop
+      tags: [workshops]
+      summary: Create a workshop
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkshopBody"
+      responses:
+        "201":
+          description: Workshop created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workshops/{id}:
+    get:
+      operationId: getWorkshop
+      tags: [workshops]
+      summary: Get a workshop by ID with participants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Workshop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateWorkshop
+      tags: [workshops]
+      summary: Update a workshop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkshopBody"
+      responses:
+        "200":
+          description: Updated workshop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteWorkshop
+      tags: [workshops]
+      summary: Delete a workshop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workshops/{id}/participants:
+    post:
+      operationId: createWorkshopParticipant
+      tags: [workshops]
+      summary: Add a participant to a workshop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkshopParticipantBody"
+      responses:
+        "201":
+          description: Participant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkshopParticipant"
+        "400":
+          description: Invalid request or capacity reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workshops/{id}/participants/{participantId}:
+    patch:
+      operationId: updateWorkshopParticipant
+      tags: [workshops]
+      summary: Update a workshop participant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: participantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkshopParticipantBody"
+      responses:
+        "200":
+          description: Participant updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkshopParticipant"
+        "400":
+          description: Invalid request or capacity reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteWorkshopParticipant
+      tags: [workshops]
+      summary: Delete a workshop participant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: participantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /dashboard/stats:
     get:
       operationId: getDashboardStats
@@ -685,6 +924,18 @@ components:
     ExternalEventServiceStatus:
       type: string
       enum: [planned, in_progress, completed, cancelled]
+
+    WorkshopStatus:
+      type: string
+      enum: [draft, open, full, completed, cancelled]
+
+    WorkshopParticipantStatus:
+      type: string
+      enum: [registered, confirmed, attended, cancelled]
+
+    WorkshopParticipantPaymentStatus:
+      type: string
+      enum: [unpaid, partial, paid]
 
     Reservation:
       type: object
@@ -1387,6 +1638,231 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExternalEventServiceInput"
+
+    WorkshopParticipant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workshopId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        amountPaid:
+          type: number
+        amountDue:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        paymentStatus:
+          $ref: "#/components/schemas/WorkshopParticipantPaymentStatus"
+        status:
+          $ref: "#/components/schemas/WorkshopParticipantStatus"
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - workshopId
+        - name
+        - phone
+        - amountPaid
+        - amountDue
+        - paymentStatus
+        - status
+        - createdAt
+        - updatedAt
+
+    Workshop:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        capacity:
+          type: integer
+        price:
+          type: number
+        kitIncluded:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/WorkshopStatus"
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        participantsCount:
+          type: integer
+        activeParticipantsCount:
+          type: integer
+        availableSeats:
+          type: integer
+        totalReceived:
+          type: number
+        totalPending:
+          type: number
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkshopParticipant"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - date
+        - startTime
+        - capacity
+        - price
+        - kitIncluded
+        - status
+        - participantsCount
+        - activeParticipantsCount
+        - availableSeats
+        - totalReceived
+        - totalPending
+        - createdAt
+        - updatedAt
+
+    CreateWorkshopBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        capacity:
+          type: integer
+          minimum: 0
+        price:
+          type: number
+          minimum: 0
+        kitIncluded:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/WorkshopStatus"
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - date
+        - startTime
+        - capacity
+        - price
+
+    UpdateWorkshopBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        capacity:
+          type: integer
+          minimum: 0
+        price:
+          type: number
+          minimum: 0
+        kitIncluded:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/WorkshopStatus"
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    CreateWorkshopParticipantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        amountPaid:
+          type: number
+          minimum: 0
+        amountDue:
+          type: number
+          minimum: 0
+        paymentMethod:
+          type: ["string", "null"]
+        paymentStatus:
+          $ref: "#/components/schemas/WorkshopParticipantPaymentStatus"
+        status:
+          $ref: "#/components/schemas/WorkshopParticipantStatus"
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - phone
+
+    UpdateWorkshopParticipantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        amountPaid:
+          type: number
+          minimum: 0
+        amountDue:
+          type: number
+          minimum: 0
+        paymentMethod:
+          type: ["string", "null"]
+        paymentStatus:
+          $ref: "#/components/schemas/WorkshopParticipantPaymentStatus"
+        status:
+          $ref: "#/components/schemas/WorkshopParticipantStatus"
+        notes:
+          type: ["string", "null"]
 
     DashboardStats:
       type: object

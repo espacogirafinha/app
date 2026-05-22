@@ -112,6 +112,40 @@ type ExternalEvent = {
   updatedAt: string;
 };
 
+type WorkshopParticipant = {
+  id: string;
+  workshopId: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  nif: string | null;
+  amountPaid: number;
+  amountDue: number;
+  paymentMethod: string | null;
+  paymentStatus: "unpaid" | "partial" | "paid";
+  status: "registered" | "confirmed" | "attended" | "cancelled";
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Workshop = {
+  id: string;
+  name: string;
+  description: string | null;
+  date: string;
+  startTime: string;
+  endTime: string | null;
+  capacity: number;
+  price: number;
+  kitIncluded: boolean;
+  status: "draft" | "open" | "full" | "completed" | "cancelled";
+  location: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const ADMIN_EMAIL = "admin@espacogirafinha.pt";
 const ADMIN_PASSWORD = "girafinha2026";
 const SESSION_COOKIE = "girafinha_dev_session";
@@ -238,6 +272,8 @@ let tasks: Task[] = [
 let venueEvents: VenueEvent[] = [];
 let externalEvents: ExternalEvent[] = [];
 let externalEventServices: ExternalEventService[] = [];
+let workshops: Workshop[] = [];
+let workshopParticipants: WorkshopParticipant[] = [];
 
 const DEFAULT_TASKS_BY_PACK: Record<string, string[]> = {
   "Aluguer do Espaço": ["Confirmar sinal", "Confirmar caução", "Preparar espaço", "Limpeza final"],
@@ -316,6 +352,52 @@ function formatExternalEvent(event: ExternalEvent) {
     services,
     remainingBalance: Math.max(0, event.totalPrice - event.amountPaid),
   };
+}
+
+function computeWorkshopParticipantPayment(price: number, amountPaid: number): Pick<WorkshopParticipant, "amountDue" | "paymentStatus"> {
+  if (amountPaid >= price) return { amountDue: 0, paymentStatus: "paid" };
+  if (amountPaid > 0) return { amountDue: Math.max(0, price - amountPaid), paymentStatus: "partial" };
+  return { amountDue: Math.max(0, price), paymentStatus: "unpaid" };
+}
+
+function isActiveWorkshopParticipant(participant: WorkshopParticipant) {
+  return ["registered", "confirmed", "attended"].includes(participant.status);
+}
+
+function workshopAggregates(workshop: Workshop) {
+  const participants = workshopParticipants.filter((participant) => participant.workshopId === workshop.id);
+  const activeParticipants = participants.filter(isActiveWorkshopParticipant);
+
+  return {
+    participantsCount: participants.length,
+    activeParticipantsCount: activeParticipants.length,
+    availableSeats: Math.max(0, workshop.capacity - activeParticipants.length),
+    totalReceived: activeParticipants.reduce((sum, participant) => sum + participant.amountPaid, 0),
+    totalPending: activeParticipants.reduce((sum, participant) => sum + participant.amountDue, 0),
+  };
+}
+
+function formatWorkshop(workshop: Workshop, includeParticipants = false) {
+  const participants = workshopParticipants.filter((participant) => participant.workshopId === workshop.id);
+
+  return {
+    ...workshop,
+    ...workshopAggregates(workshop),
+    ...(includeParticipants ? { participants } : {}),
+  };
+}
+
+function canAddActiveWorkshopParticipant(workshop: Workshop, status: WorkshopParticipant["status"], excludeParticipantId?: string) {
+  if (status === "cancelled") return true;
+
+  const activeCount = workshopParticipants.filter(
+    (participant) =>
+      participant.workshopId === workshop.id &&
+      participant.id !== excludeParticipantId &&
+      isActiveWorkshopParticipant(participant),
+  ).length;
+
+  return activeCount < workshop.capacity;
 }
 
 function json(res: ServerResponse, status: number, body?: unknown) {
@@ -774,6 +856,151 @@ export function devApiPlugin(): Plugin {
           const id = externalEventMatch[1];
           externalEvents = externalEvents.filter((event) => event.id !== id);
           externalEventServices = externalEventServices.filter((service) => service.externalEventId !== id);
+          return json(res, 204);
+        }
+
+        if (path === "/workshops" && method === "GET") {
+          const search = url.searchParams.get("search")?.toLowerCase();
+          const status = url.searchParams.get("status");
+          const dateFrom = url.searchParams.get("dateFrom");
+          const dateTo = url.searchParams.get("dateTo");
+          const result = workshops
+            .map((workshop) => formatWorkshop(workshop))
+            .filter((workshop) => !search || workshop.name.toLowerCase().includes(search) || workshop.location?.toLowerCase().includes(search))
+            .filter((workshop) => !status || workshop.status === status)
+            .filter((workshop) => !dateFrom || workshop.date >= dateFrom)
+            .filter((workshop) => !dateTo || workshop.date <= dateTo)
+            .sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
+          return json(res, 200, result);
+        }
+
+        if (path === "/workshops" && method === "POST") {
+          const body = await readBody(req);
+          const workshop: Workshop = {
+            id: randomUUID(),
+            name: String(body.name ?? ""),
+            description: body.description ? String(body.description) : null,
+            date: String(body.date ?? ""),
+            startTime: String(body.startTime ?? ""),
+            endTime: body.endTime ? String(body.endTime) : null,
+            capacity: Number(body.capacity ?? 0),
+            price: Number(body.price ?? 0),
+            kitIncluded: Boolean(body.kitIncluded),
+            status: (body.status as Workshop["status"]) ?? "draft",
+            location: body.location ? String(body.location) : null,
+            notes: body.notes ? String(body.notes) : null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          workshops.push(workshop);
+          return json(res, 201, formatWorkshop(workshop));
+        }
+
+        const workshopMatch = path.match(/^\/workshops\/([0-9a-f-]+)$/i);
+        if (workshopMatch && method === "GET") {
+          const workshop = workshops.find((item) => item.id === workshopMatch[1]);
+          if (!workshop) return json(res, 404, { error: "Workshop not found" });
+          return json(res, 200, formatWorkshop(workshop, true));
+        }
+        if (workshopMatch && method === "PATCH") {
+          const id = workshopMatch[1];
+          const body = await readBody(req);
+          const current = workshops.find((workshop) => workshop.id === id);
+          if (!current) return json(res, 404, { error: "Workshop not found" });
+          workshops = workshops.map((workshop) =>
+            workshop.id === id
+              ? {
+                  ...workshop,
+                  ...body,
+                  capacity: body.capacity !== undefined ? Number(body.capacity) : workshop.capacity,
+                  price: body.price !== undefined ? Number(body.price) : workshop.price,
+                  kitIncluded: body.kitIncluded !== undefined ? Boolean(body.kitIncluded) : workshop.kitIncluded,
+                  updatedAt: new Date().toISOString(),
+                } as Workshop
+              : workshop,
+          );
+          return json(res, 200, formatWorkshop(workshops.find((workshop) => workshop.id === id)!, true));
+        }
+        if (workshopMatch && method === "DELETE") {
+          const id = workshopMatch[1];
+          workshops = workshops.filter((workshop) => workshop.id !== id);
+          workshopParticipants = workshopParticipants.filter((participant) => participant.workshopId !== id);
+          return json(res, 204);
+        }
+
+        const workshopParticipantsMatch = path.match(/^\/workshops\/([0-9a-f-]+)\/participants$/i);
+        if (workshopParticipantsMatch && method === "POST") {
+          const workshopId = workshopParticipantsMatch[1];
+          const workshop = workshops.find((item) => item.id === workshopId);
+          if (!workshop) return json(res, 404, { error: "Workshop not found" });
+
+          const body = await readBody(req);
+          const status = (body.status as WorkshopParticipant["status"]) ?? "registered";
+          if (!canAddActiveWorkshopParticipant(workshop, status)) {
+            return json(res, 400, { error: "Workshop capacity reached" });
+          }
+
+          const amountPaid = Number(body.amountPaid ?? 0);
+          const payment = computeWorkshopParticipantPayment(workshop.price, amountPaid);
+          const participant: WorkshopParticipant = {
+            id: randomUUID(),
+            workshopId,
+            name: String(body.name ?? ""),
+            phone: String(body.phone ?? ""),
+            email: body.email ? String(body.email) : null,
+            nif: body.nif ? String(body.nif) : null,
+            amountPaid,
+            amountDue: payment.amountDue,
+            paymentMethod: body.paymentMethod ? String(body.paymentMethod) : null,
+            paymentStatus: payment.paymentStatus,
+            status,
+            notes: body.notes ? String(body.notes) : null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          workshopParticipants.push(participant);
+          return json(res, 201, participant);
+        }
+
+        const workshopParticipantMatch = path.match(/^\/workshops\/([0-9a-f-]+)\/participants\/([0-9a-f-]+)$/i);
+        if (workshopParticipantMatch && method === "PATCH") {
+          const workshopId = workshopParticipantMatch[1];
+          const participantId = workshopParticipantMatch[2];
+          const workshop = workshops.find((item) => item.id === workshopId);
+          if (!workshop) return json(res, 404, { error: "Workshop not found" });
+
+          const current = workshopParticipants.find((participant) => participant.id === participantId && participant.workshopId === workshopId);
+          if (!current) return json(res, 404, { error: "Workshop participant not found" });
+
+          const body = await readBody(req);
+          const status = (body.status as WorkshopParticipant["status"]) ?? current.status;
+          if (!canAddActiveWorkshopParticipant(workshop, status, participantId)) {
+            return json(res, 400, { error: "Workshop capacity reached" });
+          }
+
+          const amountPaid = body.amountPaid !== undefined ? Number(body.amountPaid) : current.amountPaid;
+          const payment = computeWorkshopParticipantPayment(workshop.price, amountPaid);
+          workshopParticipants = workshopParticipants.map((participant) =>
+            participant.id === participantId
+              ? {
+                  ...participant,
+                  ...body,
+                  amountPaid,
+                  amountDue: payment.amountDue,
+                  paymentStatus: payment.paymentStatus,
+                  status,
+                  updatedAt: new Date().toISOString(),
+                } as WorkshopParticipant
+              : participant,
+          );
+          return json(res, 200, workshopParticipants.find((participant) => participant.id === participantId));
+        }
+        if (workshopParticipantMatch && method === "DELETE") {
+          const workshopId = workshopParticipantMatch[1];
+          const participantId = workshopParticipantMatch[2];
+          const current = workshopParticipants.find((participant) => participant.id === participantId && participant.workshopId === workshopId);
+          if (!current) return json(res, 404, { error: "Workshop participant not found" });
+          workshopParticipants = workshopParticipants.filter((participant) => participant.id !== participantId);
           return json(res, 204);
         }
 

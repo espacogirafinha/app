@@ -22,6 +22,8 @@ import type {
   CreateReservationBody,
   CreateTaskBody,
   CreateVenueEventBody,
+  CreateWorkshopBody,
+  CreateWorkshopParticipantBody,
   DashboardStats,
   ErrorResponse,
   ExternalEvent,
@@ -32,6 +34,7 @@ import type {
   ListExternalEventsParams,
   ListReservationsParams,
   ListVenueEventsParams,
+  ListWorkshopsParams,
   ReportsData,
   Reservation,
   Task,
@@ -40,7 +43,11 @@ import type {
   UpdateReservationBody,
   UpdateTaskBody,
   UpdateVenueEventBody,
+  UpdateWorkshopBody,
+  UpdateWorkshopParticipantBody,
   VenueEvent,
+  Workshop,
+  WorkshopParticipant,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1446,6 +1453,735 @@ export const useDeleteExternalEvent = <
   TContext
 > => {
   return useMutation(getDeleteExternalEventMutationOptions(options));
+};
+
+/**
+ * @summary List workshops with participant aggregates
+ */
+export const getListWorkshopsUrl = (params?: ListWorkshopsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/workshops?${stringifiedParams}`
+    : `/api/workshops`;
+};
+
+export const listWorkshops = async (
+  params?: ListWorkshopsParams,
+  options?: RequestInit,
+): Promise<Workshop[]> => {
+  return customFetch<Workshop[]>(getListWorkshopsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListWorkshopsQueryKey = (params?: ListWorkshopsParams) => {
+  return [`/api/workshops`, ...(params ? [params] : [])] as const;
+};
+
+export const getListWorkshopsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listWorkshops>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWorkshopsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listWorkshops>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListWorkshopsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listWorkshops>>> = ({
+    signal,
+  }) => listWorkshops(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listWorkshops>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListWorkshopsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listWorkshops>>
+>;
+export type ListWorkshopsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List workshops with participant aggregates
+ */
+
+export function useListWorkshops<
+  TData = Awaited<ReturnType<typeof listWorkshops>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListWorkshopsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listWorkshops>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListWorkshopsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a workshop
+ */
+export const getCreateWorkshopUrl = () => {
+  return `/api/workshops`;
+};
+
+export const createWorkshop = async (
+  createWorkshopBody: CreateWorkshopBody,
+  options?: RequestInit,
+): Promise<Workshop> => {
+  return customFetch<Workshop>(getCreateWorkshopUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createWorkshopBody),
+  });
+};
+
+export const getCreateWorkshopMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWorkshop>>,
+    TError,
+    { data: BodyType<CreateWorkshopBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createWorkshop>>,
+  TError,
+  { data: BodyType<CreateWorkshopBody> },
+  TContext
+> => {
+  const mutationKey = ["createWorkshop"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createWorkshop>>,
+    { data: BodyType<CreateWorkshopBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createWorkshop(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateWorkshopMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createWorkshop>>
+>;
+export type CreateWorkshopMutationBody = BodyType<CreateWorkshopBody>;
+export type CreateWorkshopMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a workshop
+ */
+export const useCreateWorkshop = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWorkshop>>,
+    TError,
+    { data: BodyType<CreateWorkshopBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createWorkshop>>,
+  TError,
+  { data: BodyType<CreateWorkshopBody> },
+  TContext
+> => {
+  return useMutation(getCreateWorkshopMutationOptions(options));
+};
+
+/**
+ * @summary Get a workshop by ID with participants
+ */
+export const getGetWorkshopUrl = (id: string) => {
+  return `/api/workshops/${id}`;
+};
+
+export const getWorkshop = async (
+  id: string,
+  options?: RequestInit,
+): Promise<Workshop> => {
+  return customFetch<Workshop>(getGetWorkshopUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWorkshopQueryKey = (id: string) => {
+  return [`/api/workshops/${id}`] as const;
+};
+
+export const getGetWorkshopQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWorkshop>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWorkshop>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetWorkshopQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkshop>>> = ({
+    signal,
+  }) => getWorkshop(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWorkshop>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWorkshopQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkshop>>
+>;
+export type GetWorkshopQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a workshop by ID with participants
+ */
+
+export function useGetWorkshop<
+  TData = Awaited<ReturnType<typeof getWorkshop>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWorkshop>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWorkshopQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a workshop
+ */
+export const getUpdateWorkshopUrl = (id: string) => {
+  return `/api/workshops/${id}`;
+};
+
+export const updateWorkshop = async (
+  id: string,
+  updateWorkshopBody: UpdateWorkshopBody,
+  options?: RequestInit,
+): Promise<Workshop> => {
+  return customFetch<Workshop>(getUpdateWorkshopUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateWorkshopBody),
+  });
+};
+
+export const getUpdateWorkshopMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWorkshop>>,
+    TError,
+    { id: string; data: BodyType<UpdateWorkshopBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateWorkshop>>,
+  TError,
+  { id: string; data: BodyType<UpdateWorkshopBody> },
+  TContext
+> => {
+  const mutationKey = ["updateWorkshop"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateWorkshop>>,
+    { id: string; data: BodyType<UpdateWorkshopBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateWorkshop(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateWorkshopMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateWorkshop>>
+>;
+export type UpdateWorkshopMutationBody = BodyType<UpdateWorkshopBody>;
+export type UpdateWorkshopMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a workshop
+ */
+export const useUpdateWorkshop = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWorkshop>>,
+    TError,
+    { id: string; data: BodyType<UpdateWorkshopBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateWorkshop>>,
+  TError,
+  { id: string; data: BodyType<UpdateWorkshopBody> },
+  TContext
+> => {
+  return useMutation(getUpdateWorkshopMutationOptions(options));
+};
+
+/**
+ * @summary Delete a workshop
+ */
+export const getDeleteWorkshopUrl = (id: string) => {
+  return `/api/workshops/${id}`;
+};
+
+export const deleteWorkshop = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteWorkshopUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteWorkshopMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWorkshop>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteWorkshop>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteWorkshop"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteWorkshop>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteWorkshop(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteWorkshopMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteWorkshop>>
+>;
+
+export type DeleteWorkshopMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a workshop
+ */
+export const useDeleteWorkshop = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWorkshop>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteWorkshop>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteWorkshopMutationOptions(options));
+};
+
+/**
+ * @summary Add a participant to a workshop
+ */
+export const getCreateWorkshopParticipantUrl = (id: string) => {
+  return `/api/workshops/${id}/participants`;
+};
+
+export const createWorkshopParticipant = async (
+  id: string,
+  createWorkshopParticipantBody: CreateWorkshopParticipantBody,
+  options?: RequestInit,
+): Promise<WorkshopParticipant> => {
+  return customFetch<WorkshopParticipant>(getCreateWorkshopParticipantUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createWorkshopParticipantBody),
+  });
+};
+
+export const getCreateWorkshopParticipantMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWorkshopParticipant>>,
+    TError,
+    { id: string; data: BodyType<CreateWorkshopParticipantBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createWorkshopParticipant>>,
+  TError,
+  { id: string; data: BodyType<CreateWorkshopParticipantBody> },
+  TContext
+> => {
+  const mutationKey = ["createWorkshopParticipant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createWorkshopParticipant>>,
+    { id: string; data: BodyType<CreateWorkshopParticipantBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createWorkshopParticipant(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateWorkshopParticipantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createWorkshopParticipant>>
+>;
+export type CreateWorkshopParticipantMutationBody =
+  BodyType<CreateWorkshopParticipantBody>;
+export type CreateWorkshopParticipantMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Add a participant to a workshop
+ */
+export const useCreateWorkshopParticipant = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWorkshopParticipant>>,
+    TError,
+    { id: string; data: BodyType<CreateWorkshopParticipantBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createWorkshopParticipant>>,
+  TError,
+  { id: string; data: BodyType<CreateWorkshopParticipantBody> },
+  TContext
+> => {
+  return useMutation(getCreateWorkshopParticipantMutationOptions(options));
+};
+
+/**
+ * @summary Update a workshop participant
+ */
+export const getUpdateWorkshopParticipantUrl = (
+  id: string,
+  participantId: string,
+) => {
+  return `/api/workshops/${id}/participants/${participantId}`;
+};
+
+export const updateWorkshopParticipant = async (
+  id: string,
+  participantId: string,
+  updateWorkshopParticipantBody: UpdateWorkshopParticipantBody,
+  options?: RequestInit,
+): Promise<WorkshopParticipant> => {
+  return customFetch<WorkshopParticipant>(
+    getUpdateWorkshopParticipantUrl(id, participantId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateWorkshopParticipantBody),
+    },
+  );
+};
+
+export const getUpdateWorkshopParticipantMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWorkshopParticipant>>,
+    TError,
+    {
+      id: string;
+      participantId: string;
+      data: BodyType<UpdateWorkshopParticipantBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateWorkshopParticipant>>,
+  TError,
+  {
+    id: string;
+    participantId: string;
+    data: BodyType<UpdateWorkshopParticipantBody>;
+  },
+  TContext
+> => {
+  const mutationKey = ["updateWorkshopParticipant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateWorkshopParticipant>>,
+    {
+      id: string;
+      participantId: string;
+      data: BodyType<UpdateWorkshopParticipantBody>;
+    }
+  > = (props) => {
+    const { id, participantId, data } = props ?? {};
+
+    return updateWorkshopParticipant(id, participantId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateWorkshopParticipantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateWorkshopParticipant>>
+>;
+export type UpdateWorkshopParticipantMutationBody =
+  BodyType<UpdateWorkshopParticipantBody>;
+export type UpdateWorkshopParticipantMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a workshop participant
+ */
+export const useUpdateWorkshopParticipant = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWorkshopParticipant>>,
+    TError,
+    {
+      id: string;
+      participantId: string;
+      data: BodyType<UpdateWorkshopParticipantBody>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateWorkshopParticipant>>,
+  TError,
+  {
+    id: string;
+    participantId: string;
+    data: BodyType<UpdateWorkshopParticipantBody>;
+  },
+  TContext
+> => {
+  return useMutation(getUpdateWorkshopParticipantMutationOptions(options));
+};
+
+/**
+ * @summary Delete a workshop participant
+ */
+export const getDeleteWorkshopParticipantUrl = (
+  id: string,
+  participantId: string,
+) => {
+  return `/api/workshops/${id}/participants/${participantId}`;
+};
+
+export const deleteWorkshopParticipant = async (
+  id: string,
+  participantId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteWorkshopParticipantUrl(id, participantId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteWorkshopParticipantMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWorkshopParticipant>>,
+    TError,
+    { id: string; participantId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteWorkshopParticipant>>,
+  TError,
+  { id: string; participantId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteWorkshopParticipant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteWorkshopParticipant>>,
+    { id: string; participantId: string }
+  > = (props) => {
+    const { id, participantId } = props ?? {};
+
+    return deleteWorkshopParticipant(id, participantId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteWorkshopParticipantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteWorkshopParticipant>>
+>;
+
+export type DeleteWorkshopParticipantMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a workshop participant
+ */
+export const useDeleteWorkshopParticipant = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWorkshopParticipant>>,
+    TError,
+    { id: string; participantId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteWorkshopParticipant>>,
+  TError,
+  { id: string; participantId: string },
+  TContext
+> => {
+  return useMutation(getDeleteWorkshopParticipantMutationOptions(options));
 };
 
 /**

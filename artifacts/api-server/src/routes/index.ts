@@ -5,6 +5,7 @@ import reportsRouter from "./reports";
 import tasksRouter from "./tasks";
 import venueEventsRouter from "./venue-events";
 import externalEventsRouter from "./external-events";
+import workshopsRouter from "./workshops";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(reportsRouter);
 router.use(tasksRouter);
 router.use(venueEventsRouter);
 router.use(externalEventsRouter);
+router.use(workshopsRouter);
 
 export default router;

@@ -110,6 +110,36 @@ export const ExternalEventServiceStatus = {
   cancelled: "cancelled",
 } as const;
 
+export type WorkshopStatus =
+  (typeof WorkshopStatus)[keyof typeof WorkshopStatus];
+
+export const WorkshopStatus = {
+  draft: "draft",
+  open: "open",
+  full: "full",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type WorkshopParticipantStatus =
+  (typeof WorkshopParticipantStatus)[keyof typeof WorkshopParticipantStatus];
+
+export const WorkshopParticipantStatus = {
+  registered: "registered",
+  confirmed: "confirmed",
+  attended: "attended",
+  cancelled: "cancelled",
+} as const;
+
+export type WorkshopParticipantPaymentStatus =
+  (typeof WorkshopParticipantPaymentStatus)[keyof typeof WorkshopParticipantPaymentStatus];
+
+export const WorkshopParticipantPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+} as const;
+
 export type ReservationPack =
   (typeof ReservationPack)[keyof typeof ReservationPack];
 
@@ -621,6 +651,132 @@ export interface UpdateExternalEventBody {
   services?: ExternalEventServiceInput[];
 }
 
+export interface WorkshopParticipant {
+  id: string;
+  workshopId: string;
+  name: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  amountPaid: number;
+  amountDue: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  paymentStatus: WorkshopParticipantPaymentStatus;
+  status: WorkshopParticipantStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Workshop {
+  id: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  date: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  capacity: number;
+  price: number;
+  kitIncluded: boolean;
+  status: WorkshopStatus;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  participantsCount: number;
+  activeParticipantsCount: number;
+  availableSeats: number;
+  totalReceived: number;
+  totalPending: number;
+  participants?: WorkshopParticipant[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWorkshopBody {
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  date: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  /** @minimum 0 */
+  capacity: number;
+  /** @minimum 0 */
+  price: number;
+  kitIncluded?: boolean;
+  status?: WorkshopStatus;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface UpdateWorkshopBody {
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  date?: string;
+  startTime?: string;
+  /** @nullable */
+  endTime?: string | null;
+  /** @minimum 0 */
+  capacity?: number;
+  /** @minimum 0 */
+  price?: number;
+  kitIncluded?: boolean;
+  status?: WorkshopStatus;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface CreateWorkshopParticipantBody {
+  name: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  /** @minimum 0 */
+  amountPaid?: number;
+  /** @minimum 0 */
+  amountDue?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  paymentStatus?: WorkshopParticipantPaymentStatus;
+  status?: WorkshopParticipantStatus;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface UpdateWorkshopParticipantBody {
+  name?: string;
+  phone?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  /** @minimum 0 */
+  amountPaid?: number;
+  /** @minimum 0 */
+  amountDue?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  paymentStatus?: WorkshopParticipantPaymentStatus;
+  status?: WorkshopParticipantStatus;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export interface DashboardStats {
   totalReservations: number;
   totalRevenue: number;
@@ -777,6 +933,13 @@ export type ListExternalEventsParams = {
   search?: string;
   status?: ExternalEventStatus;
   paymentStatus?: ExternalEventPaymentStatus;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type ListWorkshopsParams = {
+  search?: string;
+  status?: WorkshopStatus;
   dateFrom?: string;
   dateTo?: string;
 };
