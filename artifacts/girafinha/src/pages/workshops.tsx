@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkshopModal } from "@/components/workshop-modal";
+import { WorkshopParticipantsPanel } from "@/components/workshop-participants-panel";
 import { useToast } from "@/hooks/use-toast";
 import { getListWorkshopsQueryKey, useDeleteWorkshop, useListWorkshops } from "@workspace/api-client-react";
 import type { Workshop } from "@workspace/api-client-react";
@@ -189,10 +190,15 @@ function WorkshopRow({
               <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
               Detalhes
             </Button>
-            <Button variant="outline" size="sm" onClick={onToggle} className="rounded-xl">
-              <Users className="h-4 w-4" />
-              Participantes
-            </Button>
+            <WorkshopParticipantsPanel
+              workshop={workshop}
+              trigger={
+                <Button variant="outline" size="sm" className="rounded-xl">
+                  <Users className="h-4 w-4" />
+                  Participantes
+                </Button>
+              }
+            />
           </div>
         </div>
       </div>
@@ -212,7 +218,7 @@ function WorkshopRow({
               <Info label="Inscrições ativas" value={String(workshop.activeParticipantsCount)} />
               <Info label="Vagas livres" value={String(workshop.availableSeats)} />
               <Info label="Total de participantes" value={String(workshop.participantsCount)} />
-              <Info label="Participantes" value="Gestão de participantes será implementada na próxima fase." />
+              <Info label="Participantes cancelados" value="Visíveis no painel, sem ocupar vaga." />
             </DetailsBlock>
             <DetailsBlock title="Pagamento e ações">
               <Info label="Preço" value={`${workshop.price.toFixed(2)} €`} />
@@ -228,10 +234,15 @@ function WorkshopRow({
                     </Button>
                   }
                 />
-                <Button variant="outline" size="sm" disabled className="rounded-xl">
-                  <Users className="h-4 w-4" />
-                  Participantes
-                </Button>
+                <WorkshopParticipantsPanel
+                  workshop={workshop}
+                  trigger={
+                    <Button variant="outline" size="sm" className="rounded-xl">
+                      <Users className="h-4 w-4" />
+                      Participantes
+                    </Button>
+                  }
+                />
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="rounded-xl text-destructive hover:text-destructive">
