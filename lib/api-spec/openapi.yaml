@@ -685,6 +685,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /dashboard-v2:
+    get:
+      operationId: getDashboardV2
+      tags: [dashboard]
+      summary: Get V2 dashboard aggregate
+      description: Aggregates venue events, external events, services, workshops and participants for the V2 dashboard.
+      responses:
+        "200":
+          description: V2 dashboard aggregate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardV2"
+
   /dashboard/stats:
     get:
       operationId: getDashboardStats
@@ -1892,6 +1906,140 @@ components:
         - paidCount
         - partialCount
         - unpaidCount
+
+    DashboardV2:
+      type: object
+      properties:
+        summary:
+          $ref: "#/components/schemas/DashboardV2Summary"
+        areas:
+          $ref: "#/components/schemas/DashboardV2Areas"
+        agenda:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardV2AgendaItem"
+      required:
+        - summary
+        - areas
+        - agenda
+
+    DashboardV2Summary:
+      type: object
+      properties:
+        todayCount:
+          type: integer
+        nextSevenDaysCount:
+          type: integer
+        totalReceived:
+          type: number
+        totalPending:
+          type: number
+      required:
+        - todayCount
+        - nextSevenDaysCount
+        - totalReceived
+        - totalPending
+
+    DashboardV2Areas:
+      type: object
+      properties:
+        venueEvents:
+          $ref: "#/components/schemas/DashboardV2AreaSummary"
+        externalEvents:
+          $ref: "#/components/schemas/DashboardV2AreaSummary"
+        workshops:
+          $ref: "#/components/schemas/DashboardV2WorkshopAreaSummary"
+      required:
+        - venueEvents
+        - externalEvents
+        - workshops
+
+    DashboardV2AreaSummary:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+        upcomingCount:
+          type: integer
+        nextSevenDaysCount:
+          type: integer
+        received:
+          type: number
+        pending:
+          type: number
+      required:
+        - totalCount
+        - upcomingCount
+        - nextSevenDaysCount
+        - received
+        - pending
+
+    DashboardV2WorkshopAreaSummary:
+      allOf:
+        - $ref: "#/components/schemas/DashboardV2AreaSummary"
+        - type: object
+          properties:
+            activeParticipantsCount:
+              type: integer
+            availableSeats:
+              type: integer
+          required:
+            - activeParticipantsCount
+            - availableSeats
+
+    DashboardV2AgendaItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [venue_events, external_events, workshops]
+        typeLabel:
+          type: string
+        title:
+          type: string
+        date:
+          type: string
+        time:
+          type: string
+        location:
+          type: ["string", "null"]
+        status:
+          type: string
+        paymentStatus:
+          type: string
+          enum: [unpaid, partial, paid, none]
+        total:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        nextAction:
+          type: string
+        href:
+          type: string
+        services:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - type
+        - typeLabel
+        - title
+        - date
+        - time
+        - location
+        - status
+        - paymentStatus
+        - total
+        - received
+        - pending
+        - nextAction
+        - href
+        - services
 
     Task:
       type: object

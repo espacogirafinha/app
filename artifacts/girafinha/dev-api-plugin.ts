@@ -387,6 +387,180 @@ function formatWorkshop(workshop: Workshop, includeParticipants = false) {
   };
 }
 
+type DashboardAreaType = "venue_events" | "external_events" | "workshops";
+type DashboardPaymentStatus = "unpaid" | "partial" | "paid" | "none";
+type DashboardAgendaItem = {
+  id: string;
+  type: DashboardAreaType;
+  typeLabel: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string | null;
+  status: string;
+  paymentStatus: DashboardPaymentStatus;
+  total: number;
+  received: number;
+  pending: number;
+  nextAction: string;
+  href: string;
+  services: string[];
+};
+
+function currentIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function addDaysIso(baseDate: string, days: number) {
+  const date = new Date(`${baseDate}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function isActiveStatus(status: string) {
+  return status !== "cancelled";
+}
+
+function paymentStatusFromAmounts(total: number, received: number): DashboardPaymentStatus {
+  if (total <= 0 && received <= 0) return "none";
+  if (received >= total) return "paid";
+  if (received > 0) return "partial";
+  return "unpaid";
+}
+
+function nextDashboardAction(status: string, paymentStatus: DashboardPaymentStatus, pending: number, area: DashboardAreaType) {
+  if (status === "cancelled") return "Cancelado";
+  if (status === "completed") return "Concluido";
+  if (paymentStatus !== "paid" && pending > 0) {
+    return paymentStatus === "unpaid" ? "Cobrar sinal" : "Cobrar restante";
+  }
+  if (area === "workshops") return "Ver participantes";
+  if (status === "draft") return "Confirmar detalhes";
+  return "Preparar evento";
+}
+
+function areaSummary(items: DashboardAgendaItem[], todayValue: string, nextSevenDaysEnd: string) {
+  const activeItems = items.filter((item) => isActiveStatus(item.status));
+  return {
+    totalCount: activeItems.length,
+    upcomingCount: activeItems.filter((item) => item.date >= todayValue).length,
+    nextSevenDaysCount: activeItems.filter((item) => item.date >= todayValue && item.date <= nextSevenDaysEnd).length,
+    received: activeItems.reduce((sum, item) => sum + item.received, 0),
+    pending: activeItems.reduce((sum, item) => sum + item.pending, 0),
+  };
+}
+
+function dashboardV2Data() {
+  const todayValue = currentIsoDate();
+  const nextSevenDaysEnd = addDaysIso(todayValue, 7);
+
+  const venueItems: DashboardAgendaItem[] = venueEvents.map((event) => {
+    const pending = Math.max(0, event.totalPrice - event.amountPaid);
+    const payment = paymentStatusFromAmounts(event.totalPrice, event.amountPaid);
+    return {
+      id: event.id,
+      type: "venue_events",
+      typeLabel: "Festa no Espaco",
+      title: event.birthdayChildName ? `${event.customerName} - ${event.birthdayChildName}` : event.customerName,
+      date: event.eventDate,
+      time: event.startTime,
+      location: "Espaco Girafinha",
+      status: event.status,
+      paymentStatus: payment,
+      total: event.totalPrice,
+      received: event.amountPaid,
+      pending,
+      nextAction: nextDashboardAction(event.status, payment, pending, "venue_events"),
+      href: "/venue-events",
+      services: [event.packName],
+    };
+  });
+
+  const externalItems: DashboardAgendaItem[] = externalEvents.map((event) => {
+    const services = externalEventServices
+      .filter((service) => service.externalEventId === event.id)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const pending = Math.max(0, event.totalPrice - event.amountPaid);
+    const payment = paymentStatusFromAmounts(event.totalPrice, event.amountPaid);
+    return {
+      id: event.id,
+      type: "external_events",
+      typeLabel: "Servico Externo",
+      title: event.customerName,
+      date: event.eventDate,
+      time: event.startTime,
+      location: event.eventLocation,
+      status: event.status,
+      paymentStatus: payment,
+      total: event.totalPrice,
+      received: event.amountPaid,
+      pending,
+      nextAction: nextDashboardAction(event.status, payment, pending, "external_events"),
+      href: "/external-events",
+      services: services.map((service) => service.serviceLabel),
+    };
+  });
+
+  const workshopItems: DashboardAgendaItem[] = workshops.map((workshop) => {
+    const participants = workshopParticipants.filter((participant) => participant.workshopId === workshop.id);
+    const activeParticipants = participants.filter(isActiveWorkshopParticipant);
+    const received = activeParticipants.reduce((sum, participant) => sum + participant.amountPaid, 0);
+    const pending = activeParticipants.reduce((sum, participant) => sum + participant.amountDue, 0);
+    const total = received + pending;
+    const payment = paymentStatusFromAmounts(total, received);
+    return {
+      id: workshop.id,
+      type: "workshops",
+      typeLabel: "Workshop/Formacao",
+      title: workshop.name,
+      date: workshop.date,
+      time: workshop.startTime,
+      location: workshop.location,
+      status: workshop.status,
+      paymentStatus: payment,
+      total,
+      received,
+      pending,
+      nextAction: nextDashboardAction(workshop.status, payment, pending, "workshops"),
+      href: "/workshops",
+      services: [`${activeParticipants.length}/${workshop.capacity} inscritos`],
+    };
+  });
+
+  const allItems = [...venueItems, ...externalItems, ...workshopItems];
+  const activeItems = allItems.filter((item) => isActiveStatus(item.status));
+  const agenda = activeItems
+    .filter((item) => item.date >= todayValue)
+    .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+    .slice(0, 12);
+
+  return {
+    summary: {
+      todayCount: activeItems.filter((item) => item.date === todayValue).length,
+      nextSevenDaysCount: activeItems.filter((item) => item.date >= todayValue && item.date <= nextSevenDaysEnd).length,
+      totalReceived: activeItems.reduce((sum, item) => sum + item.received, 0),
+      totalPending: activeItems.reduce((sum, item) => sum + item.pending, 0),
+    },
+    areas: {
+      venueEvents: areaSummary(venueItems, todayValue, nextSevenDaysEnd),
+      externalEvents: areaSummary(externalItems, todayValue, nextSevenDaysEnd),
+      workshops: {
+        ...areaSummary(workshopItems, todayValue, nextSevenDaysEnd),
+        activeParticipantsCount: workshopParticipants.filter(isActiveWorkshopParticipant).length,
+        availableSeats: workshops
+          .filter((workshop) => isActiveStatus(workshop.status))
+          .reduce((sum, workshop) => {
+            const activeParticipants = workshopParticipants.filter(
+              (participant) => participant.workshopId === workshop.id && isActiveWorkshopParticipant(participant),
+            );
+            return sum + Math.max(0, workshop.capacity - activeParticipants.length);
+          }, 0),
+      },
+    },
+    agenda,
+  };
+}
+
 function canAddActiveWorkshopParticipant(workshop: Workshop, status: WorkshopParticipant["status"], excludeParticipantId?: string) {
   if (status === "cancelled") return true;
 
@@ -636,6 +810,7 @@ export function devApiPlugin(): Plugin {
         if (path === "/healthz") return json(res, 200, { ok: true });
         if (!(await requireAuth(req, res))) return;
 
+        if (path === "/dashboard-v2") return json(res, 200, dashboardV2Data());
         if (path === "/dashboard/stats") return json(res, 200, stats());
         if (path === "/dashboard/upcoming") {
           return json(res, 200, reservations.filter((r) => r.eventDate >= today.toISOString().slice(0, 10)).map(formatReservation));

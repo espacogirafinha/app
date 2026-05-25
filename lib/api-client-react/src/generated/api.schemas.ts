@@ -788,6 +788,76 @@ export interface DashboardStats {
   unpaidCount: number;
 }
 
+export interface DashboardV2Summary {
+  todayCount: number;
+  nextSevenDaysCount: number;
+  totalReceived: number;
+  totalPending: number;
+}
+
+export interface DashboardV2AreaSummary {
+  totalCount: number;
+  upcomingCount: number;
+  nextSevenDaysCount: number;
+  received: number;
+  pending: number;
+}
+
+export type DashboardV2WorkshopAreaSummary = DashboardV2AreaSummary & {
+  activeParticipantsCount: number;
+  availableSeats: number;
+};
+
+export interface DashboardV2Areas {
+  venueEvents: DashboardV2AreaSummary;
+  externalEvents: DashboardV2AreaSummary;
+  workshops: DashboardV2WorkshopAreaSummary;
+}
+
+export type DashboardV2AgendaItemType =
+  (typeof DashboardV2AgendaItemType)[keyof typeof DashboardV2AgendaItemType];
+
+export const DashboardV2AgendaItemType = {
+  venue_events: "venue_events",
+  external_events: "external_events",
+  workshops: "workshops",
+} as const;
+
+export type DashboardV2AgendaItemPaymentStatus =
+  (typeof DashboardV2AgendaItemPaymentStatus)[keyof typeof DashboardV2AgendaItemPaymentStatus];
+
+export const DashboardV2AgendaItemPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+  none: "none",
+} as const;
+
+export interface DashboardV2AgendaItem {
+  id: string;
+  type: DashboardV2AgendaItemType;
+  typeLabel: string;
+  title: string;
+  date: string;
+  time: string;
+  /** @nullable */
+  location: string | null;
+  status: string;
+  paymentStatus: DashboardV2AgendaItemPaymentStatus;
+  total: number;
+  received: number;
+  pending: number;
+  nextAction: string;
+  href: string;
+  services: string[];
+}
+
+export interface DashboardV2 {
+  summary: DashboardV2Summary;
+  areas: DashboardV2Areas;
+  agenda: DashboardV2AgendaItem[];
+}
+
 export interface Task {
   id: number;
   reservationId: number;

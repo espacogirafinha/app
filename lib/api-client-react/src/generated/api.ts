@@ -25,6 +25,7 @@ import type {
   CreateWorkshopBody,
   CreateWorkshopParticipantBody,
   DashboardStats,
+  DashboardV2,
   ErrorResponse,
   ExternalEvent,
   GetCalendarReservationsParams,
@@ -2183,6 +2184,82 @@ export const useDeleteWorkshopParticipant = <
 > => {
   return useMutation(getDeleteWorkshopParticipantMutationOptions(options));
 };
+
+/**
+ * Aggregates venue events, external events, services, workshops and participants for the V2 dashboard.
+ * @summary Get V2 dashboard aggregate
+ */
+export const getGetDashboardV2Url = () => {
+  return `/api/dashboard-v2`;
+};
+
+export const getDashboardV2 = async (
+  options?: RequestInit,
+): Promise<DashboardV2> => {
+  return customFetch<DashboardV2>(getGetDashboardV2Url(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDashboardV2QueryKey = () => {
+  return [`/api/dashboard-v2`] as const;
+};
+
+export const getGetDashboardV2QueryOptions = <
+  TData = Awaited<ReturnType<typeof getDashboardV2>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardV2>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDashboardV2QueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardV2>>> = ({
+    signal,
+  }) => getDashboardV2({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardV2>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDashboardV2QueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDashboardV2>>
+>;
+export type GetDashboardV2QueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get V2 dashboard aggregate
+ */
+
+export function useGetDashboardV2<
+  TData = Awaited<ReturnType<typeof getDashboardV2>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardV2>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDashboardV2QueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get dashboard statistics

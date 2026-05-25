@@ -1161,6 +1161,68 @@ export const DeleteWorkshopParticipantParams = zod.object({
 });
 
 /**
+ * Aggregates venue events, external events, services, workshops and participants for the V2 dashboard.
+ * @summary Get V2 dashboard aggregate
+ */
+export const GetDashboardV2Response = zod.object({
+  summary: zod.object({
+    todayCount: zod.number(),
+    nextSevenDaysCount: zod.number(),
+    totalReceived: zod.number(),
+    totalPending: zod.number(),
+  }),
+  areas: zod.object({
+    venueEvents: zod.object({
+      totalCount: zod.number(),
+      upcomingCount: zod.number(),
+      nextSevenDaysCount: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+    }),
+    externalEvents: zod.object({
+      totalCount: zod.number(),
+      upcomingCount: zod.number(),
+      nextSevenDaysCount: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+    }),
+    workshops: zod
+      .object({
+        totalCount: zod.number(),
+        upcomingCount: zod.number(),
+        nextSevenDaysCount: zod.number(),
+        received: zod.number(),
+        pending: zod.number(),
+      })
+      .and(
+        zod.object({
+          activeParticipantsCount: zod.number(),
+          availableSeats: zod.number(),
+        }),
+      ),
+  }),
+  agenda: zod.array(
+    zod.object({
+      id: zod.string(),
+      type: zod.enum(["venue_events", "external_events", "workshops"]),
+      typeLabel: zod.string(),
+      title: zod.string(),
+      date: zod.string(),
+      time: zod.string(),
+      location: zod.string().nullable(),
+      status: zod.string(),
+      paymentStatus: zod.enum(["unpaid", "partial", "paid", "none"]),
+      total: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+      nextAction: zod.string(),
+      href: zod.string(),
+      services: zod.array(zod.string()),
+    }),
+  ),
+});
+
+/**
  * @summary Get dashboard statistics
  */
 export const GetDashboardStatsResponse = zod.object({
