@@ -1223,6 +1223,99 @@ export const GetDashboardV2Response = zod.object({
 });
 
 /**
+ * Aggregates V2 venue events, external events, workshops and participants for the operational calendar.
+ * @summary Get V2 calendar aggregate
+ */
+export const getCalendarV2QueryStartDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+export const getCalendarV2QueryEndDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+
+export const GetCalendarV2QueryParams = zod.object({
+  startDate: zod.coerce
+    .string()
+    .regex(getCalendarV2QueryStartDateRegExp)
+    .optional(),
+  endDate: zod.coerce
+    .string()
+    .regex(getCalendarV2QueryEndDateRegExp)
+    .optional(),
+});
+
+export const GetCalendarV2Response = zod.object({
+  summary: zod.object({
+    startDate: zod.string(),
+    endDate: zod.string(),
+    totalItems: zod.number(),
+    spaceOccupyingItems: zod.number(),
+    externalItems: zod.number(),
+    workshops: zod.number(),
+    freeDays: zod.number(),
+    busyDays: zod.number(),
+    almostFullDays: zod.number(),
+    fullDays: zod.number(),
+  }),
+  days: zod.array(
+    zod.object({
+      date: zod.string(),
+      status: zod.enum(["free", "busy", "almost_full", "full"]),
+      spaceSlotsUsed: zod.number(),
+      spaceSlotsTotal: zod.number(),
+      items: zod.array(
+        zod.object({
+          id: zod.string(),
+          type: zod.enum(["venue_event", "external_event", "workshop"]),
+          title: zod.string(),
+          date: zod.string(),
+          startTime: zod.string(),
+          endTime: zod.string().nullable(),
+          customerName: zod.string().nullable(),
+          location: zod.string().nullable(),
+          servicesLabels: zod.array(zod.string()),
+          paymentStatus: zod.string().nullable(),
+          amountPaid: zod.number().nullable(),
+          totalPrice: zod.number().nullable(),
+          pendingAmount: zod.number().nullable(),
+          capacity: zod.number().nullable(),
+          activeParticipantsCount: zod.number().nullable(),
+          availableSeats: zod.number().nullable(),
+          totalReceived: zod.number().nullable(),
+          totalPending: zod.number().nullable(),
+          occupiesSpace: zod.boolean(),
+          status: zod.string(),
+        }),
+      ),
+    }),
+  ),
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      type: zod.enum(["venue_event", "external_event", "workshop"]),
+      title: zod.string(),
+      date: zod.string(),
+      startTime: zod.string(),
+      endTime: zod.string().nullable(),
+      customerName: zod.string().nullable(),
+      location: zod.string().nullable(),
+      servicesLabels: zod.array(zod.string()),
+      paymentStatus: zod.string().nullable(),
+      amountPaid: zod.number().nullable(),
+      totalPrice: zod.number().nullable(),
+      pendingAmount: zod.number().nullable(),
+      capacity: zod.number().nullable(),
+      activeParticipantsCount: zod.number().nullable(),
+      availableSeats: zod.number().nullable(),
+      totalReceived: zod.number().nullable(),
+      totalPending: zod.number().nullable(),
+      occupiesSpace: zod.boolean(),
+      status: zod.string(),
+    }),
+  ),
+});
+
+/**
  * @summary Get dashboard statistics
  */
 export const GetDashboardStatsResponse = zod.object({

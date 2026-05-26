@@ -18,6 +18,7 @@ import type {
 
 import type {
   CalendarDay,
+  CalendarV2,
   CreateExternalEventBody,
   CreateReservationBody,
   CreateTaskBody,
@@ -29,6 +30,7 @@ import type {
   ErrorResponse,
   ExternalEvent,
   GetCalendarReservationsParams,
+  GetCalendarV2Params,
   GetReportsDataParams,
   GetTasksSummaryParams,
   HealthStatus,
@@ -2253,6 +2255,101 @@ export function useGetDashboardV2<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetDashboardV2QueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Aggregates V2 venue events, external events, workshops and participants for the operational calendar.
+ * @summary Get V2 calendar aggregate
+ */
+export const getGetCalendarV2Url = (params?: GetCalendarV2Params) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/calendar-v2?${stringifiedParams}`
+    : `/api/calendar-v2`;
+};
+
+export const getCalendarV2 = async (
+  params?: GetCalendarV2Params,
+  options?: RequestInit,
+): Promise<CalendarV2> => {
+  return customFetch<CalendarV2>(getGetCalendarV2Url(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCalendarV2QueryKey = (params?: GetCalendarV2Params) => {
+  return [`/api/calendar-v2`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetCalendarV2QueryOptions = <
+  TData = Awaited<ReturnType<typeof getCalendarV2>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: GetCalendarV2Params,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCalendarV2>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCalendarV2QueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCalendarV2>>> = ({
+    signal,
+  }) => getCalendarV2(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCalendarV2>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCalendarV2QueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCalendarV2>>
+>;
+export type GetCalendarV2QueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get V2 calendar aggregate
+ */
+
+export function useGetCalendarV2<
+  TData = Awaited<ReturnType<typeof getCalendarV2>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: GetCalendarV2Params,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCalendarV2>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCalendarV2QueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

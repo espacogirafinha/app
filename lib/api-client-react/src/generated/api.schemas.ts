@@ -858,6 +858,87 @@ export interface DashboardV2 {
   agenda: DashboardV2AgendaItem[];
 }
 
+export interface CalendarV2Summary {
+  startDate: string;
+  endDate: string;
+  totalItems: number;
+  spaceOccupyingItems: number;
+  externalItems: number;
+  workshops: number;
+  freeDays: number;
+  busyDays: number;
+  almostFullDays: number;
+  fullDays: number;
+}
+
+export type CalendarV2DayStatus =
+  (typeof CalendarV2DayStatus)[keyof typeof CalendarV2DayStatus];
+
+export const CalendarV2DayStatus = {
+  free: "free",
+  busy: "busy",
+  almost_full: "almost_full",
+  full: "full",
+} as const;
+
+export type CalendarV2ItemType =
+  (typeof CalendarV2ItemType)[keyof typeof CalendarV2ItemType];
+
+export const CalendarV2ItemType = {
+  venue_event: "venue_event",
+  external_event: "external_event",
+  workshop: "workshop",
+} as const;
+
+export interface CalendarV2Item {
+  id: string;
+  type: CalendarV2ItemType;
+  title: string;
+  date: string;
+  startTime: string;
+  /** @nullable */
+  endTime: string | null;
+  /** @nullable */
+  customerName: string | null;
+  /** @nullable */
+  location: string | null;
+  servicesLabels: string[];
+  /** @nullable */
+  paymentStatus: string | null;
+  /** @nullable */
+  amountPaid: number | null;
+  /** @nullable */
+  totalPrice: number | null;
+  /** @nullable */
+  pendingAmount: number | null;
+  /** @nullable */
+  capacity: number | null;
+  /** @nullable */
+  activeParticipantsCount: number | null;
+  /** @nullable */
+  availableSeats: number | null;
+  /** @nullable */
+  totalReceived: number | null;
+  /** @nullable */
+  totalPending: number | null;
+  occupiesSpace: boolean;
+  status: string;
+}
+
+export interface CalendarV2Day {
+  date: string;
+  status: CalendarV2DayStatus;
+  spaceSlotsUsed: number;
+  spaceSlotsTotal: number;
+  items: CalendarV2Item[];
+}
+
+export interface CalendarV2 {
+  summary: CalendarV2Summary;
+  days: CalendarV2Day[];
+  items: CalendarV2Item[];
+}
+
 export interface Task {
   id: number;
   reservationId: number;
@@ -1012,6 +1093,17 @@ export type ListWorkshopsParams = {
   status?: WorkshopStatus;
   dateFrom?: string;
   dateTo?: string;
+};
+
+export type GetCalendarV2Params = {
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  startDate?: string;
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  endDate?: string;
 };
 
 export type GetTasksSummaryParams = {

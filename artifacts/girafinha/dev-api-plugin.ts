@@ -561,6 +561,192 @@ function dashboardV2Data() {
   };
 }
 
+type CalendarV2ItemType = "venue_event" | "external_event" | "workshop";
+type CalendarV2DayStatus = "free" | "busy" | "almost_full" | "full";
+type CalendarV2Item = {
+  id: string;
+  type: CalendarV2ItemType;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string | null;
+  customerName: string | null;
+  location: string | null;
+  servicesLabels: string[];
+  paymentStatus: string | null;
+  amountPaid: number | null;
+  totalPrice: number | null;
+  pendingAmount: number | null;
+  capacity: number | null;
+  activeParticipantsCount: number | null;
+  availableSeats: number | null;
+  totalReceived: number | null;
+  totalPending: number | null;
+  occupiesSpace: boolean;
+  status: string;
+};
+
+function defaultCalendarDateRange() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { startDate, endDate };
+}
+
+function isValidDateParam(value: string | null) {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}
+
+function isEspacoGirafinha(location: string | null) {
+  if (!location) return false;
+  const normalized = location
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  return normalized.includes("espaco girafinha") || (normalized.includes("espaco") && normalized.includes("girafinha"));
+}
+
+function datesBetween(startDate: string, endDate: string) {
+  const dates: string[] = [];
+  for (let current = startDate; current <= endDate; current = addDaysIso(current, 1)) {
+    dates.push(current);
+  }
+  return dates;
+}
+
+function calendarDayStatus(items: CalendarV2Item[]): CalendarV2DayStatus {
+  const spaceSlotsUsed = items.filter((item) => item.occupiesSpace).length;
+  const hasOperationalItems = items.some((item) => !item.occupiesSpace);
+
+  if (spaceSlotsUsed >= MAX_EVENTS_PER_DAY) return "full";
+  if (spaceSlotsUsed === 1 || hasOperationalItems) return "almost_full";
+  if (items.length > 0) return "busy";
+  return "free";
+}
+
+function calendarV2Data(startDate: string, endDate: string) {
+  const venueItems: CalendarV2Item[] = venueEvents
+    .filter((event) => isActiveStatus(event.status) && event.eventDate >= startDate && event.eventDate <= endDate)
+    .map((event) => ({
+      id: event.id,
+      type: "venue_event",
+      title: event.birthdayChildName ? `${event.packName} - ${event.birthdayChildName}` : event.packName,
+      date: event.eventDate,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      customerName: event.customerName,
+      location: "Espaco Girafinha",
+      servicesLabels: [event.packName],
+      paymentStatus: event.paymentStatus,
+      amountPaid: event.amountPaid,
+      totalPrice: event.totalPrice,
+      pendingAmount: Math.max(0, event.totalPrice - event.amountPaid),
+      capacity: null,
+      activeParticipantsCount: null,
+      availableSeats: null,
+      totalReceived: null,
+      totalPending: null,
+      occupiesSpace: true,
+      status: event.status,
+    }));
+
+  const externalItems: CalendarV2Item[] = externalEvents
+    .filter((event) => isActiveStatus(event.status) && event.eventDate >= startDate && event.eventDate <= endDate)
+    .map((event) => {
+      const services = externalEventServices
+        .filter((service) => service.externalEventId === event.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+      return {
+        id: event.id,
+        type: "external_event",
+        title: event.eventType || event.eventTheme || "Servico externo",
+        date: event.eventDate,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        customerName: event.customerName,
+        location: event.eventLocation,
+        servicesLabels: services.map((service) => service.serviceLabel),
+        paymentStatus: event.paymentStatus,
+        amountPaid: event.amountPaid,
+        totalPrice: event.totalPrice,
+        pendingAmount: Math.max(0, event.totalPrice - event.amountPaid),
+        capacity: null,
+        activeParticipantsCount: null,
+        availableSeats: null,
+        totalReceived: null,
+        totalPending: null,
+        occupiesSpace: false,
+        status: event.status,
+      };
+    });
+
+  const workshopItems: CalendarV2Item[] = workshops
+    .filter((workshop) => isActiveStatus(workshop.status) && workshop.date >= startDate && workshop.date <= endDate)
+    .map((workshop) => {
+      const activeParticipants = workshopParticipants
+        .filter((participant) => participant.workshopId === workshop.id)
+        .filter(isActiveWorkshopParticipant);
+      const totalReceived = activeParticipants.reduce((sum, participant) => sum + participant.amountPaid, 0);
+      const totalPending = activeParticipants.reduce((sum, participant) => sum + participant.amountDue, 0);
+      return {
+        id: workshop.id,
+        type: "workshop",
+        title: workshop.name,
+        date: workshop.date,
+        startTime: workshop.startTime,
+        endTime: workshop.endTime,
+        customerName: null,
+        location: workshop.location,
+        servicesLabels: [],
+        paymentStatus: null,
+        amountPaid: null,
+        totalPrice: null,
+        pendingAmount: null,
+        capacity: workshop.capacity,
+        activeParticipantsCount: activeParticipants.length,
+        availableSeats: Math.max(0, workshop.capacity - activeParticipants.length),
+        totalReceived,
+        totalPending,
+        occupiesSpace: isEspacoGirafinha(workshop.location),
+        status: workshop.status,
+      };
+    });
+
+  const items = [...venueItems, ...externalItems, ...workshopItems]
+    .sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
+
+  const days = datesBetween(startDate, endDate).map((date) => {
+    const dayItems = items.filter((item) => item.date === date);
+    return {
+      date,
+      status: calendarDayStatus(dayItems),
+      spaceSlotsUsed: dayItems.filter((item) => item.occupiesSpace).length,
+      spaceSlotsTotal: MAX_EVENTS_PER_DAY,
+      items: dayItems,
+    };
+  });
+
+  return {
+    summary: {
+      startDate,
+      endDate,
+      totalItems: items.length,
+      spaceOccupyingItems: items.filter((item) => item.occupiesSpace).length,
+      externalItems: items.filter((item) => item.type === "external_event").length,
+      workshops: items.filter((item) => item.type === "workshop").length,
+      freeDays: days.filter((day) => day.status === "free").length,
+      busyDays: days.filter((day) => day.status === "busy").length,
+      almostFullDays: days.filter((day) => day.status === "almost_full").length,
+      fullDays: days.filter((day) => day.status === "full").length,
+    },
+    days,
+    items,
+  };
+}
+
 function canAddActiveWorkshopParticipant(workshop: Workshop, status: WorkshopParticipant["status"], excludeParticipantId?: string) {
   if (status === "cancelled") return true;
 
@@ -811,6 +997,21 @@ export function devApiPlugin(): Plugin {
         if (!(await requireAuth(req, res))) return;
 
         if (path === "/dashboard-v2") return json(res, 200, dashboardV2Data());
+        if (path === "/calendar-v2") {
+          const defaults = defaultCalendarDateRange();
+          const startDate = isValidDateParam(url.searchParams.get("startDate"))
+            ? url.searchParams.get("startDate")!
+            : defaults.startDate;
+          const endDate = isValidDateParam(url.searchParams.get("endDate"))
+            ? url.searchParams.get("endDate")!
+            : defaults.endDate;
+
+          if (startDate > endDate) {
+            return json(res, 400, { error: "startDate must be before or equal to endDate" });
+          }
+
+          return json(res, 200, calendarV2Data(startDate, endDate));
+        }
         if (path === "/dashboard/stats") return json(res, 200, stats());
         if (path === "/dashboard/upcoming") {
           return json(res, 200, reservations.filter((r) => r.eventDate >= today.toISOString().slice(0, 10)).map(formatReservation));

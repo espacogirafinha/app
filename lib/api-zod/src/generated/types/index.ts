@@ -7,6 +7,12 @@
  */
 
 export * from "./calendarDay";
+export * from "./calendarV2";
+export * from "./calendarV2Day";
+export * from "./calendarV2DayStatus";
+export * from "./calendarV2Item";
+export * from "./calendarV2ItemType";
+export * from "./calendarV2Summary";
 export * from "./createExternalEventBody";
 export * from "./createReservationBody";
 export * from "./createReservationBodyPack";
@@ -33,6 +39,7 @@ export * from "./externalEventServiceType";
 export * from "./externalEventStatus";
 export * from "./extraStats";
 export * from "./getCalendarReservationsParams";
+export * from "./getCalendarV2Params";
 export * from "./getReportsDataParams";
 export * from "./getTasksSummaryParams";
 export * from "./healthStatus";

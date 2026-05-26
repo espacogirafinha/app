@@ -699,6 +699,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardV2"
 
+  /calendar-v2:
+    get:
+      operationId: getCalendarV2
+      tags: [dashboard]
+      summary: Get V2 calendar aggregate
+      description: Aggregates V2 venue events, external events, workshops and participants for the operational calendar.
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: V2 calendar aggregate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarV2"
+        "400":
+          description: Invalid date range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /dashboard/stats:
     get:
       operationId: getDashboardStats
@@ -2040,6 +2071,156 @@ components:
         - nextAction
         - href
         - services
+
+    CalendarV2:
+      type: object
+      properties:
+        summary:
+          $ref: "#/components/schemas/CalendarV2Summary"
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarV2Day"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarV2Item"
+      required:
+        - summary
+        - days
+        - items
+
+    CalendarV2Summary:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+        totalItems:
+          type: integer
+        spaceOccupyingItems:
+          type: integer
+        externalItems:
+          type: integer
+        workshops:
+          type: integer
+        freeDays:
+          type: integer
+        busyDays:
+          type: integer
+        almostFullDays:
+          type: integer
+        fullDays:
+          type: integer
+      required:
+        - startDate
+        - endDate
+        - totalItems
+        - spaceOccupyingItems
+        - externalItems
+        - workshops
+        - freeDays
+        - busyDays
+        - almostFullDays
+        - fullDays
+
+    CalendarV2DayStatus:
+      type: string
+      enum: [free, busy, almost_full, full]
+
+    CalendarV2ItemType:
+      type: string
+      enum: [venue_event, external_event, workshop]
+
+    CalendarV2Day:
+      type: object
+      properties:
+        date:
+          type: string
+        status:
+          $ref: "#/components/schemas/CalendarV2DayStatus"
+        spaceSlotsUsed:
+          type: integer
+        spaceSlotsTotal:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarV2Item"
+      required:
+        - date
+        - status
+        - spaceSlotsUsed
+        - spaceSlotsTotal
+        - items
+
+    CalendarV2Item:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/CalendarV2ItemType"
+        title:
+          type: string
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        customerName:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        servicesLabels:
+          type: array
+          items:
+            type: string
+        paymentStatus:
+          type: ["string", "null"]
+        amountPaid:
+          type: ["number", "null"]
+        totalPrice:
+          type: ["number", "null"]
+        pendingAmount:
+          type: ["number", "null"]
+        capacity:
+          type: ["integer", "null"]
+        activeParticipantsCount:
+          type: ["integer", "null"]
+        availableSeats:
+          type: ["integer", "null"]
+        totalReceived:
+          type: ["number", "null"]
+        totalPending:
+          type: ["number", "null"]
+        occupiesSpace:
+          type: boolean
+        status:
+          type: string
+      required:
+        - id
+        - type
+        - title
+        - date
+        - startTime
+        - endTime
+        - customerName
+        - location
+        - servicesLabels
+        - paymentStatus
+        - amountPaid
+        - totalPrice
+        - pendingAmount
+        - capacity
+        - activeParticipantsCount
+        - availableSeats
+        - totalReceived
+        - totalPending
+        - occupiesSpace
+        - status
 
     Task:
       type: object
