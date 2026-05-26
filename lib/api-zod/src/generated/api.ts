@@ -1316,6 +1316,136 @@ export const GetCalendarV2Response = zod.object({
 });
 
 /**
+ * Aggregates V2 venue events, external events, services, workshops and participants for business reports.
+ * @summary Get V2 reports aggregate
+ */
+export const getReportsV2QueryStartDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+export const getReportsV2QueryEndDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+
+export const GetReportsV2QueryParams = zod.object({
+  startDate: zod.coerce
+    .string()
+    .regex(getReportsV2QueryStartDateRegExp)
+    .optional(),
+  endDate: zod.coerce.string().regex(getReportsV2QueryEndDateRegExp).optional(),
+});
+
+export const GetReportsV2Response = zod.object({
+  summary: zod.object({
+    startDate: zod.string(),
+    endDate: zod.string(),
+    totalRevenue: zod.number(),
+    totalReceived: zod.number(),
+    totalPending: zod.number(),
+    eventCount: zod.number(),
+    averageTicket: zod.number(),
+  }),
+  areas: zod.object({
+    venueEvents: zod.object({
+      eventCount: zod.number(),
+      revenue: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+      averageTicket: zod.number(),
+    }),
+    externalEvents: zod.object({
+      eventCount: zod.number(),
+      revenue: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+      averageTicket: zod.number(),
+    }),
+    workshops: zod.object({
+      eventCount: zod.number(),
+      revenue: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+      averageTicket: zod.number(),
+    }),
+  }),
+  venueEvents: zod.object({
+    partyCount: zod.number(),
+    revenue: zod.number(),
+    received: zod.number(),
+    pending: zod.number(),
+    topPacks: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    revenueByPack: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    averageChildren: zod.number(),
+    sources: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+  }),
+  externalEvents: zod.object({
+    eventCount: zod.number(),
+    revenue: zod.number(),
+    received: zod.number(),
+    pending: zod.number(),
+    topServices: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    revenueByServiceType: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    serviceCombinations: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    averageTicket: zod.number(),
+  }),
+  workshops: zod.object({
+    workshopCount: zod.number(),
+    activeRegistrations: zod.number(),
+    occupiedSeats: zod.number(),
+    freeSeats: zod.number(),
+    occupancyRate: zod.number(),
+    received: zod.number(),
+    pending: zod.number(),
+    participantsByPaymentStatus: zod.object({
+      paid: zod.number(),
+      partial: zod.number(),
+      unpaid: zod.number(),
+    }),
+  }),
+});
+
+/**
  * @summary Get dashboard statistics
  */
 export const GetDashboardStatsResponse = zod.object({

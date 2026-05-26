@@ -747,6 +747,145 @@ function calendarV2Data(startDate: string, endDate: string) {
   };
 }
 
+function reportStatFromMap(map: Map<string, { count: number; revenue: number }>, totalCount: number) {
+  return [...map.entries()]
+    .map(([label, value]) => ({
+      label,
+      count: value.count,
+      revenue: Math.round(value.revenue * 100) / 100,
+      percentage: totalCount > 0 ? Math.round((value.count / totalCount) * 10000) / 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count || b.revenue - a.revenue || a.label.localeCompare(b.label));
+}
+
+function addReportStat(map: Map<string, { count: number; revenue: number }>, label: string, revenue: number) {
+  const current = map.get(label) ?? { count: 0, revenue: 0 };
+  map.set(label, { count: current.count + 1, revenue: current.revenue + revenue });
+}
+
+function reportAreaSummary(count: number, revenue: number, received: number, pending: number) {
+  return {
+    eventCount: count,
+    revenue: Math.round(revenue * 100) / 100,
+    received: Math.round(received * 100) / 100,
+    pending: Math.round(pending * 100) / 100,
+    averageTicket: count > 0 ? Math.round((revenue / count) * 100) / 100 : 0,
+  };
+}
+
+function reportsV2Data(startDate: string, endDate: string) {
+  const activeVenueEvents = venueEvents.filter(
+    (event) => isActiveStatus(event.status) && event.eventDate >= startDate && event.eventDate <= endDate,
+  );
+  const activeExternalEvents = externalEvents.filter(
+    (event) => isActiveStatus(event.status) && event.eventDate >= startDate && event.eventDate <= endDate,
+  );
+  const activeExternalIds = new Set(activeExternalEvents.map((event) => event.id));
+  const activeExternalServices = externalEventServices.filter((service) => activeExternalIds.has(service.externalEventId));
+  const activeWorkshops = workshops.filter(
+    (workshop) => isActiveStatus(workshop.status) && workshop.date >= startDate && workshop.date <= endDate,
+  );
+  const activeWorkshopIds = new Set(activeWorkshops.map((workshop) => workshop.id));
+  const activeWorkshopParticipants = workshopParticipants.filter(
+    (participant) => activeWorkshopIds.has(participant.workshopId) && isActiveWorkshopParticipant(participant),
+  );
+
+  const packStats = new Map<string, { count: number; revenue: number }>();
+  const sourceStats = new Map<string, { count: number; revenue: number }>();
+  const venueRevenue = activeVenueEvents.reduce((sum, event) => {
+    addReportStat(packStats, event.packName || "Sem pack", event.totalPrice);
+    if (event.source) addReportStat(sourceStats, event.source, event.totalPrice);
+    return sum + event.totalPrice;
+  }, 0);
+  const venueReceived = activeVenueEvents.reduce((sum, event) => sum + event.amountPaid, 0);
+  const venuePending = Math.max(0, venueRevenue - venueReceived);
+  const venueAverageChildren =
+    activeVenueEvents.length > 0
+      ? Math.round((activeVenueEvents.reduce((sum, event) => sum + event.childrenCount, 0) / activeVenueEvents.length) * 100) / 100
+      : 0;
+
+  const serviceStats = new Map<string, { count: number; revenue: number }>();
+  const combinationStats = new Map<string, { count: number; revenue: number }>();
+  const externalRevenue = activeExternalEvents.reduce((sum, event) => {
+    const services = activeExternalServices
+      .filter((service) => service.externalEventId === event.id)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    for (const service of services) addReportStat(serviceStats, service.serviceLabel || service.serviceType, service.price);
+    addReportStat(
+      combinationStats,
+      services.length > 0 ? services.map((service) => service.serviceLabel || service.serviceType).join(" + ") : "Sem servicos",
+      event.totalPrice,
+    );
+    return sum + event.totalPrice;
+  }, 0);
+  const externalReceived = activeExternalEvents.reduce((sum, event) => sum + event.amountPaid, 0);
+  const externalPending = Math.max(0, externalRevenue - externalReceived);
+
+  const workshopReceived = activeWorkshopParticipants.reduce((sum, participant) => sum + participant.amountPaid, 0);
+  const workshopPending = activeWorkshopParticipants.reduce((sum, participant) => sum + participant.amountDue, 0);
+  const workshopCapacity = activeWorkshops.reduce((sum, workshop) => sum + workshop.capacity, 0);
+  const workshopPaymentCounts = {
+    paid: activeWorkshopParticipants.filter((participant) => participant.paymentStatus === "paid").length,
+    partial: activeWorkshopParticipants.filter((participant) => participant.paymentStatus === "partial").length,
+    unpaid: activeWorkshopParticipants.filter((participant) => participant.paymentStatus === "unpaid").length,
+  };
+
+  const venueArea = reportAreaSummary(activeVenueEvents.length, venueRevenue, venueReceived, venuePending);
+  const externalArea = reportAreaSummary(activeExternalEvents.length, externalRevenue, externalReceived, externalPending);
+  const workshopArea = reportAreaSummary(activeWorkshops.length, workshopReceived + workshopPending, workshopReceived, workshopPending);
+  const totalRevenue = venueArea.revenue + externalArea.revenue + workshopArea.revenue;
+  const totalReceived = venueArea.received + externalArea.received + workshopArea.received;
+  const totalPending = venueArea.pending + externalArea.pending + workshopArea.pending;
+  const eventCount = venueArea.eventCount + externalArea.eventCount + workshopArea.eventCount;
+
+  return {
+    summary: {
+      startDate,
+      endDate,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      totalReceived: Math.round(totalReceived * 100) / 100,
+      totalPending: Math.round(totalPending * 100) / 100,
+      eventCount,
+      averageTicket: eventCount > 0 ? Math.round((totalRevenue / eventCount) * 100) / 100 : 0,
+    },
+    areas: {
+      venueEvents: venueArea,
+      externalEvents: externalArea,
+      workshops: workshopArea,
+    },
+    venueEvents: {
+      partyCount: activeVenueEvents.length,
+      revenue: venueArea.revenue,
+      received: venueArea.received,
+      pending: venueArea.pending,
+      topPacks: reportStatFromMap(packStats, activeVenueEvents.length),
+      revenueByPack: reportStatFromMap(packStats, activeVenueEvents.length),
+      averageChildren: venueAverageChildren,
+      sources: reportStatFromMap(sourceStats, activeVenueEvents.length),
+    },
+    externalEvents: {
+      eventCount: activeExternalEvents.length,
+      revenue: externalArea.revenue,
+      received: externalArea.received,
+      pending: externalArea.pending,
+      topServices: reportStatFromMap(serviceStats, activeExternalServices.length),
+      revenueByServiceType: reportStatFromMap(serviceStats, activeExternalServices.length),
+      serviceCombinations: reportStatFromMap(combinationStats, activeExternalEvents.length),
+      averageTicket: externalArea.averageTicket,
+    },
+    workshops: {
+      workshopCount: activeWorkshops.length,
+      activeRegistrations: activeWorkshopParticipants.length,
+      occupiedSeats: activeWorkshopParticipants.length,
+      freeSeats: Math.max(0, workshopCapacity - activeWorkshopParticipants.length),
+      occupancyRate: workshopCapacity > 0 ? Math.round((activeWorkshopParticipants.length / workshopCapacity) * 10000) / 100 : 0,
+      received: workshopArea.received,
+      pending: workshopArea.pending,
+      participantsByPaymentStatus: workshopPaymentCounts,
+    },
+  };
+}
+
 function canAddActiveWorkshopParticipant(workshop: Workshop, status: WorkshopParticipant["status"], excludeParticipantId?: string) {
   if (status === "cancelled") return true;
 
@@ -1011,6 +1150,21 @@ export function devApiPlugin(): Plugin {
           }
 
           return json(res, 200, calendarV2Data(startDate, endDate));
+        }
+        if (path === "/reports-v2") {
+          const defaults = defaultCalendarDateRange();
+          const startDate = isValidDateParam(url.searchParams.get("startDate"))
+            ? url.searchParams.get("startDate")!
+            : defaults.startDate;
+          const endDate = isValidDateParam(url.searchParams.get("endDate"))
+            ? url.searchParams.get("endDate")!
+            : defaults.endDate;
+
+          if (startDate > endDate) {
+            return json(res, 400, { error: "startDate must be before or equal to endDate" });
+          }
+
+          return json(res, 200, reportsV2Data(startDate, endDate));
         }
         if (path === "/dashboard/stats") return json(res, 200, stats());
         if (path === "/dashboard/upcoming") {

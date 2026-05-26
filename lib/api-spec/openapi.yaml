@@ -730,6 +730,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /reports-v2:
+    get:
+      operationId: getReportsV2
+      tags: [dashboard]
+      summary: Get V2 reports aggregate
+      description: Aggregates V2 venue events, external events, services, workshops and participants for business reports.
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: V2 reports aggregate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportsV2"
+        "400":
+          description: Invalid date range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /dashboard/stats:
     get:
       operationId: getDashboardStats
@@ -2221,6 +2252,216 @@ components:
         - totalPending
         - occupiesSpace
         - status
+
+    ReportsV2:
+      type: object
+      properties:
+        summary:
+          $ref: "#/components/schemas/ReportsV2Summary"
+        areas:
+          $ref: "#/components/schemas/ReportsV2Areas"
+        venueEvents:
+          $ref: "#/components/schemas/ReportsV2VenueEvents"
+        externalEvents:
+          $ref: "#/components/schemas/ReportsV2ExternalEvents"
+        workshops:
+          $ref: "#/components/schemas/ReportsV2Workshops"
+      required:
+        - summary
+        - areas
+        - venueEvents
+        - externalEvents
+        - workshops
+
+    ReportsV2Summary:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+        totalRevenue:
+          type: number
+        totalReceived:
+          type: number
+        totalPending:
+          type: number
+        eventCount:
+          type: integer
+        averageTicket:
+          type: number
+      required:
+        - startDate
+        - endDate
+        - totalRevenue
+        - totalReceived
+        - totalPending
+        - eventCount
+        - averageTicket
+
+    ReportsV2Areas:
+      type: object
+      properties:
+        venueEvents:
+          $ref: "#/components/schemas/ReportsV2AreaSummary"
+        externalEvents:
+          $ref: "#/components/schemas/ReportsV2AreaSummary"
+        workshops:
+          $ref: "#/components/schemas/ReportsV2AreaSummary"
+      required:
+        - venueEvents
+        - externalEvents
+        - workshops
+
+    ReportsV2AreaSummary:
+      type: object
+      properties:
+        eventCount:
+          type: integer
+        revenue:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        averageTicket:
+          type: number
+      required:
+        - eventCount
+        - revenue
+        - received
+        - pending
+        - averageTicket
+
+    ReportsV2RevenueStat:
+      type: object
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+        revenue:
+          type: number
+        percentage:
+          type: number
+      required:
+        - label
+        - count
+        - revenue
+        - percentage
+
+    ReportsV2VenueEvents:
+      type: object
+      properties:
+        partyCount:
+          type: integer
+        revenue:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        topPacks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        revenueByPack:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        averageChildren:
+          type: number
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+      required:
+        - partyCount
+        - revenue
+        - received
+        - pending
+        - topPacks
+        - revenueByPack
+        - averageChildren
+        - sources
+
+    ReportsV2ExternalEvents:
+      type: object
+      properties:
+        eventCount:
+          type: integer
+        revenue:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        topServices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        revenueByServiceType:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        serviceCombinations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        averageTicket:
+          type: number
+      required:
+        - eventCount
+        - revenue
+        - received
+        - pending
+        - topServices
+        - revenueByServiceType
+        - serviceCombinations
+        - averageTicket
+
+    ReportsV2PaymentStatusCounts:
+      type: object
+      properties:
+        paid:
+          type: integer
+        partial:
+          type: integer
+        unpaid:
+          type: integer
+      required:
+        - paid
+        - partial
+        - unpaid
+
+    ReportsV2Workshops:
+      type: object
+      properties:
+        workshopCount:
+          type: integer
+        activeRegistrations:
+          type: integer
+        occupiedSeats:
+          type: integer
+        freeSeats:
+          type: integer
+        occupancyRate:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        participantsByPaymentStatus:
+          $ref: "#/components/schemas/ReportsV2PaymentStatusCounts"
+      required:
+        - workshopCount
+        - activeRegistrations
+        - occupiedSeats
+        - freeSeats
+        - occupancyRate
+        - received
+        - pending
+        - participantsByPaymentStatus
 
     Task:
       type: object

@@ -939,6 +939,84 @@ export interface CalendarV2 {
   items: CalendarV2Item[];
 }
 
+export interface ReportsV2Summary {
+  startDate: string;
+  endDate: string;
+  totalRevenue: number;
+  totalReceived: number;
+  totalPending: number;
+  eventCount: number;
+  averageTicket: number;
+}
+
+export interface ReportsV2AreaSummary {
+  eventCount: number;
+  revenue: number;
+  received: number;
+  pending: number;
+  averageTicket: number;
+}
+
+export interface ReportsV2Areas {
+  venueEvents: ReportsV2AreaSummary;
+  externalEvents: ReportsV2AreaSummary;
+  workshops: ReportsV2AreaSummary;
+}
+
+export interface ReportsV2RevenueStat {
+  label: string;
+  count: number;
+  revenue: number;
+  percentage: number;
+}
+
+export interface ReportsV2VenueEvents {
+  partyCount: number;
+  revenue: number;
+  received: number;
+  pending: number;
+  topPacks: ReportsV2RevenueStat[];
+  revenueByPack: ReportsV2RevenueStat[];
+  averageChildren: number;
+  sources: ReportsV2RevenueStat[];
+}
+
+export interface ReportsV2ExternalEvents {
+  eventCount: number;
+  revenue: number;
+  received: number;
+  pending: number;
+  topServices: ReportsV2RevenueStat[];
+  revenueByServiceType: ReportsV2RevenueStat[];
+  serviceCombinations: ReportsV2RevenueStat[];
+  averageTicket: number;
+}
+
+export interface ReportsV2PaymentStatusCounts {
+  paid: number;
+  partial: number;
+  unpaid: number;
+}
+
+export interface ReportsV2Workshops {
+  workshopCount: number;
+  activeRegistrations: number;
+  occupiedSeats: number;
+  freeSeats: number;
+  occupancyRate: number;
+  received: number;
+  pending: number;
+  participantsByPaymentStatus: ReportsV2PaymentStatusCounts;
+}
+
+export interface ReportsV2 {
+  summary: ReportsV2Summary;
+  areas: ReportsV2Areas;
+  venueEvents: ReportsV2VenueEvents;
+  externalEvents: ReportsV2ExternalEvents;
+  workshops: ReportsV2Workshops;
+}
+
 export interface Task {
   id: number;
   reservationId: number;
@@ -1096,6 +1174,17 @@ export type ListWorkshopsParams = {
 };
 
 export type GetCalendarV2Params = {
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  startDate?: string;
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  endDate?: string;
+};
+
+export type GetReportsV2Params = {
   /**
    * @pattern ^\d{4}-\d{2}-\d{2}$
    */

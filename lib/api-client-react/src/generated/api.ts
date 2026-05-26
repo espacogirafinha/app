@@ -32,6 +32,7 @@ import type {
   GetCalendarReservationsParams,
   GetCalendarV2Params,
   GetReportsDataParams,
+  GetReportsV2Params,
   GetTasksSummaryParams,
   HealthStatus,
   ListExternalEventsParams,
@@ -39,6 +40,7 @@ import type {
   ListVenueEventsParams,
   ListWorkshopsParams,
   ReportsData,
+  ReportsV2,
   Reservation,
   Task,
   TaskSummary,
@@ -2350,6 +2352,101 @@ export function useGetCalendarV2<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetCalendarV2QueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Aggregates V2 venue events, external events, services, workshops and participants for business reports.
+ * @summary Get V2 reports aggregate
+ */
+export const getGetReportsV2Url = (params?: GetReportsV2Params) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/reports-v2?${stringifiedParams}`
+    : `/api/reports-v2`;
+};
+
+export const getReportsV2 = async (
+  params?: GetReportsV2Params,
+  options?: RequestInit,
+): Promise<ReportsV2> => {
+  return customFetch<ReportsV2>(getGetReportsV2Url(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportsV2QueryKey = (params?: GetReportsV2Params) => {
+  return [`/api/reports-v2`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetReportsV2QueryOptions = <
+  TData = Awaited<ReturnType<typeof getReportsV2>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: GetReportsV2Params,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReportsV2>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReportsV2QueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportsV2>>> = ({
+    signal,
+  }) => getReportsV2(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReportsV2>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReportsV2QueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReportsV2>>
+>;
+export type GetReportsV2QueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get V2 reports aggregate
+ */
+
+export function useGetReportsV2<
+  TData = Awaited<ReturnType<typeof getReportsV2>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: GetReportsV2Params,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReportsV2>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReportsV2QueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
