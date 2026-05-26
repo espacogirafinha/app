@@ -1,13 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  eachDayOfInterval,
-  endOfMonth,
-  endOfYear,
-  format,
-  parseISO,
-  startOfMonth,
-  startOfYear,
-} from "date-fns";
+import { endOfMonth, endOfYear, format, parseISO, startOfMonth, startOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   BarChart3,
@@ -20,6 +12,7 @@ import {
   PieChart as PieChartIcon,
   Star,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import {
   Bar,
@@ -43,23 +36,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MAX_EVENTS_PER_DAY } from "@/lib/constants";
-import { useListReservations } from "@workspace/api-client-react";
-import type { Reservation } from "@workspace/api-client-react";
+import { useGetReportsV2, type ReportsV2AreaSummary, type ReportsV2RevenueStat } from "@workspace/api-client-react";
 
 type PeriodMode = "month" | "year" | "custom";
-
-type RankedStat = {
-  name: string;
-  count: number;
-  revenue: number;
-  percentage: number;
-};
 
 const MONTHS = [
   "Janeiro",
   "Fevereiro",
-  "Março",
+  "Marco",
   "Abril",
   "Maio",
   "Junho",
@@ -73,7 +57,7 @@ const MONTHS = [
 
 const COLORS = ["#ec4899", "#14b8a6", "#f59e0b", "#6366f1", "#84cc16", "#f97316"];
 
-const euro = (value: number) => `${value.toFixed(2)} €`;
+const euro = (value: number) => `${value.toFixed(2)} EUR`;
 
 export default function ReportsPage() {
   const now = new Date();
@@ -87,8 +71,8 @@ export default function ReportsPage() {
     if (mode === "year") {
       const base = new Date(selectedYear, 0, 1);
       return {
-        dateFrom: format(startOfYear(base), "yyyy-MM-dd"),
-        dateTo: format(endOfYear(base), "yyyy-MM-dd"),
+        startDate: format(startOfYear(base), "yyyy-MM-dd"),
+        endDate: format(endOfYear(base), "yyyy-MM-dd"),
         label: selectedYear.toString(),
       };
     }
@@ -96,76 +80,65 @@ export default function ReportsPage() {
     if (mode === "custom") {
       const safeStart = customStart || format(startOfMonth(now), "yyyy-MM-dd");
       const safeEnd = customEnd || safeStart;
+      const startDate = safeStart <= safeEnd ? safeStart : safeEnd;
+      const endDate = safeStart <= safeEnd ? safeEnd : safeStart;
       return {
-        dateFrom: safeStart <= safeEnd ? safeStart : safeEnd,
-        dateTo: safeStart <= safeEnd ? safeEnd : safeStart,
-        label: `${format(parseISO(safeStart <= safeEnd ? safeStart : safeEnd), "dd MMM yyyy", { locale: ptBR })} - ${format(parseISO(safeStart <= safeEnd ? safeEnd : safeStart), "dd MMM yyyy", { locale: ptBR })}`,
+        startDate,
+        endDate,
+        label: `${format(parseISO(startDate), "dd MMM yyyy", { locale: ptBR })} - ${format(parseISO(endDate), "dd MMM yyyy", { locale: ptBR })}`,
       };
     }
 
     const base = new Date(selectedYear, selectedMonth - 1, 1);
     return {
-      dateFrom: format(startOfMonth(base), "yyyy-MM-dd"),
-      dateTo: format(endOfMonth(base), "yyyy-MM-dd"),
+      startDate: format(startOfMonth(base), "yyyy-MM-dd"),
+      endDate: format(endOfMonth(base), "yyyy-MM-dd"),
       label: `${MONTHS[selectedMonth - 1]} ${selectedYear}`,
     };
   }, [customEnd, customStart, mode, now, selectedMonth, selectedYear]);
 
-  const { data: reservations, isLoading } = useListReservations();
+  const { data: report, isLoading, isError } = useGetReportsV2({
+    startDate: period.startDate,
+    endDate: period.endDate,
+  });
 
-  const filteredReservations = useMemo(
-    () => filterReservationsByDate(reservations ?? [], period.dateFrom, period.dateTo),
-    [period.dateFrom, period.dateTo, reservations],
-  );
-
-  const report = useMemo(() => buildReport(filteredReservations, period.dateFrom, period.dateTo), [filteredReservations, period]);
-  const monthlyTrend = useMemo(() => buildMonthlyTrend(reservations ?? [], selectedYear), [reservations, selectedYear]);
+  const areaRows = useMemo(() => {
+    if (!report) return [];
+    return [
+      { name: "Festas no Espaco", ...report.areas.venueEvents },
+      { name: "Servicos Externos", ...report.areas.externalEvents },
+      { name: "Workshops/Formacoes", ...report.areas.workshops },
+    ];
+  }, [report]);
 
   const exportCsv = () => {
-    const rows = filteredReservations;
-    const headers = [
-      "Cliente",
-      "Data",
-      "Hora",
-      "Tipo",
-      "Pack",
-      "Total",
-      "Recebido",
-      "Por receber",
-      "Extras",
-      "Origem",
-      "Notas",
+    if (!report) return;
+
+    const rows = [
+      ["Periodo", period.startDate, period.endDate],
+      ["Resumo", "Receita total", report.summary.totalRevenue],
+      ["Resumo", "Recebido", report.summary.totalReceived],
+      ["Resumo", "Por receber", report.summary.totalPending],
+      ["Resumo", "Eventos", report.summary.eventCount],
+      ["Resumo", "Ticket medio", report.summary.averageTicket],
+      ...areaRows.map((area) => [area.name, "Receita", area.revenue]),
+      ...areaRows.map((area) => [area.name, "Recebido", area.received]),
+      ...areaRows.map((area) => [area.name, "Por receber", area.pending]),
     ];
 
-    const csvRows = rows.map((reservation) =>
-      [
-        csv(reservation.customerName),
-        reservation.eventDate,
-        reservation.eventTime,
-        csv(reservation.serviceType),
-        csv(reservation.pack),
-        reservation.totalPrice,
-        reservation.amountPaid,
-        reservation.remainingBalance,
-        csv(reservation.extras || ""),
-        csv(getOrigin(reservation.notes)),
-        csv(reservation.notes || ""),
-      ].join(","),
-    );
-
-    downloadCsv([headers.join(","), ...csvRows].join("\n"), `relatorio_girafinha_${period.dateFrom}_${period.dateTo}.csv`);
+    downloadCsv(rows.map((row) => row.map(csv).join(",")).join("\n"), `relatorio_v2_${period.startDate}_${period.endDate}.csv`);
   };
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Relatórios</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Relatorios</h1>
           <p className="mt-1 text-sm md:text-base text-muted-foreground">
-            Faturação, ocupação e desempenho dos serviços para decisões internas.
+            Analise V2 por festas no espaco, servicos externos e workshops/formacoes.
           </p>
         </div>
-        <Button variant="outline" onClick={exportCsv} disabled={filteredReservations.length === 0} className="min-h-[40px] rounded-xl">
+        <Button variant="outline" onClick={exportCsv} disabled={!report} className="min-h-[40px] rounded-xl">
           <Download className="h-4 w-4" />
           Exportar CSV
         </Button>
@@ -178,7 +151,7 @@ export default function ReportsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="month">Mês</SelectItem>
+              <SelectItem value="month">Mes</SelectItem>
               <SelectItem value="year">Ano</SelectItem>
               <SelectItem value="custom">Intervalo</SelectItem>
             </SelectContent>
@@ -221,14 +194,16 @@ export default function ReportsPage() {
         <div className="flex justify-center p-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
         </div>
+      ) : isError || !report ? (
+        <EmptyState text="Nao foi possivel carregar os relatorios V2." />
       ) : (
         <>
           <div className="grid gap-3 grid-cols-2 xl:grid-cols-5">
-            <MetricCard title="Receita total" value={euro(report.revenue)} icon={Euro} tone="emerald" />
-            <MetricCard title="Recebido" value={euro(report.paid)} icon={TrendingUp} tone="teal" />
-            <MetricCard title="Por receber" value={euro(report.pending)} icon={Euro} tone="amber" />
-            <MetricCard title="Reservas" value={String(report.count)} icon={CalendarDays} tone="pink" />
-            <MetricCard title="Ticket médio" value={euro(report.avgTicket)} icon={FileText} />
+            <MetricCard title="Receita total" value={euro(report.summary.totalRevenue)} icon={Euro} tone="emerald" />
+            <MetricCard title="Recebido" value={euro(report.summary.totalReceived)} icon={TrendingUp} tone="teal" />
+            <MetricCard title="Por receber" value={euro(report.summary.totalPending)} icon={Euro} tone="amber" />
+            <MetricCard title="Eventos" value={String(report.summary.eventCount)} icon={CalendarDays} tone="pink" />
+            <MetricCard title="Ticket medio" value={euro(report.summary.averageTicket)} icon={FileText} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
@@ -236,19 +211,19 @@ export default function ReportsPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <BarChart3 className="h-5 w-5 text-primary" />
-                  Faturação por mês em {selectedYear}
+                  Receita por area
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyTrend} margin={{ top: 8, right: 10, left: -10, bottom: 0 }}>
+                    <BarChart data={areaRows} margin={{ top: 8, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => `${value}€`} />
-                      <Tooltip formatter={(value: number, name) => [euro(value), name === "paid" ? "Recebido" : "Receita"]} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => `${value}EUR`} />
+                      <Tooltip formatter={(value: number, name) => [euro(value), name === "received" ? "Recebido" : "Receita"]} />
                       <Bar dataKey="revenue" fill="#ec4899" radius={[6, 6, 0, 0]} name="Receita" />
-                      <Bar dataKey="paid" fill="#14b8a6" radius={[6, 6, 0, 0]} name="Recebido" />
+                      <Bar dataKey="received" fill="#14b8a6" radius={[6, 6, 0, 0]} name="Recebido" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -258,59 +233,25 @@ export default function ReportsPage() {
             <Card className="shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <CalendarDays className="h-5 w-5 text-primary" />
-                  Ocupação
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <SmallMetric label="Dias com reservas" value={String(report.occupancy.bookedDays)} />
-                  <SmallMetric label="Dias lotados" value={String(report.occupancy.fullDays)} />
-                  <SmallMetric label="Slots usados" value={`${report.occupancy.usedSlots}/${report.occupancy.maxSlots}`} />
-                  <SmallMetric label="Slots livres" value={String(report.occupancy.availableSlots)} />
-                </div>
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Taxa de ocupação</span>
-                    <span>{report.occupancy.rate}%</span>
-                  </div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, report.occupancy.rate)}%` }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            <RankingCard title="Packs mais vendidos" icon={Star} rows={report.packStats} />
-            <RankingCard title="Tipos de serviço" icon={PieChartIcon} rows={report.serviceStats} />
-            <RankingCard title="Extras mais vendidos" icon={PackagePlus} rows={report.extraStats} empty="Sem extras neste período." />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-            <Card className="shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
                   <PieChartIcon className="h-5 w-5 text-primary" />
-                  Distribuição dos serviços
+                  Distribuicao por eventos
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {report.serviceStats.length > 0 ? (
+                {areaRows.some((area) => area.eventCount > 0) ? (
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={report.serviceStats}
+                          data={areaRows}
                           cx="50%"
                           cy="50%"
-                          outerRadius={96}
-                          dataKey="count"
+                          outerRadius={90}
+                          dataKey="eventCount"
                           nameKey="name"
-                          label={({ percentage }) => `${percentage}%`}
+                          label={({ eventCount }) => String(eventCount)}
                         >
-                          {report.serviceStats.map((_, index) => (
+                          {areaRows.map((_, index) => (
                             <Cell key={index} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -319,156 +260,88 @@ export default function ReportsPage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <EmptyState text="Sem reservas neste período." />
+                  <EmptyState text="Sem eventos neste periodo." />
                 )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <AreaCard title="Festas no Espaco" summary={report.areas.venueEvents} />
+            <AreaCard title="Servicos Externos" summary={report.areas.externalEvents} />
+            <AreaCard title="Workshops/Formacoes" summary={report.areas.workshops} />
+          </div>
+
+          <section className="grid gap-4 xl:grid-cols-2">
+            <Card className="shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Star className="h-5 w-5 text-primary" />
+                  Festas no Espaco
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <SmallMetric label="Festas" value={String(report.venueEvents.partyCount)} />
+                  <SmallMetric label="Media criancas" value={String(report.venueEvents.averageChildren)} />
+                  <SmallMetric label="Recebido" value={euro(report.venueEvents.received)} />
+                  <SmallMetric label="Por receber" value={euro(report.venueEvents.pending)} />
+                </div>
+                <RankingCard title="Packs mais vendidos" icon={Star} rows={report.venueEvents.topPacks} />
+                <RankingCard title="Receita por pack" icon={BarChart3} rows={report.venueEvents.revenueByPack} />
+                <RankingCard title="Origem dos clientes" icon={Users} rows={report.venueEvents.sources} empty="Sem origem registada neste periodo." />
               </CardContent>
             </Card>
 
             <Card className="shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Origem dos clientes</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <PackagePlus className="h-5 w-5 text-primary" />
+                  Servicos Externos
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {report.originStats.length > 0 ? (
-                  report.originStats.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between rounded-lg border border-border p-3">
-                      <span className="text-sm font-medium">{item.name}</span>
-                      <span className="text-sm font-bold">{item.count}</span>
-                    </div>
-                  ))
-                ) : (
-                  <EmptyState text="Sem origem registada nas notas." />
-                )}
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <SmallMetric label="Eventos" value={String(report.externalEvents.eventCount)} />
+                  <SmallMetric label="Ticket medio" value={euro(report.externalEvents.averageTicket)} />
+                  <SmallMetric label="Recebido" value={euro(report.externalEvents.received)} />
+                  <SmallMetric label="Por receber" value={euro(report.externalEvents.pending)} />
+                </div>
+                <RankingCard title="Servicos mais vendidos" icon={PackagePlus} rows={report.externalEvents.topServices} />
+                <RankingCard title="Receita por servico" icon={BarChart3} rows={report.externalEvents.revenueByServiceType} />
+                <RankingCard title="Combinacoes de servicos" icon={PieChartIcon} rows={report.externalEvents.serviceCombinations} />
               </CardContent>
             </Card>
-          </div>
+          </section>
+
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="h-5 w-5 text-primary" />
+                Workshops/Formacoes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <SmallMetric label="Workshops" value={String(report.workshops.workshopCount)} />
+                <SmallMetric label="Inscricoes ativas" value={String(report.workshops.activeRegistrations)} />
+                <SmallMetric label="Vagas ocupadas" value={String(report.workshops.occupiedSeats)} />
+                <SmallMetric label="Vagas livres" value={String(report.workshops.freeSeats)} />
+                <SmallMetric label="Taxa ocupacao" value={`${report.workshops.occupancyRate}%`} />
+                <SmallMetric label="Recebido" value={euro(report.workshops.received)} />
+                <SmallMetric label="Por receber" value={euro(report.workshops.pending)} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <PaymentStatusCard title="Pagos" value={report.workshops.participantsByPaymentStatus.paid} tone="emerald" />
+                <PaymentStatusCard title="Parciais" value={report.workshops.participantsByPaymentStatus.partial} tone="amber" />
+                <PaymentStatusCard title="Por pagar" value={report.workshops.participantsByPaymentStatus.unpaid} tone="pink" />
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
   );
-}
-
-function filterReservationsByDate(reservations: Reservation[], dateFrom: string, dateTo: string) {
-  return reservations.filter((reservation) => reservation.eventDate >= dateFrom && reservation.eventDate <= dateTo);
-}
-
-function buildReport(reservations: Reservation[], dateFrom: string, dateTo: string) {
-  const packMap = new Map<string, { count: number; revenue: number }>();
-  const serviceMap = new Map<string, { count: number; revenue: number }>();
-  const extraMap = new Map<string, { count: number; revenue: number }>();
-  const originMap = new Map<string, { count: number; revenue: number }>();
-  const occupancyByDate = new Map<string, number>();
-
-  let revenue = 0;
-  let paid = 0;
-  let pending = 0;
-  let extrasRevenue = 0;
-
-  for (const reservation of reservations) {
-    const extras = parseExtras(reservation.extras);
-    const reservationExtrasRevenue = extras.reduce((sum, extra) => sum + extra.revenue, 0);
-    extrasRevenue += reservationExtrasRevenue;
-    revenue += reservation.totalPrice;
-    paid += reservation.amountPaid;
-    pending += reservation.remainingBalance;
-
-    addStat(packMap, reservation.pack, reservation.totalPrice);
-    addStat(serviceMap, reservation.serviceType, reservation.totalPrice);
-
-    for (const extra of extras) addStat(extraMap, extra.name, extra.revenue);
-
-    const origin = getOrigin(reservation.notes);
-    if (origin !== "Sem origem") addStat(originMap, origin, reservation.totalPrice);
-
-    if (reservation.serviceType !== "Serviços externos") {
-      occupancyByDate.set(reservation.eventDate, (occupancyByDate.get(reservation.eventDate) ?? 0) + 1);
-    }
-  }
-
-  const days = eachDayOfInterval({ start: parseISO(dateFrom), end: parseISO(dateTo) }).length;
-  const usedSlots = Array.from(occupancyByDate.values()).reduce((sum, count) => sum + Math.min(count, MAX_EVENTS_PER_DAY), 0);
-  const maxSlots = days * MAX_EVENTS_PER_DAY;
-
-  return {
-    count: reservations.length,
-    revenue,
-    paid,
-    pending,
-    avgTicket: reservations.length > 0 ? revenue / reservations.length : 0,
-    baseRevenue: Math.max(0, revenue - extrasRevenue),
-    extrasRevenue,
-    packStats: toRankedStats(packMap, reservations.length),
-    serviceStats: toRankedStats(serviceMap, reservations.length),
-    extraStats: toRankedStats(extraMap, Math.max(1, Array.from(extraMap.values()).reduce((sum, item) => sum + item.count, 0))),
-    originStats: toRankedStats(originMap, reservations.length),
-    occupancy: {
-      bookedDays: occupancyByDate.size,
-      fullDays: Array.from(occupancyByDate.values()).filter((count) => count >= MAX_EVENTS_PER_DAY).length,
-      usedSlots,
-      maxSlots,
-      availableSlots: Math.max(0, maxSlots - usedSlots),
-      rate: maxSlots > 0 ? Math.round((usedSlots / maxSlots) * 1000) / 10 : 0,
-    },
-  };
-}
-
-function buildMonthlyTrend(reservations: Reservation[], year: number) {
-  return MONTHS.map((month, index) => {
-    const rows = reservations.filter(
-      (reservation) =>
-        Number(reservation.eventDate.slice(0, 4)) === year &&
-        Number(reservation.eventDate.slice(5, 7)) === index + 1,
-    );
-    return {
-      month: month.slice(0, 3),
-      revenue: rows.reduce((sum, reservation) => sum + reservation.totalPrice, 0),
-      paid: rows.reduce((sum, reservation) => sum + reservation.amountPaid, 0),
-      reservations: rows.length,
-    };
-  });
-}
-
-function addStat(map: Map<string, { count: number; revenue: number }>, name: string, revenue: number) {
-  const current = map.get(name) ?? { count: 0, revenue: 0 };
-  map.set(name, { count: current.count + 1, revenue: current.revenue + revenue });
-}
-
-function toRankedStats(map: Map<string, { count: number; revenue: number }>, totalCount: number): RankedStat[] {
-  return Array.from(map.entries())
-    .map(([name, item]) => ({
-      name,
-      count: item.count,
-      revenue: item.revenue,
-      percentage: totalCount > 0 ? Math.round((item.count / totalCount) * 1000) / 10 : 0,
-    }))
-    .sort((a, b) => b.count - a.count || b.revenue - a.revenue);
-}
-
-function parseExtras(value?: string | null) {
-  if (!value) return [];
-
-  return value
-    .split(";")
-    .map((raw) => raw.trim())
-    .filter(Boolean)
-    .map((raw) => {
-      const structured = raw.match(/^(.*?)\s+x\s*([\d.,]+)\s+-\s*([\d.,]+)\s*€/);
-      if (structured) {
-        return { name: structured[1].trim(), revenue: Number(structured[3].replace(",", ".")) || 0 };
-      }
-
-      const legacy = raw.match(/^(.*?)\s*\(\+?([\d.,]+)\s*€\)$/);
-      if (legacy) {
-        return { name: legacy[1].trim(), revenue: Number(legacy[2].replace(",", ".")) || 0 };
-      }
-
-      return { name: raw, revenue: 0 };
-    });
-}
-
-function getOrigin(notes?: string | null) {
-  const match = notes?.match(/Origem:\s*([^\n;]+)/i);
-  return match?.[1]?.trim() || "Sem origem";
 }
 
 function YearInput({ value, onChange }: { value: number; onChange: (value: number) => void }) {
@@ -518,51 +391,63 @@ function MetricCard({
   );
 }
 
+function AreaCard({ title, summary }: { title: string; summary: ReportsV2AreaSummary }) {
+  return (
+    <Card className="shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 gap-3">
+        <SmallMetric label="Eventos" value={String(summary.eventCount)} />
+        <SmallMetric label="Ticket medio" value={euro(summary.averageTicket)} />
+        <SmallMetric label="Receita" value={euro(summary.revenue)} />
+        <SmallMetric label="Por receber" value={euro(summary.pending)} />
+      </CardContent>
+    </Card>
+  );
+}
+
 function RankingCard({
   title,
   icon: Icon,
   rows,
-  empty = "Sem dados neste período.",
+  empty = "Sem dados neste periodo.",
 }: {
   title: string;
   icon: React.ElementType;
-  rows: RankedStat[];
+  rows: ReportsV2RevenueStat[];
   empty?: string;
 }) {
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Icon className="h-5 w-5 text-primary" />
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {rows.length === 0 ? (
-          <EmptyState text={empty} />
-        ) : (
-          rows.slice(0, 6).map((row, index) => (
-            <div key={row.name} className="rounded-lg border border-border p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{row.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {row.count} reserva{row.count === 1 ? "" : "s"} · {row.percentage}%
-                  </p>
-                </div>
-                <p className="shrink-0 text-sm font-bold text-emerald-700">{euro(row.revenue)}</p>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <Icon className="h-4 w-4 text-primary" />
+        {title}
+      </div>
+      {rows.length === 0 ? (
+        <EmptyState text={empty} />
+      ) : (
+        rows.slice(0, 6).map((row, index) => (
+          <div key={`${row.label}-${index}`} className="rounded-lg border border-border p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{row.label}</p>
+                <p className="text-xs text-muted-foreground">
+                  {row.count} registo{row.count === 1 ? "" : "s"} - {row.percentage}%
+                </p>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${Math.min(100, row.percentage)}%`, backgroundColor: COLORS[index % COLORS.length] }}
-                />
-              </div>
+              <p className="shrink-0 text-sm font-bold text-emerald-700">{euro(row.revenue)}</p>
             </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${Math.min(100, row.percentage)}%`, backgroundColor: COLORS[index % COLORS.length] }}
+              />
+            </div>
+          </div>
+        ))
+      )}
+    </div>
   );
 }
 
@@ -570,7 +455,23 @@ function SmallMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-border p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-bold">{value}</p>
+      <p className="mt-1 text-lg font-bold">{value}</p>
+    </div>
+  );
+}
+
+function PaymentStatusCard({ title, value, tone }: { title: string; value: number; tone: "emerald" | "amber" | "pink" }) {
+  const className =
+    tone === "emerald"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : tone === "amber"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
+        : "border-primary/20 bg-primary/5 text-primary";
+
+  return (
+    <div className={`rounded-lg border p-3 ${className}`}>
+      <p className="text-xs font-medium opacity-80">{title}</p>
+      <p className="mt-1 text-2xl font-bold">{value}</p>
     </div>
   );
 }
