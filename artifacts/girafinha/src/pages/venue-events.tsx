@@ -227,7 +227,7 @@ function VenueEventRow({
               <Info label="Total" value={`${event.totalPrice.toFixed(2)} €`} />
               <Info label="Pago" value={`${event.amountPaid.toFixed(2)} €`} />
               <Info label="Método" value={event.paymentMethod} />
-              <Info label="Checklist" value="TODO V2: checklist própria de festas" />
+              <Info label="Checklist" value="Checklist operacional da festa sera adicionada numa proxima melhoria." />
               <div className="mt-3 flex flex-wrap gap-2">
                 <VenueEventModal
                   event={event}

@@ -202,6 +202,7 @@ router.get("/dashboard-v2", async (_req, res): Promise<void> => {
   const venueItems = venueEvents.map(venueAgendaItem);
   const externalItems = externalEvents.map((event) => externalAgendaItem(event, servicesByEvent.get(event.id) ?? []));
   const workshopItems = workshops.map((workshop) => workshopAgendaItem(workshop, participantsByWorkshop.get(workshop.id) ?? []));
+  const activeWorkshopIds = new Set(workshops.filter((workshop) => isActiveStatus(workshop.status)).map((workshop) => workshop.id));
   const allItems = [...venueItems, ...externalItems, ...workshopItems];
   const activeItems = allItems.filter((item) => isActiveStatus(item.status));
 
@@ -222,7 +223,9 @@ router.get("/dashboard-v2", async (_req, res): Promise<void> => {
       externalEvents: areaSummary(externalItems, today, nextSevenDaysEnd),
       workshops: {
         ...areaSummary(workshopItems, today, nextSevenDaysEnd),
-        activeParticipantsCount: workshopParticipants.filter((participant) => ACTIVE_PARTICIPANT_STATUSES.has(participant.status)).length,
+        activeParticipantsCount: workshopParticipants.filter(
+          (participant) => activeWorkshopIds.has(participant.workshopId) && ACTIVE_PARTICIPANT_STATUSES.has(participant.status),
+        ).length,
         availableSeats: workshops
           .filter((workshop) => isActiveStatus(workshop.status))
           .reduce((sum, workshop) => {

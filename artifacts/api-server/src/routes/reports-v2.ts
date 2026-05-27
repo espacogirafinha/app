@@ -75,6 +75,10 @@ function areaSummary(count: number, revenue: number, received: number, pending: 
   };
 }
 
+function pendingAmount(total: number, paid: number) {
+  return Math.max(0, total - paid);
+}
+
 function statFromMap(map: Map<string, { count: number; revenue: number }>, totalCount: number): RevenueStat[] {
   return [...map.entries()]
     .map(([label, value]) => ({
@@ -114,6 +118,7 @@ function venueReport(venueEvents: VenueEventRow[]) {
   const sourceStats = new Map<string, { count: number; revenue: number }>();
   let revenue = 0;
   let received = 0;
+  let pending = 0;
   let childrenTotal = 0;
 
   for (const event of venueEvents) {
@@ -121,6 +126,7 @@ function venueReport(venueEvents: VenueEventRow[]) {
     const paid = money(event.amountPaid);
     revenue += total;
     received += paid;
+    pending += pendingAmount(total, paid);
     childrenTotal += event.childrenCount ?? 0;
     addStat(packStats, event.packName || "Sem pack", total);
     if (event.source) addStat(sourceStats, event.source, total);
@@ -130,7 +136,7 @@ function venueReport(venueEvents: VenueEventRow[]) {
     partyCount: venueEvents.length,
     revenue: roundNumber(revenue),
     received: roundNumber(received),
-    pending: roundNumber(Math.max(0, revenue - received)),
+    pending: roundNumber(pending),
     topPacks: statFromMap(packStats, venueEvents.length),
     revenueByPack: statFromMap(packStats, venueEvents.length),
     averageChildren: venueEvents.length > 0 ? roundNumber(childrenTotal / venueEvents.length) : 0,
@@ -144,12 +150,14 @@ function externalReport(externalEvents: ExternalEventRow[], externalServices: Ex
   const combinationStats = new Map<string, { count: number; revenue: number }>();
   let revenue = 0;
   let received = 0;
+  let pending = 0;
 
   for (const event of externalEvents) {
     const total = money(event.totalPrice);
     const paid = money(event.amountPaid);
     revenue += total;
     received += paid;
+    pending += pendingAmount(total, paid);
 
     const services = (servicesByEvent.get(event.id) ?? []).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     for (const service of services) {
@@ -164,7 +172,7 @@ function externalReport(externalEvents: ExternalEventRow[], externalServices: Ex
     eventCount: externalEvents.length,
     revenue: roundNumber(revenue),
     received: roundNumber(received),
-    pending: roundNumber(Math.max(0, revenue - received)),
+    pending: roundNumber(pending),
     topServices: statFromMap(serviceStats, externalServices.length),
     revenueByServiceType: statFromMap(serviceStats, externalServices.length),
     serviceCombinations: statFromMap(combinationStats, externalEvents.length),
