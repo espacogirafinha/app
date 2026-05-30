@@ -12,6 +12,12 @@ tags:
     description: Health operations
   - name: reservations
     description: Reservation management
+  - name: venue-events
+    description: Venue event management
+  - name: external-events
+    description: External event management
+  - name: workshops
+    description: Workshop and participant management
   - name: dashboard
     description: Dashboard and analytics
 
@@ -161,6 +167,595 @@ paths:
           description: Deleted
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /venue-events:
+    get:
+      operationId: listVenueEvents
+      tags: [venue-events]
+      summary: List venue events
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/VenueEventStatus"
+        - name: paymentStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/VenueEventPaymentStatus"
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of venue events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VenueEvent"
+
+    post:
+      operationId: createVenueEvent
+      tags: [venue-events]
+      summary: Create a venue event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVenueEventBody"
+      responses:
+        "201":
+          description: Venue event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenueEvent"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /venue-events/{id}:
+    get:
+      operationId: getVenueEvent
+      tags: [venue-events]
+      summary: Get a venue event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Venue event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenueEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateVenueEvent
+      tags: [venue-events]
+      summary: Update a venue event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVenueEventBody"
+      responses:
+        "200":
+          description: Updated venue event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenueEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteVenueEvent
+      tags: [venue-events]
+      summary: Delete a venue event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /external-events:
+    get:
+      operationId: listExternalEvents
+      tags: [external-events]
+      summary: List external events
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ExternalEventStatus"
+        - name: paymentStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/ExternalEventPaymentStatus"
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of external events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExternalEvent"
+
+    post:
+      operationId: createExternalEvent
+      tags: [external-events]
+      summary: Create an external event with services
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExternalEventBody"
+      responses:
+        "201":
+          description: External event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalEvent"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /external-events/{id}:
+    get:
+      operationId: getExternalEvent
+      tags: [external-events]
+      summary: Get an external event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: External event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateExternalEvent
+      tags: [external-events]
+      summary: Update an external event and optionally replace services
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExternalEventBody"
+      responses:
+        "200":
+          description: Updated external event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteExternalEvent
+      tags: [external-events]
+      summary: Delete an external event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workshops:
+    get:
+      operationId: listWorkshops
+      tags: [workshops]
+      summary: List workshops with participant aggregates
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/WorkshopStatus"
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of workshops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workshop"
+
+    post:
+      operationId: createWorkshop
+      tags: [workshops]
+      summary: Create a workshop
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkshopBody"
+      responses:
+        "201":
+          description: Workshop created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workshops/{id}:
+    get:
+      operationId: getWorkshop
+      tags: [workshops]
+      summary: Get a workshop by ID with participants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Workshop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateWorkshop
+      tags: [workshops]
+      summary: Update a workshop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkshopBody"
+      responses:
+        "200":
+          description: Updated workshop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteWorkshop
+      tags: [workshops]
+      summary: Delete a workshop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workshops/{id}/participants:
+    post:
+      operationId: createWorkshopParticipant
+      tags: [workshops]
+      summary: Add a participant to a workshop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkshopParticipantBody"
+      responses:
+        "201":
+          description: Participant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkshopParticipant"
+        "400":
+          description: Invalid request or capacity reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workshops/{id}/participants/{participantId}:
+    patch:
+      operationId: updateWorkshopParticipant
+      tags: [workshops]
+      summary: Update a workshop participant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: participantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkshopParticipantBody"
+      responses:
+        "200":
+          description: Participant updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkshopParticipant"
+        "400":
+          description: Invalid request or capacity reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteWorkshopParticipant
+      tags: [workshops]
+      summary: Delete a workshop participant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: participantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard-v2:
+    get:
+      operationId: getDashboardV2
+      tags: [dashboard]
+      summary: Get V2 dashboard aggregate
+      description: Aggregates venue events, external events, services, workshops and participants for the V2 dashboard.
+      responses:
+        "200":
+          description: V2 dashboard aggregate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardV2"
+
+  /calendar-v2:
+    get:
+      operationId: getCalendarV2
+      tags: [dashboard]
+      summary: Get V2 calendar aggregate
+      description: Aggregates V2 venue events, external events, workshops and participants for the operational calendar.
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: V2 calendar aggregate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarV2"
+        "400":
+          description: Invalid date range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reports-v2:
+    get:
+      operationId: getReportsV2
+      tags: [dashboard]
+      summary: Get V2 reports aggregate
+      description: Aggregates V2 venue events, external events, services, workshops and participants for business reports.
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: V2 reports aggregate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportsV2"
+        "400":
+          description: Invalid date range
           content:
             application/json:
               schema:
@@ -370,6 +965,54 @@ components:
       type: string
       enum: ["Festas no espaço", "Serviços externos", "Workshops"]
 
+    ReservationType:
+      type: string
+      enum: [venue_party, external_service, workshop]
+
+    ReservationStatus:
+      type: string
+      enum: [draft, confirmed, completed, cancelled]
+
+    VenueEventStatus:
+      type: string
+      enum: [draft, confirmed, completed, cancelled]
+
+    VenueEventPaymentStatus:
+      type: string
+      enum: [unpaid, partial, paid]
+
+    VenueEventImageAuthorization:
+      type: string
+      enum: [rosto_visivel, rosto_tapado, nao_autorizo]
+
+    ExternalEventStatus:
+      type: string
+      enum: [draft, confirmed, completed, cancelled]
+
+    ExternalEventPaymentStatus:
+      type: string
+      enum: [unpaid, partial, paid]
+
+    ExternalEventServiceType:
+      type: string
+      enum: [decoracao, catering, organizacao_evento, animacao, insuflavel, baloes, outro]
+
+    ExternalEventServiceStatus:
+      type: string
+      enum: [planned, in_progress, completed, cancelled]
+
+    WorkshopStatus:
+      type: string
+      enum: [draft, open, full, completed, cancelled]
+
+    WorkshopParticipantStatus:
+      type: string
+      enum: [registered, confirmed, attended, cancelled]
+
+    WorkshopParticipantPaymentStatus:
+      type: string
+      enum: [unpaid, partial, paid]
+
     Reservation:
       type: object
       properties:
@@ -400,6 +1043,53 @@ components:
           type: number
         amountPaid:
           type: number
+        reservationType:
+          $ref: "#/components/schemas/ReservationType"
+        customerEmail:
+          type: ["string", "null"]
+        customerNif:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        reservationSource:
+          type: ["string", "null"]
+        reservationStatus:
+          $ref: "#/components/schemas/ReservationStatus"
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringOption:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - type: string
+              enum: [rosto_visivel, rosto_tapado, nao_autorizo]
+            - type: "null"
+        termsAccepted:
+          type: ["boolean", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: ["integer", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        externalServiceNotes:
+          type: ["string", "null"]
+        workshopName:
+          type: ["string", "null"]
+        participantCount:
+          type: ["integer", "null"]
+        workshopNotes:
+          type: ["string", "null"]
         remainingBalance:
           type: number
         paymentStatus:
@@ -454,6 +1144,53 @@ components:
           type: number
         amountPaid:
           type: number
+        reservationType:
+          $ref: "#/components/schemas/ReservationType"
+        customerEmail:
+          type: ["string", "null"]
+        customerNif:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        reservationSource:
+          type: ["string", "null"]
+        reservationStatus:
+          $ref: "#/components/schemas/ReservationStatus"
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringOption:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - type: string
+              enum: [rosto_visivel, rosto_tapado, nao_autorizo]
+            - type: "null"
+        termsAccepted:
+          type: ["boolean", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: ["integer", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        externalServiceNotes:
+          type: ["string", "null"]
+        workshopName:
+          type: ["string", "null"]
+        participantCount:
+          type: ["integer", "null"]
+        workshopNotes:
+          type: ["string", "null"]
       required:
         - customerName
         - phone
@@ -493,6 +1230,715 @@ components:
           type: number
         amountPaid:
           type: number
+        reservationType:
+          $ref: "#/components/schemas/ReservationType"
+        customerEmail:
+          type: ["string", "null"]
+        customerNif:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        reservationSource:
+          type: ["string", "null"]
+        reservationStatus:
+          $ref: "#/components/schemas/ReservationStatus"
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringOption:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - type: string
+              enum: [rosto_visivel, rosto_tapado, nao_autorizo]
+            - type: "null"
+        termsAccepted:
+          type: ["boolean", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: ["integer", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        externalServiceNotes:
+          type: ["string", "null"]
+        workshopName:
+          type: ["string", "null"]
+        participantCount:
+          type: ["integer", "null"]
+        workshopNotes:
+          type: ["string", "null"]
+
+    VenueEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/VenueEventStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/VenueEventPaymentStatus"
+        source:
+          type: ["string", "null"]
+        packName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        childrenCount:
+          type: integer
+        childrenAges:
+          type: ["string", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringNotes:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - $ref: "#/components/schemas/VenueEventImageAuthorization"
+            - type: "null"
+        termsAccepted:
+          type: boolean
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        remainingBalance:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - customerName
+        - phone
+        - eventDate
+        - startTime
+        - status
+        - paymentStatus
+        - packName
+        - childrenCount
+        - termsAccepted
+        - totalPrice
+        - amountPaid
+        - remainingBalance
+        - createdAt
+        - updatedAt
+
+    CreateVenueEventBody:
+      type: object
+      properties:
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/VenueEventStatus"
+        source:
+          type: ["string", "null"]
+        packName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        childrenCount:
+          type: integer
+        childrenAges:
+          type: ["string", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringNotes:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - $ref: "#/components/schemas/VenueEventImageAuthorization"
+            - type: "null"
+        termsAccepted:
+          type: boolean
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - customerName
+        - phone
+        - eventDate
+        - startTime
+        - packName
+        - totalPrice
+        - amountPaid
+
+    UpdateVenueEventBody:
+      type: object
+      properties:
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/VenueEventStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/VenueEventPaymentStatus"
+        source:
+          type: ["string", "null"]
+        packName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        birthdayChildAge:
+          type: ["integer", "null"]
+        childrenCount:
+          type: integer
+        childrenAges:
+          type: ["string", "null"]
+        partyTheme:
+          type: ["string", "null"]
+        decorationNotes:
+          type: ["string", "null"]
+        cateringNotes:
+          type: ["string", "null"]
+        allergies:
+          type: ["string", "null"]
+        imageAuthorization:
+          oneOf:
+            - $ref: "#/components/schemas/VenueEventImageAuthorization"
+            - type: "null"
+        termsAccepted:
+          type: boolean
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    ExternalEventService:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        externalEventId:
+          type: string
+          format: uuid
+        serviceType:
+          $ref: "#/components/schemas/ExternalEventServiceType"
+        serviceLabel:
+          type: string
+        price:
+          type: number
+        status:
+          $ref: "#/components/schemas/ExternalEventServiceStatus"
+        notes:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - externalEventId
+        - serviceType
+        - serviceLabel
+        - price
+        - status
+        - sortOrder
+        - createdAt
+        - updatedAt
+
+    ExternalEventServiceInput:
+      type: object
+      properties:
+        serviceType:
+          $ref: "#/components/schemas/ExternalEventServiceType"
+        serviceLabel:
+          type: string
+        price:
+          type: number
+        status:
+          $ref: "#/components/schemas/ExternalEventServiceStatus"
+        notes:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+      required:
+        - serviceType
+        - serviceLabel
+
+    ExternalEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/ExternalEventStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/ExternalEventPaymentStatus"
+        source:
+          type: ["string", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: integer
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        setupNotes:
+          type: ["string", "null"]
+        teardownNotes:
+          type: ["string", "null"]
+        accessNotes:
+          type: ["string", "null"]
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        remainingBalance:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExternalEventService"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - customerName
+        - phone
+        - eventDate
+        - startTime
+        - status
+        - paymentStatus
+        - guestCount
+        - totalPrice
+        - amountPaid
+        - remainingBalance
+        - services
+        - createdAt
+        - updatedAt
+
+    CreateExternalEventBody:
+      type: object
+      properties:
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/ExternalEventStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/ExternalEventPaymentStatus"
+        source:
+          type: ["string", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: integer
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        setupNotes:
+          type: ["string", "null"]
+        teardownNotes:
+          type: ["string", "null"]
+        accessNotes:
+          type: ["string", "null"]
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        services:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ExternalEventServiceInput"
+      required:
+        - customerName
+        - phone
+        - eventDate
+        - startTime
+        - totalPrice
+        - amountPaid
+        - services
+
+    UpdateExternalEventBody:
+      type: object
+      properties:
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/ExternalEventStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/ExternalEventPaymentStatus"
+        source:
+          type: ["string", "null"]
+        eventLocation:
+          type: ["string", "null"]
+        guestCount:
+          type: integer
+        eventType:
+          type: ["string", "null"]
+        eventTheme:
+          type: ["string", "null"]
+        setupNotes:
+          type: ["string", "null"]
+        teardownNotes:
+          type: ["string", "null"]
+        accessNotes:
+          type: ["string", "null"]
+        totalPrice:
+          type: number
+        amountPaid:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExternalEventServiceInput"
+
+    WorkshopParticipant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workshopId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        amountPaid:
+          type: number
+        amountDue:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        paymentStatus:
+          $ref: "#/components/schemas/WorkshopParticipantPaymentStatus"
+        status:
+          $ref: "#/components/schemas/WorkshopParticipantStatus"
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - workshopId
+        - name
+        - phone
+        - amountPaid
+        - amountDue
+        - paymentStatus
+        - status
+        - createdAt
+        - updatedAt
+
+    Workshop:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        capacity:
+          type: integer
+        price:
+          type: number
+        kitIncluded:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/WorkshopStatus"
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        participantsCount:
+          type: integer
+        activeParticipantsCount:
+          type: integer
+        availableSeats:
+          type: integer
+        totalReceived:
+          type: number
+        totalPending:
+          type: number
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkshopParticipant"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - date
+        - startTime
+        - capacity
+        - price
+        - kitIncluded
+        - status
+        - participantsCount
+        - activeParticipantsCount
+        - availableSeats
+        - totalReceived
+        - totalPending
+        - createdAt
+        - updatedAt
+
+    CreateWorkshopBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        capacity:
+          type: integer
+          minimum: 0
+        price:
+          type: number
+          minimum: 0
+        kitIncluded:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/WorkshopStatus"
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - date
+        - startTime
+        - capacity
+        - price
+
+    UpdateWorkshopBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        capacity:
+          type: integer
+          minimum: 0
+        price:
+          type: number
+          minimum: 0
+        kitIncluded:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/WorkshopStatus"
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    CreateWorkshopParticipantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        amountPaid:
+          type: number
+          minimum: 0
+        amountDue:
+          type: number
+          minimum: 0
+        paymentMethod:
+          type: ["string", "null"]
+        paymentStatus:
+          $ref: "#/components/schemas/WorkshopParticipantPaymentStatus"
+        status:
+          $ref: "#/components/schemas/WorkshopParticipantStatus"
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - phone
+
+    UpdateWorkshopParticipantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        nif:
+          type: ["string", "null"]
+        amountPaid:
+          type: number
+          minimum: 0
+        amountDue:
+          type: number
+          minimum: 0
+        paymentMethod:
+          type: ["string", "null"]
+        paymentStatus:
+          $ref: "#/components/schemas/WorkshopParticipantPaymentStatus"
+        status:
+          $ref: "#/components/schemas/WorkshopParticipantStatus"
+        notes:
+          type: ["string", "null"]
 
     DashboardStats:
       type: object
@@ -522,6 +1968,500 @@ components:
         - paidCount
         - partialCount
         - unpaidCount
+
+    DashboardV2:
+      type: object
+      properties:
+        summary:
+          $ref: "#/components/schemas/DashboardV2Summary"
+        areas:
+          $ref: "#/components/schemas/DashboardV2Areas"
+        agenda:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardV2AgendaItem"
+      required:
+        - summary
+        - areas
+        - agenda
+
+    DashboardV2Summary:
+      type: object
+      properties:
+        todayCount:
+          type: integer
+        nextSevenDaysCount:
+          type: integer
+        totalReceived:
+          type: number
+        totalPending:
+          type: number
+      required:
+        - todayCount
+        - nextSevenDaysCount
+        - totalReceived
+        - totalPending
+
+    DashboardV2Areas:
+      type: object
+      properties:
+        venueEvents:
+          $ref: "#/components/schemas/DashboardV2AreaSummary"
+        externalEvents:
+          $ref: "#/components/schemas/DashboardV2AreaSummary"
+        workshops:
+          $ref: "#/components/schemas/DashboardV2WorkshopAreaSummary"
+      required:
+        - venueEvents
+        - externalEvents
+        - workshops
+
+    DashboardV2AreaSummary:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+        upcomingCount:
+          type: integer
+        nextSevenDaysCount:
+          type: integer
+        received:
+          type: number
+        pending:
+          type: number
+      required:
+        - totalCount
+        - upcomingCount
+        - nextSevenDaysCount
+        - received
+        - pending
+
+    DashboardV2WorkshopAreaSummary:
+      allOf:
+        - $ref: "#/components/schemas/DashboardV2AreaSummary"
+        - type: object
+          properties:
+            activeParticipantsCount:
+              type: integer
+            availableSeats:
+              type: integer
+          required:
+            - activeParticipantsCount
+            - availableSeats
+
+    DashboardV2AgendaItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [venue_events, external_events, workshops]
+        typeLabel:
+          type: string
+        title:
+          type: string
+        date:
+          type: string
+        time:
+          type: string
+        location:
+          type: ["string", "null"]
+        status:
+          type: string
+        paymentStatus:
+          type: string
+          enum: [unpaid, partial, paid, none]
+        total:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        nextAction:
+          type: string
+        href:
+          type: string
+        services:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - type
+        - typeLabel
+        - title
+        - date
+        - time
+        - location
+        - status
+        - paymentStatus
+        - total
+        - received
+        - pending
+        - nextAction
+        - href
+        - services
+
+    CalendarV2:
+      type: object
+      properties:
+        summary:
+          $ref: "#/components/schemas/CalendarV2Summary"
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarV2Day"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarV2Item"
+      required:
+        - summary
+        - days
+        - items
+
+    CalendarV2Summary:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+        totalItems:
+          type: integer
+        spaceOccupyingItems:
+          type: integer
+        externalItems:
+          type: integer
+        workshops:
+          type: integer
+        freeDays:
+          type: integer
+        busyDays:
+          type: integer
+        almostFullDays:
+          type: integer
+        fullDays:
+          type: integer
+      required:
+        - startDate
+        - endDate
+        - totalItems
+        - spaceOccupyingItems
+        - externalItems
+        - workshops
+        - freeDays
+        - busyDays
+        - almostFullDays
+        - fullDays
+
+    CalendarV2DayStatus:
+      type: string
+      enum: [free, busy, almost_full, full]
+
+    CalendarV2ItemType:
+      type: string
+      enum: [venue_event, external_event, workshop]
+
+    CalendarV2Day:
+      type: object
+      properties:
+        date:
+          type: string
+        status:
+          $ref: "#/components/schemas/CalendarV2DayStatus"
+        spaceSlotsUsed:
+          type: integer
+        spaceSlotsTotal:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarV2Item"
+      required:
+        - date
+        - status
+        - spaceSlotsUsed
+        - spaceSlotsTotal
+        - items
+
+    CalendarV2Item:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/CalendarV2ItemType"
+        title:
+          type: string
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        customerName:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        servicesLabels:
+          type: array
+          items:
+            type: string
+        paymentStatus:
+          type: ["string", "null"]
+        amountPaid:
+          type: ["number", "null"]
+        totalPrice:
+          type: ["number", "null"]
+        pendingAmount:
+          type: ["number", "null"]
+        capacity:
+          type: ["integer", "null"]
+        activeParticipantsCount:
+          type: ["integer", "null"]
+        availableSeats:
+          type: ["integer", "null"]
+        totalReceived:
+          type: ["number", "null"]
+        totalPending:
+          type: ["number", "null"]
+        occupiesSpace:
+          type: boolean
+        status:
+          type: string
+      required:
+        - id
+        - type
+        - title
+        - date
+        - startTime
+        - endTime
+        - customerName
+        - location
+        - servicesLabels
+        - paymentStatus
+        - amountPaid
+        - totalPrice
+        - pendingAmount
+        - capacity
+        - activeParticipantsCount
+        - availableSeats
+        - totalReceived
+        - totalPending
+        - occupiesSpace
+        - status
+
+    ReportsV2:
+      type: object
+      properties:
+        summary:
+          $ref: "#/components/schemas/ReportsV2Summary"
+        areas:
+          $ref: "#/components/schemas/ReportsV2Areas"
+        venueEvents:
+          $ref: "#/components/schemas/ReportsV2VenueEvents"
+        externalEvents:
+          $ref: "#/components/schemas/ReportsV2ExternalEvents"
+        workshops:
+          $ref: "#/components/schemas/ReportsV2Workshops"
+      required:
+        - summary
+        - areas
+        - venueEvents
+        - externalEvents
+        - workshops
+
+    ReportsV2Summary:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: string
+        totalRevenue:
+          type: number
+        totalReceived:
+          type: number
+        totalPending:
+          type: number
+        eventCount:
+          type: integer
+        averageTicket:
+          type: number
+      required:
+        - startDate
+        - endDate
+        - totalRevenue
+        - totalReceived
+        - totalPending
+        - eventCount
+        - averageTicket
+
+    ReportsV2Areas:
+      type: object
+      properties:
+        venueEvents:
+          $ref: "#/components/schemas/ReportsV2AreaSummary"
+        externalEvents:
+          $ref: "#/components/schemas/ReportsV2AreaSummary"
+        workshops:
+          $ref: "#/components/schemas/ReportsV2AreaSummary"
+      required:
+        - venueEvents
+        - externalEvents
+        - workshops
+
+    ReportsV2AreaSummary:
+      type: object
+      properties:
+        eventCount:
+          type: integer
+        revenue:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        averageTicket:
+          type: number
+      required:
+        - eventCount
+        - revenue
+        - received
+        - pending
+        - averageTicket
+
+    ReportsV2RevenueStat:
+      type: object
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+        revenue:
+          type: number
+        percentage:
+          type: number
+      required:
+        - label
+        - count
+        - revenue
+        - percentage
+
+    ReportsV2VenueEvents:
+      type: object
+      properties:
+        partyCount:
+          type: integer
+        revenue:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        topPacks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        revenueByPack:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        averageChildren:
+          type: number
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+      required:
+        - partyCount
+        - revenue
+        - received
+        - pending
+        - topPacks
+        - revenueByPack
+        - averageChildren
+        - sources
+
+    ReportsV2ExternalEvents:
+      type: object
+      properties:
+        eventCount:
+          type: integer
+        revenue:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        topServices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        revenueByServiceType:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        serviceCombinations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2RevenueStat"
+        averageTicket:
+          type: number
+      required:
+        - eventCount
+        - revenue
+        - received
+        - pending
+        - topServices
+        - revenueByServiceType
+        - serviceCombinations
+        - averageTicket
+
+    ReportsV2PaymentStatusCounts:
+      type: object
+      properties:
+        paid:
+          type: integer
+        partial:
+          type: integer
+        unpaid:
+          type: integer
+      required:
+        - paid
+        - partial
+        - unpaid
+
+    ReportsV2Workshops:
+      type: object
+      properties:
+        workshopCount:
+          type: integer
+        activeRegistrations:
+          type: integer
+        occupiedSeats:
+          type: integer
+        freeSeats:
+          type: integer
+        occupancyRate:
+          type: number
+        received:
+          type: number
+        pending:
+          type: number
+        participantsByPaymentStatus:
+          $ref: "#/components/schemas/ReportsV2PaymentStatusCounts"
+      required:
+        - workshopCount
+        - activeRegistrations
+        - occupiedSeats
+        - freeSeats
+        - occupancyRate
+        - received
+        - pending
+        - participantsByPaymentStatus
 
     Task:
       type: object

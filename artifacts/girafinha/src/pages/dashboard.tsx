@@ -1,338 +1,155 @@
-import { endOfMonth, format, parseISO, isToday, isTomorrow, differenceInDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  AlertTriangle,
   Calendar as CalendarIcon,
   CheckCircle2,
   Clock,
   Euro,
+  GraduationCap,
   Loader2,
-  Plus,
-  Search,
-  Users,
+  MapPin,
+  PartyPopper,
+  Wallet,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ChecklistButton, ChecklistProgressBar, useReservationTaskSummaries } from "@/components/checklist-button";
-import { ReservationModal } from "@/components/reservation-modal";
-import { StatusBadge, PaymentSummary } from "@/components/status-badge";
-import { WhatsAppButton } from "@/components/whatsapp-button";
-import { useToast } from "@/hooks/use-toast";
-import {
-  getGetDashboardStatsQueryKey,
-  getGetUpcomingReservationsQueryKey,
-  getListReservationsQueryKey,
-  useGetDashboardStats,
-  useGetUpcomingReservations,
-  useUpdateReservation,
-} from "@workspace/api-client-react";
-import type { Reservation, TaskSummary } from "@workspace/api-client-react";
+import { useGetDashboardV2 } from "@workspace/api-client-react";
+import type { DashboardV2AgendaItem, DashboardV2AreaSummary, DashboardV2WorkshopAreaSummary } from "@workspace/api-client-react";
 
-type QuickFilter = "all" | "today" | "week" | "pending" | "workshops" | "external";
-
-const QUICK_FILTERS: Array<{ value: QuickFilter; label: string }> = [
-  { value: "all", label: "Todas" },
-  { value: "today", label: "Hoje" },
-  { value: "week", label: "7 dias" },
-  { value: "pending", label: "Pendentes" },
-  { value: "workshops", label: "Workshops" },
-  { value: "external", label: "Serviços externos" },
-];
+const moneyFormatter = new Intl.NumberFormat("pt-PT", {
+  style: "currency",
+  currency: "EUR",
+});
 
 export default function Dashboard() {
-  const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
-  const { data: upcoming, isLoading: upcomingLoading } = useGetUpcomingReservations();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
+  const { data, isLoading, isError, refetch } = useGetDashboardV2();
 
-  const taskSummaries = useReservationTaskSummaries(upcoming?.map((r) => r.id) ?? []);
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[360px] items-center justify-center">
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <span className="text-sm font-medium text-muted-foreground">A carregar painel V2...</span>
+        </div>
+      </div>
+    );
+  }
 
-  const todayReservations = useMemo(
-    () => upcoming?.filter((reservation) => isToday(parseISO(reservation.eventDate))) ?? [],
-    [upcoming],
-  );
-
-  const nextSevenDays = useMemo(
-    () => upcoming?.filter((reservation) => {
-      const daysUntil = differenceInDays(parseISO(reservation.eventDate), new Date());
-      return daysUntil >= 0 && daysUntil <= 7;
-    }) ?? [],
-    [upcoming],
-  );
-
-  const restOfMonth = useMemo(() => {
-    const today = new Date();
-    const monthEnd = format(endOfMonth(today), "yyyy-MM-dd");
-    return (upcoming ?? []).filter((reservation) => {
-      const daysUntil = differenceInDays(parseISO(reservation.eventDate), today);
-      return daysUntil > 7 && reservation.eventDate <= monthEnd;
-    });
-  }, [upcoming]);
-
-  const workshopsUpcoming = useMemo(
-    () => (upcoming ?? []).filter((reservation) => reservation.serviceType === "Workshops"),
-    [upcoming],
-  );
-
-  const pendingPaymentSoon = useMemo(
-    () => nextSevenDays.filter((reservation) => reservation.paymentStatus !== "paid"),
-    [nextSevenDays],
-  );
-
-  const incompleteTasksSoon = useMemo(
-    () => nextSevenDays.filter((reservation) => {
-      const summary = taskSummaries.get(reservation.id);
-      return summary && summary.total > 0 && summary.completed < summary.total;
-    }),
-    [nextSevenDays, taskSummaries],
-  );
-
-  const filteredUpcoming = useMemo(
-    () => (upcoming ?? [])
-      .filter((reservation) => matchesQuickFilter(reservation, quickFilter))
-      .filter((reservation) => {
-        const search = searchTerm.trim().toLowerCase();
-        if (!search) return true;
-        return reservation.customerName.toLowerCase().includes(search) || reservation.phone.includes(search);
-      }),
-    [quickFilter, searchTerm, upcoming],
-  );
-
-  const nextReservation = upcoming?.[0];
-  const pendingSoonTotal = pendingPaymentSoon.reduce((sum, reservation) => sum + reservation.remainingBalance, 0);
+  if (isError || !data) {
+    return (
+      <div className="flex min-h-[360px] items-center justify-center">
+        <Card className="max-w-md border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle>Dashboard indisponivel</CardTitle>
+            <CardDescription>Nao foi possivel carregar o painel V2 neste momento.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => refetch()} className="w-full rounded-xl">
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Painel de gestão</h1>
-          <p className="mt-1 text-sm md:text-base text-muted-foreground">
-            Prioridades, pagamentos e próximas reservas num só sítio.
+          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Painel de gestao</h1>
+          <p className="mt-1 text-sm text-muted-foreground md:text-base">
+            Festas, servicos externos e workshops num so lugar.
           </p>
         </div>
-        <ReservationModal
-          trigger={
-            <Button className="min-h-[44px] rounded-full bg-primary px-5 text-primary-foreground shadow-md hover:bg-primary/90">
-              <Plus className="h-4 w-4" />
-              Nova Reserva
-            </Button>
-          }
-        />
-      </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <QuickLink href="/venue-events" label="Nova festa" />
+          <QuickLink href="/external-events" label="Novo servico" />
+          <QuickLink href="/workshops" label="Novo workshop" />
+        </div>
+      </header>
 
-      <section className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
-        <TodayPanel todayReservations={todayReservations} nextReservation={nextReservation} loading={upcomingLoading} />
-        <ActionPanel
-          pendingPaymentSoon={pendingPaymentSoon}
-          incompleteTasksSoon={incompleteTasksSoon}
-          pendingSoonTotal={pendingSoonTotal}
-        />
-      </section>
-
-      <section className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <MetricCard title="Hoje" value={todayReservations.length.toString()} helper="Eventos marcados" loading={upcomingLoading} />
-        <MetricCard title="Próximos 7 dias" value={nextSevenDays.length.toString()} helper="Reservas e serviços" loading={upcomingLoading} />
+      <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <MetricCard title="Hoje" value={String(data.summary.todayCount)} helper="Itens marcados" icon={CalendarIcon} />
+        <MetricCard title="Proximos 7 dias" value={String(data.summary.nextSevenDaysCount)} helper="Agenda ativa" icon={Clock} />
         <MetricCard
           title="Por receber"
-          value={`€${stats?.totalPending.toFixed(2) || "0.00"}`}
-          helper="Total pendente"
-          loading={statsLoading}
+          value={formatMoney(data.summary.totalPending)}
+          helper="Eventos ativos"
+          icon={Wallet}
           tone="danger"
         />
         <MetricCard
           title="Recebido"
-          value={`€${stats?.totalPaid.toFixed(2) || "0.00"}`}
+          value={formatMoney(data.summary.totalReceived)}
           helper="Pagamentos registados"
-          loading={statsLoading}
+          icon={Euro}
           tone="success"
         />
       </section>
 
-      <PreparationPanel
-        nextSevenDays={nextSevenDays}
-        restOfMonth={restOfMonth}
-        workshops={workshopsUpcoming}
-        taskSummaries={taskSummaries}
-      />
+      <section className="grid gap-3 lg:grid-cols-3">
+        <AreaCard
+          title="Festas no Espaco"
+          description="Aniversarios, packs, decoracao e catering no espaco."
+          href="/venue-events"
+          cta="Ver festas"
+          icon={PartyPopper}
+          area={data.areas.venueEvents}
+          tone="venue"
+        />
+        <AreaCard
+          title="Servicos Externos"
+          description="Decoracao, catering, animacao, insuflaveis e baloes."
+          href="/external-events"
+          cta="Ver servicos"
+          icon={MapPin}
+          area={data.areas.externalEvents}
+          tone="external"
+        />
+        <AreaCard
+          title="Workshops/Formacoes"
+          description="Workshops, inscricoes, participantes e pagamentos."
+          href="/workshops"
+          cta="Ver workshops"
+          icon={GraduationCap}
+          area={data.areas.workshops}
+          tone="workshop"
+        />
+      </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Card className="overflow-hidden border-border/70 shadow-sm">
-          <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <CardTitle className="text-lg md:text-xl">Agenda operacional</CardTitle>
-                <CardDescription>Reservas, workshops e serviços por ordem de data.</CardDescription>
-              </div>
-              <div className="relative w-full md:w-72">
-                <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Pesquisar cliente ou telemóvel..."
-                  className="min-h-[44px] rounded-full bg-background pl-9"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pt-3">
-              {QUICK_FILTERS.map((filter) => (
-                <Button
-                  key={filter.value}
-                  type="button"
-                  variant={quickFilter === filter.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setQuickFilter(filter.value)}
-                  className="rounded-full whitespace-nowrap"
-                >
-                  {filter.label}
-                </Button>
+      <Card className="overflow-hidden border-border/70 shadow-sm">
+        <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
+          <CardTitle className="text-lg md:text-xl">Agenda operacional</CardTitle>
+          <CardDescription>Proximos itens V2 por ordem de data, sem depender da tabela antiga de reservas.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {data.agenda.length > 0 ? (
+            <div className="divide-y divide-border/60">
+              {data.agenda.map((item) => (
+                <AgendaItemRow key={`${item.type}-${item.id}`} item={item} />
               ))}
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {upcomingLoading ? (
-              <div className="flex justify-center p-10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
-              </div>
-            ) : filteredUpcoming.length > 0 ? (
-              <div className="divide-y divide-border/60">
-                {filteredUpcoming.map((reservation) => (
-                  <UpcomingReservationRow
-                    key={reservation.id}
-                    reservation={reservation}
-                    taskSummary={taskSummaries.get(reservation.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center p-10 text-center text-muted-foreground">
-                <CalendarIcon className="mb-3 h-12 w-12 text-muted-foreground/30" />
-                <p>Nenhuma reserva encontrada.</p>
-                <p className="mt-1 text-sm">Ajuste os filtros ou crie uma nova reserva.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <SideSummary stats={stats} loading={statsLoading} />
-      </section>
-    </div>
-  );
-}
-
-function matchesQuickFilter(reservation: Reservation, quickFilter: QuickFilter) {
-  const eventDate = parseISO(reservation.eventDate);
-  const daysUntil = differenceInDays(eventDate, new Date());
-  if (quickFilter === "today") return isToday(eventDate);
-  if (quickFilter === "week") return daysUntil >= 0 && daysUntil <= 7;
-  if (quickFilter === "pending") return reservation.paymentStatus !== "paid";
-  if (quickFilter === "workshops") return reservation.serviceType === "Workshops";
-  if (quickFilter === "external") return reservation.serviceType === "Serviços externos";
-  return true;
-}
-
-function TodayPanel({
-  todayReservations,
-  nextReservation,
-  loading,
-}: {
-  todayReservations: Reservation[];
-  nextReservation?: Reservation;
-  loading: boolean;
-}) {
-  return (
-    <Card className="border-primary/20 bg-primary/5 shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <CalendarIcon className="h-5 w-5 text-primary" />
-          Hoje
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
-        ) : todayReservations.length > 0 ? (
-          <div className="space-y-2">
-            {todayReservations.map((reservation) => (
-              <div key={reservation.id} className="rounded-lg border border-primary/20 bg-background p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold truncate">{reservation.customerName}</p>
-                    <p className="text-sm text-muted-foreground">{reservation.eventTime} · {reservation.pack}</p>
-                  </div>
-                  <StatusBadge status={reservation.paymentStatus} />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div>
-            <p className="text-lg font-bold">Sem eventos hoje</p>
-            <p className="text-sm text-muted-foreground">
-              {nextReservation
-                ? `Próxima reserva: ${format(parseISO(nextReservation.eventDate), "dd MMM", { locale: ptBR })}, ${nextReservation.customerName}.`
-                : "Não há reservas futuras registadas."}
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ActionPanel({
-  pendingPaymentSoon,
-  incompleteTasksSoon,
-  pendingSoonTotal,
-}: {
-  pendingPaymentSoon: Reservation[];
-  incompleteTasksSoon: Reservation[];
-  pendingSoonTotal: number;
-}) {
-  const hasActions = pendingPaymentSoon.length > 0 || incompleteTasksSoon.length > 0;
-
-  return (
-    <Card className={hasActions ? "border-amber-300 bg-amber-50 shadow-sm" : "border-emerald-200 bg-emerald-50 shadow-sm"}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          {hasActions ? (
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
           ) : (
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            <div className="flex flex-col items-center p-10 text-center text-muted-foreground">
+              <CalendarIcon className="mb-3 h-12 w-12 text-muted-foreground/30" />
+              <p>Nao ha itens futuros nos modulos V2.</p>
+              <p className="mt-1 text-sm">Crie festas, servicos externos ou workshops para preencher a agenda.</p>
+            </div>
           )}
-          Ações prioritárias
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {hasActions ? (
-          <>
-            <ActionLine label="Pagamentos por cobrar" count={pendingPaymentSoon.length} detail={`€${pendingSoonTotal.toFixed(2)}`} />
-            <ActionLine label="Checklists incompletas" count={incompleteTasksSoon.length} detail="Próximos 7 dias" />
-            <p className="text-xs text-amber-800">
-              Use os botões na agenda para enviar lembretes, marcar pagamentos e abrir checklists.
-            </p>
-          </>
-        ) : (
-          <p className="text-sm text-emerald-800">Nada urgente nos próximos 7 dias.</p>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-function ActionLine({ label, count, detail }: { label: string; count: number; detail: string }) {
+function QuickLink({ href, label }: { href: string; label: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg bg-background/80 p-3">
-      <div>
-        <p className="text-sm font-semibold">{label}</p>
-        <p className="text-xs text-muted-foreground">{detail}</p>
-      </div>
-      <span className="text-xl font-bold">{count}</span>
-    </div>
+    <Button asChild variant="outline" className="min-h-[40px] rounded-full">
+      <Link href={href}>{label}</Link>
+    </Button>
   );
 }
 
@@ -340,360 +157,185 @@ function MetricCard({
   title,
   value,
   helper,
-  loading,
+  icon: Icon,
   tone,
 }: {
   title: string;
   value: string;
   helper: string;
-  loading?: boolean;
+  icon: typeof CalendarIcon;
   tone?: "success" | "danger";
 }) {
-  const toneClass = tone === "success" ? "text-emerald-700" : tone === "danger" ? "text-rose-700" : "";
+  const toneClass = tone === "success" ? "text-emerald-700" : tone === "danger" ? "text-rose-700" : "text-foreground";
+
   return (
     <Card className="border-border/70 shadow-sm">
-      <CardContent className="p-4">
-        <p className="text-xs font-medium text-muted-foreground">{title}</p>
-        {loading ? (
-          <Loader2 className="mt-2 h-5 w-5 animate-spin text-muted-foreground" />
-        ) : (
-          <p className={`mt-1 text-2xl font-bold ${toneClass}`}>{value}</p>
-        )}
-        <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-muted-foreground">{title}</p>
+            <p className={`mt-1 break-words text-xl font-bold sm:text-2xl ${toneClass}`}>{value}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+          </div>
+          <div className="rounded-full bg-primary/10 p-2 text-primary">
+            <Icon className="h-4 w-4" />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-function SideSummary({
-  stats,
-  loading,
-}: {
-  stats?: {
-    totalReservations: number;
-    paidCount: number;
-    partialCount: number;
-    unpaidCount: number;
-    totalRevenue: number;
-  };
-  loading: boolean;
-}) {
-  return (
-    <Card className="h-fit border-border/70 shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Resumo rápido</CardTitle>
-        <CardDescription>Estado geral das reservas.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {loading ? (
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        ) : (
-          <>
-            <StatusCountPill label="Total" count={stats?.totalReservations || 0} color="bg-muted text-foreground" />
-            <StatusCountPill label="Pagas" count={stats?.paidCount || 0} color="bg-emerald-100 text-emerald-800" />
-            <StatusCountPill label="Com sinal" count={stats?.partialCount || 0} color="bg-amber-100 text-amber-800" />
-            <StatusCountPill label="Pendentes" count={stats?.unpaidCount || 0} color="bg-rose-100 text-rose-800" />
-            <div className="rounded-lg border border-border bg-background p-3">
-              <p className="text-xs text-muted-foreground">Receita total</p>
-              <p className="mt-1 text-lg font-bold">€{stats?.totalRevenue.toFixed(2) || "0.00"}</p>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function StatusCountPill({ label, count, color }: { label: string; count: number; color: string }) {
-  return (
-    <div className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium ${color}`}>
-      <span>{label}</span>
-      <span className="font-bold">{count}</span>
-    </div>
-  );
-}
-
-function PreparationPanel({
-  nextSevenDays,
-  restOfMonth,
-  workshops,
-  taskSummaries,
-}: {
-  nextSevenDays: Reservation[];
-  restOfMonth: Reservation[];
-  workshops: Reservation[];
-  taskSummaries: Map<number, TaskSummary>;
-}) {
-  const incompleteThisWeek = nextSevenDays.filter((reservation) => {
-    const summary = taskSummaries.get(reservation.id);
-    return !summary || summary.total === 0 || summary.completed < summary.total;
-  });
-
-  return (
-    <section className="grid gap-4 xl:grid-cols-3">
-      <PreparationCard
-        title="Preparar esta semana"
-        description="Reservas que precisam de atenção nos próximos 7 dias."
-        rows={incompleteThisWeek}
-        taskSummaries={taskSummaries}
-        empty="Nada pendente para preparar esta semana."
-      />
-      <PreparationCard
-        title="Resto do mês"
-        description="Próximas reservas depois desta semana."
-        rows={restOfMonth}
-        taskSummaries={taskSummaries}
-        empty="Sem reservas no resto do mês."
-      />
-      <PreparationCard
-        title="Workshops"
-        description="Produto separado das festas e serviços externos."
-        rows={workshops}
-        taskSummaries={taskSummaries}
-        empty="Sem workshops agendados."
-      />
-    </section>
-  );
-}
-
-function PreparationCard({
+function AreaCard({
   title,
   description,
-  rows,
-  taskSummaries,
-  empty,
+  href,
+  cta,
+  icon: Icon,
+  area,
+  tone,
 }: {
   title: string;
   description: string;
-  rows: Reservation[];
-  taskSummaries: Map<number, TaskSummary>;
-  empty: string;
+  href: string;
+  cta: string;
+  icon: typeof PartyPopper;
+  area: DashboardV2AreaSummary | DashboardV2WorkshopAreaSummary;
+  tone: "venue" | "external" | "workshop";
 }) {
+  const isWorkshop = "activeParticipantsCount" in area;
+
   return (
     <Card className="border-border/70 shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {rows.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">{empty}</div>
-        ) : (
-          rows.slice(0, 4).map((reservation) => {
-            const summary = taskSummaries.get(reservation.id);
-            return (
-              <div key={reservation.id} className="rounded-lg border border-border bg-background p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{reservation.customerName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(parseISO(reservation.eventDate), "dd MMM", { locale: ptBR })} · {reservation.pack}
-                    </p>
-                  </div>
-                  <OperationalStatus reservation={reservation} summary={summary} />
-                </div>
-                <div className="mt-2">
-                  <ChecklistProgressBar summary={summary} />
-                </div>
-              </div>
-            );
-          })
+      <CardContent className="space-y-4 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-base font-bold text-foreground">{title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+          </div>
+          <div className={`rounded-full p-2 ${areaToneClass(tone)}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <SmallMetric label="Proximos" value={String(area.upcomingCount)} />
+          <SmallMetric label="7 dias" value={String(area.nextSevenDaysCount)} />
+          <SmallMetric label="Recebido" value={formatMoney(area.received)} tone="success" />
+          <SmallMetric label="Por receber" value={formatMoney(area.pending)} tone="danger" />
+        </div>
+
+        {isWorkshop && (
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-2">
+            <SmallMetric label="Inscricoes" value={String(area.activeParticipantsCount)} compact />
+            <SmallMetric label="Vagas livres" value={String(area.availableSeats)} compact />
+          </div>
         )}
+
+        <Button asChild variant="outline" className="w-full rounded-xl">
+          <Link href={href}>{cta}</Link>
+        </Button>
       </CardContent>
     </Card>
   );
 }
 
-function OperationalStatus({ reservation, summary }: { reservation: Reservation; summary?: TaskSummary }) {
-  if (reservation.paymentStatus === "unpaid") {
-    return <Badge className="rounded-md bg-rose-100 text-rose-800 hover:bg-rose-100">Sinal por pagar</Badge>;
-  }
-  if (summary && summary.total > 0 && summary.completed === summary.total) {
-    return <Badge className="rounded-md bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Pronta</Badge>;
-  }
-  if (summary && summary.total > 0) {
-    return <Badge className="rounded-md bg-amber-100 text-amber-800 hover:bg-amber-100">Em preparação</Badge>;
-  }
-  return <Badge variant="outline" className="rounded-md">Confirmada</Badge>;
-}
-
-function UpcomingReservationRow({
-  reservation,
-  taskSummary,
+function SmallMetric({
+  label,
+  value,
+  tone,
+  compact,
 }: {
-  reservation: Reservation;
-  taskSummary?: TaskSummary;
+  label: string;
+  value: string;
+  tone?: "success" | "danger";
+  compact?: boolean;
 }) {
-  const date = parseISO(reservation.eventDate);
-  const queryClient = useQueryClient();
-  const updateReservation = useUpdateReservation();
-  const { toast } = useToast();
-
-  let dateDisplay = format(date, "dd MMM", { locale: ptBR });
-  if (isToday(date)) dateDisplay = "Hoje";
-  else if (isTomorrow(date)) dateDisplay = "Amanhã";
-
-  const daysUntil = differenceInDays(date, new Date());
-  const isUrgent = daysUntil <= 3 && daysUntil >= 0 && reservation.paymentStatus !== "paid";
-
-  const handleMarkPaid = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    updateReservation.mutate(
-      { id: reservation.id, data: { amountPaid: reservation.totalPrice } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetDashboardStatsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetUpcomingReservationsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getListReservationsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard/calendar"] });
-          toast({ title: "Pagamento registado", description: `${reservation.customerName} marcado como pago.` });
-        },
-      },
-    );
-  };
-
-  const handleMessageSent = (messageType: "reservation" | "depositRequest" | "depositConfirmation" | "postEvent") => {
-    const labels = {
-      reservation: "confirmação da reserva",
-      depositRequest: "pedido de sinal",
-      depositConfirmation: "confirmação do sinal",
-      postEvent: "mensagem pós-festa",
-    };
-    const note = `[${format(new Date(), "yyyy-MM-dd HH:mm")}] WhatsApp enviado: ${labels[messageType]}.`;
-    const notes = reservation.notes ? `${reservation.notes}\n${note}` : note;
-
-    updateReservation.mutate(
-      { id: reservation.id, data: { notes } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetUpcomingReservationsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getListReservationsQueryKey() });
-          toast({ title: "Mensagem registada", description: `Nota adicionada em ${reservation.customerName}.` });
-        },
-      },
-    );
-  };
+  const toneClass = tone === "success" ? "text-emerald-700" : tone === "danger" ? "text-rose-700" : "text-foreground";
 
   return (
-    <div className={`p-4 transition-colors hover:bg-muted/30 ${isUrgent ? "border-l-4 border-l-amber-400 bg-amber-50/50" : ""}`}>
-      <div className="grid gap-3 lg:grid-cols-[72px_1fr_auto] lg:items-center">
-        <div className="flex lg:flex-col items-center justify-between lg:justify-center rounded-xl bg-primary/10 px-3 py-2 text-primary">
-          <span className="text-xs font-semibold uppercase">{format(date, "MMM", { locale: ptBR })}</span>
-          <span className="text-xl font-bold leading-none">{format(date, "dd")}</span>
-        </div>
+    <div className="rounded-lg border border-border bg-background p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`${compact ? "text-base" : "text-lg"} mt-1 break-words font-bold ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
 
-        <div className="min-w-0 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-bold text-base">{reservation.customerName}</h3>
-            <StatusBadge status={reservation.paymentStatus} />
-            <Badge variant="outline" className="rounded-md">{reservation.serviceType}</Badge>
-          </div>
-          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{dateDisplay}, {reservation.eventTime}</span>
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{reservation.numChildren}</span>
-            <span className="truncate">{reservation.pack}</span>
-          </div>
-          {taskSummary && taskSummary.total > 0 && (
-            <div className="max-w-sm">
-              <ChecklistProgressBar summary={taskSummary} />
-            </div>
-          )}
-        </div>
+function AgendaItemRow({ item }: { item: DashboardV2AgendaItem }) {
+  const date = parseISO(item.date);
 
-        <div className="space-y-3 lg:min-w-[210px]">
-          <PaymentSummary
-            totalPrice={reservation.totalPrice}
-            amountPaid={reservation.amountPaid}
-            remainingBalance={reservation.remainingBalance}
-            compact
-          />
-          <div className="flex flex-wrap gap-2">
-            <WhatsAppButton
-              phone={reservation.phone}
-              customerName={reservation.customerName}
-              eventDate={dateDisplay}
-              eventTime={reservation.eventTime}
-              pack={reservation.pack}
-              serviceType={reservation.serviceType}
-              extras={reservation.extras}
-              totalPrice={reservation.totalPrice}
-              amountPaid={reservation.amountPaid}
-              remainingBalance={reservation.remainingBalance}
-              messageType="reservation"
-              label="Confirmação"
-              onSent={handleMessageSent}
-            />
-            {reservation.paymentStatus === "unpaid" && (
-              <WhatsAppButton
-                phone={reservation.phone}
-                customerName={reservation.customerName}
-                eventDate={dateDisplay}
-                eventTime={reservation.eventTime}
-                pack={reservation.pack}
-                serviceType={reservation.serviceType}
-                extras={reservation.extras}
-                totalPrice={reservation.totalPrice}
-                amountPaid={reservation.amountPaid}
-                remainingBalance={reservation.remainingBalance}
-                variant="reminder"
-                messageType="depositRequest"
-                label="Sinal"
-                onSent={handleMessageSent}
-              />
-            )}
-            {reservation.paymentStatus === "partial" && (
-              <WhatsAppButton
-                phone={reservation.phone}
-                customerName={reservation.customerName}
-                eventDate={dateDisplay}
-                eventTime={reservation.eventTime}
-                pack={reservation.pack}
-                serviceType={reservation.serviceType}
-                extras={reservation.extras}
-                totalPrice={reservation.totalPrice}
-                amountPaid={reservation.amountPaid}
-                remainingBalance={reservation.remainingBalance}
-                messageType="depositConfirmation"
-                label="Sinal OK"
-                onSent={handleMessageSent}
-              />
-            )}
-            {differenceInDays(new Date(), date) >= 0 && (
-              <WhatsAppButton
-                phone={reservation.phone}
-                customerName={reservation.customerName}
-                eventDate={dateDisplay}
-                eventTime={reservation.eventTime}
-                serviceType={reservation.serviceType}
-                messageType="postEvent"
-                label="Pós-festa"
-                onSent={handleMessageSent}
-              />
-            )}
-            {reservation.paymentStatus !== "paid" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleMarkPaid}
-                disabled={updateReservation.isPending}
-                className="min-h-[40px] rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Pago
-              </Button>
-            )}
-            <ChecklistButton reservation={reservation} summary={taskSummary} variant="compact" />
-            <ReservationModal
-              reservation={reservation}
-              trigger={
-                <Button variant="outline" size="sm" className="min-h-[40px] rounded-xl">
-                  Detalhes
-                </Button>
-              }
-            />
+  return (
+    <div className="grid gap-3 p-4 md:grid-cols-[88px_1fr_auto] md:items-center">
+      <div className="flex items-center justify-between rounded-xl bg-primary/10 px-3 py-2 text-primary md:flex-col md:justify-center">
+        <span className="text-xs font-semibold uppercase">{format(date, "MMM", { locale: ptBR })}</span>
+        <span className="text-xl font-bold leading-none">{format(date, "dd")}</span>
+      </div>
+
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge className={agendaBadgeClass(item.type)}>{item.typeLabel}</Badge>
+          <Badge className={paymentBadgeClass(item.paymentStatus)}>{paymentLabel(item.paymentStatus)}</Badge>
+          <Badge variant="outline" className="rounded-md">{item.nextAction}</Badge>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">{item.title}</p>
+          <div className="mt-1 flex flex-wrap gap-3 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{item.time}</span>
+            {item.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{item.location}</span>}
           </div>
         </div>
+        {item.services.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {item.services.slice(0, 4).map((service) => (
+              <Badge key={service} variant="secondary" className="rounded-md">{service}</Badge>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-sm md:min-w-[170px] md:text-right">
+        <div>
+          <p className="text-xs text-muted-foreground">Recebido</p>
+          <p className="font-bold text-emerald-700">{formatMoney(item.received)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Falta</p>
+          <p className={item.pending > 0 ? "font-bold text-rose-700" : "font-bold text-emerald-700"}>{formatMoney(item.pending)}</p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="col-span-2 mt-1 rounded-xl">
+          <Link href={item.href}>Abrir</Link>
+        </Button>
       </div>
     </div>
   );
+}
+
+function areaToneClass(tone: "venue" | "external" | "workshop") {
+  if (tone === "external") return "bg-sky-100 text-sky-800";
+  if (tone === "workshop") return "bg-violet-100 text-violet-800";
+  return "bg-pink-100 text-pink-800";
+}
+
+function agendaBadgeClass(type: DashboardV2AgendaItem["type"]) {
+  if (type === "external_events") return "rounded-md border-none bg-sky-100 text-sky-800 hover:bg-sky-100";
+  if (type === "workshops") return "rounded-md border-none bg-violet-100 text-violet-800 hover:bg-violet-100";
+  return "rounded-md border-none bg-pink-100 text-pink-800 hover:bg-pink-100";
+}
+
+function paymentBadgeClass(status: DashboardV2AgendaItem["paymentStatus"]) {
+  if (status === "paid") return "rounded-md border-none bg-emerald-100 text-emerald-800 hover:bg-emerald-100";
+  if (status === "partial") return "rounded-md border-none bg-amber-100 text-amber-800 hover:bg-amber-100";
+  if (status === "unpaid") return "rounded-md border-none bg-rose-100 text-rose-800 hover:bg-rose-100";
+  return "rounded-md border-none bg-muted text-muted-foreground hover:bg-muted";
+}
+
+function paymentLabel(status: DashboardV2AgendaItem["paymentStatus"]) {
+  if (status === "paid") return "Pago";
+  if (status === "partial") return "Sinal";
+  if (status === "unpaid") return "Pendente";
+  return "Sem pagamento";
+}
+
+function formatMoney(value: number) {
+  return moneyFormatter.format(value);
 }

@@ -56,6 +56,37 @@ export const ListReservationsResponseItem = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
   createdAt: zod.string(),
@@ -95,6 +126,37 @@ export const CreateReservationBody = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
 });
 
 /**
@@ -132,6 +194,37 @@ export const GetReservationResponse = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
   createdAt: zod.string(),
@@ -176,6 +269,37 @@ export const UpdateReservationBody = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number().optional(),
   amountPaid: zod.number().optional(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
 });
 
 export const UpdateReservationResponse = zod.object({
@@ -206,6 +330,37 @@ export const UpdateReservationResponse = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
   createdAt: zod.string(),
@@ -217,6 +372,1077 @@ export const UpdateReservationResponse = zod.object({
  */
 export const DeleteReservationParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary List venue events
+ */
+export const ListVenueEventsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+});
+
+export const ListVenueEventsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  packName: zod.string(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  childrenCount: zod.number(),
+  childrenAges: zod.string().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringNotes: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListVenueEventsResponse = zod.array(ListVenueEventsResponseItem);
+
+/**
+ * @summary Create a venue event
+ */
+export const CreateVenueEventBody = zod.object({
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  source: zod.string().nullish(),
+  packName: zod.string(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  childrenCount: zod.number().optional(),
+  childrenAges: zod.string().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringNotes: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().optional(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Get a venue event by ID
+ */
+export const GetVenueEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetVenueEventResponse = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  packName: zod.string(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  childrenCount: zod.number(),
+  childrenAges: zod.string().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringNotes: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Update a venue event
+ */
+export const UpdateVenueEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateVenueEventBody = zod.object({
+  customerName: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string().optional(),
+  startTime: zod.string().optional(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  source: zod.string().nullish(),
+  packName: zod.string().optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  childrenCount: zod.number().optional(),
+  childrenAges: zod.string().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringNotes: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().optional(),
+  totalPrice: zod.number().optional(),
+  amountPaid: zod.number().optional(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateVenueEventResponse = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  packName: zod.string(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  childrenCount: zod.number(),
+  childrenAges: zod.string().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringNotes: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete a venue event
+ */
+export const DeleteVenueEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary List external events
+ */
+export const ListExternalEventsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+});
+
+export const ListExternalEventsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      externalEventId: zod.string().uuid(),
+      serviceType: zod.enum([
+        "decoracao",
+        "catering",
+        "organizacao_evento",
+        "animacao",
+        "insuflavel",
+        "baloes",
+        "outro",
+      ]),
+      serviceLabel: zod.string(),
+      price: zod.number(),
+      status: zod.enum(["planned", "in_progress", "completed", "cancelled"]),
+      notes: zod.string().nullish(),
+      sortOrder: zod.number(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListExternalEventsResponse = zod.array(
+  ListExternalEventsResponseItem,
+);
+
+/**
+ * @summary Create an external event with services
+ */
+
+export const CreateExternalEventBody = zod.object({
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().optional(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod
+    .array(
+      zod.object({
+        serviceType: zod.enum([
+          "decoracao",
+          "catering",
+          "organizacao_evento",
+          "animacao",
+          "insuflavel",
+          "baloes",
+          "outro",
+        ]),
+        serviceLabel: zod.string(),
+        price: zod.number().optional(),
+        status: zod
+          .enum(["planned", "in_progress", "completed", "cancelled"])
+          .optional(),
+        notes: zod.string().nullish(),
+        sortOrder: zod.number().optional(),
+      }),
+    )
+    .min(1),
+});
+
+/**
+ * @summary Get an external event by ID
+ */
+export const GetExternalEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetExternalEventResponse = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      externalEventId: zod.string().uuid(),
+      serviceType: zod.enum([
+        "decoracao",
+        "catering",
+        "organizacao_evento",
+        "animacao",
+        "insuflavel",
+        "baloes",
+        "outro",
+      ]),
+      serviceLabel: zod.string(),
+      price: zod.number(),
+      status: zod.enum(["planned", "in_progress", "completed", "cancelled"]),
+      notes: zod.string().nullish(),
+      sortOrder: zod.number(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Update an external event and optionally replace services
+ */
+export const UpdateExternalEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateExternalEventBody = zod.object({
+  customerName: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string().optional(),
+  startTime: zod.string().optional(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().optional(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number().optional(),
+  amountPaid: zod.number().optional(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod
+    .array(
+      zod.object({
+        serviceType: zod.enum([
+          "decoracao",
+          "catering",
+          "organizacao_evento",
+          "animacao",
+          "insuflavel",
+          "baloes",
+          "outro",
+        ]),
+        serviceLabel: zod.string(),
+        price: zod.number().optional(),
+        status: zod
+          .enum(["planned", "in_progress", "completed", "cancelled"])
+          .optional(),
+        notes: zod.string().nullish(),
+        sortOrder: zod.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+export const UpdateExternalEventResponse = zod.object({
+  id: zod.string().uuid(),
+  customerName: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  eventDate: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  status: zod.enum(["draft", "confirmed", "completed", "cancelled"]),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  source: zod.string().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  setupNotes: zod.string().nullish(),
+  teardownNotes: zod.string().nullish(),
+  accessNotes: zod.string().nullish(),
+  totalPrice: zod.number(),
+  amountPaid: zod.number(),
+  remainingBalance: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  services: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      externalEventId: zod.string().uuid(),
+      serviceType: zod.enum([
+        "decoracao",
+        "catering",
+        "organizacao_evento",
+        "animacao",
+        "insuflavel",
+        "baloes",
+        "outro",
+      ]),
+      serviceLabel: zod.string(),
+      price: zod.number(),
+      status: zod.enum(["planned", "in_progress", "completed", "cancelled"]),
+      notes: zod.string().nullish(),
+      sortOrder: zod.number(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete an external event
+ */
+export const DeleteExternalEventParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary List workshops with participant aggregates
+ */
+export const ListWorkshopsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  status: zod
+    .enum(["draft", "open", "full", "completed", "cancelled"])
+    .optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+});
+
+export const ListWorkshopsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  date: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number(),
+  price: zod.number(),
+  kitIncluded: zod.boolean(),
+  status: zod.enum(["draft", "open", "full", "completed", "cancelled"]),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  participantsCount: zod.number(),
+  activeParticipantsCount: zod.number(),
+  availableSeats: zod.number(),
+  totalReceived: zod.number(),
+  totalPending: zod.number(),
+  participants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        workshopId: zod.string().uuid(),
+        name: zod.string(),
+        phone: zod.string(),
+        email: zod.string().nullish(),
+        nif: zod.string().nullish(),
+        amountPaid: zod.number(),
+        amountDue: zod.number(),
+        paymentMethod: zod.string().nullish(),
+        paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+        status: zod.enum(["registered", "confirmed", "attended", "cancelled"]),
+        notes: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListWorkshopsResponse = zod.array(ListWorkshopsResponseItem);
+
+/**
+ * @summary Create a workshop
+ */
+export const createWorkshopBodyCapacityMin = 0;
+
+export const createWorkshopBodyPriceMin = 0;
+
+export const CreateWorkshopBody = zod.object({
+  name: zod.string(),
+  description: zod.string().nullish(),
+  date: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number().min(createWorkshopBodyCapacityMin),
+  price: zod.number().min(createWorkshopBodyPriceMin),
+  kitIncluded: zod.boolean().optional(),
+  status: zod
+    .enum(["draft", "open", "full", "completed", "cancelled"])
+    .optional(),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Get a workshop by ID with participants
+ */
+export const GetWorkshopParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const GetWorkshopResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  date: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number(),
+  price: zod.number(),
+  kitIncluded: zod.boolean(),
+  status: zod.enum(["draft", "open", "full", "completed", "cancelled"]),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  participantsCount: zod.number(),
+  activeParticipantsCount: zod.number(),
+  availableSeats: zod.number(),
+  totalReceived: zod.number(),
+  totalPending: zod.number(),
+  participants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        workshopId: zod.string().uuid(),
+        name: zod.string(),
+        phone: zod.string(),
+        email: zod.string().nullish(),
+        nif: zod.string().nullish(),
+        amountPaid: zod.number(),
+        amountDue: zod.number(),
+        paymentMethod: zod.string().nullish(),
+        paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+        status: zod.enum(["registered", "confirmed", "attended", "cancelled"]),
+        notes: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Update a workshop
+ */
+export const UpdateWorkshopParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateWorkshopBodyCapacityMin = 0;
+
+export const updateWorkshopBodyPriceMin = 0;
+
+export const UpdateWorkshopBody = zod.object({
+  name: zod.string().optional(),
+  description: zod.string().nullish(),
+  date: zod.string().optional(),
+  startTime: zod.string().optional(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number().min(updateWorkshopBodyCapacityMin).optional(),
+  price: zod.number().min(updateWorkshopBodyPriceMin).optional(),
+  kitIncluded: zod.boolean().optional(),
+  status: zod
+    .enum(["draft", "open", "full", "completed", "cancelled"])
+    .optional(),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateWorkshopResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  date: zod.string(),
+  startTime: zod.string(),
+  endTime: zod.string().nullish(),
+  capacity: zod.number(),
+  price: zod.number(),
+  kitIncluded: zod.boolean(),
+  status: zod.enum(["draft", "open", "full", "completed", "cancelled"]),
+  location: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  participantsCount: zod.number(),
+  activeParticipantsCount: zod.number(),
+  availableSeats: zod.number(),
+  totalReceived: zod.number(),
+  totalPending: zod.number(),
+  participants: zod
+    .array(
+      zod.object({
+        id: zod.string().uuid(),
+        workshopId: zod.string().uuid(),
+        name: zod.string(),
+        phone: zod.string(),
+        email: zod.string().nullish(),
+        nif: zod.string().nullish(),
+        amountPaid: zod.number(),
+        amountDue: zod.number(),
+        paymentMethod: zod.string().nullish(),
+        paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+        status: zod.enum(["registered", "confirmed", "attended", "cancelled"]),
+        notes: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+    )
+    .optional(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete a workshop
+ */
+export const DeleteWorkshopParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Add a participant to a workshop
+ */
+export const CreateWorkshopParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const createWorkshopParticipantBodyAmountPaidMin = 0;
+
+export const createWorkshopParticipantBodyAmountDueMin = 0;
+
+export const CreateWorkshopParticipantBody = zod.object({
+  name: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  amountPaid: zod
+    .number()
+    .min(createWorkshopParticipantBodyAmountPaidMin)
+    .optional(),
+  amountDue: zod
+    .number()
+    .min(createWorkshopParticipantBodyAmountDueMin)
+    .optional(),
+  paymentMethod: zod.string().nullish(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  status: zod
+    .enum(["registered", "confirmed", "attended", "cancelled"])
+    .optional(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Update a workshop participant
+ */
+export const UpdateWorkshopParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  participantId: zod.coerce.string().uuid(),
+});
+
+export const updateWorkshopParticipantBodyAmountPaidMin = 0;
+
+export const updateWorkshopParticipantBodyAmountDueMin = 0;
+
+export const UpdateWorkshopParticipantBody = zod.object({
+  name: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  amountPaid: zod
+    .number()
+    .min(updateWorkshopParticipantBodyAmountPaidMin)
+    .optional(),
+  amountDue: zod
+    .number()
+    .min(updateWorkshopParticipantBodyAmountDueMin)
+    .optional(),
+  paymentMethod: zod.string().nullish(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
+  status: zod
+    .enum(["registered", "confirmed", "attended", "cancelled"])
+    .optional(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateWorkshopParticipantResponse = zod.object({
+  id: zod.string().uuid(),
+  workshopId: zod.string().uuid(),
+  name: zod.string(),
+  phone: zod.string(),
+  email: zod.string().nullish(),
+  nif: zod.string().nullish(),
+  amountPaid: zod.number(),
+  amountDue: zod.number(),
+  paymentMethod: zod.string().nullish(),
+  paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+  status: zod.enum(["registered", "confirmed", "attended", "cancelled"]),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Delete a workshop participant
+ */
+export const DeleteWorkshopParticipantParams = zod.object({
+  id: zod.coerce.string().uuid(),
+  participantId: zod.coerce.string().uuid(),
+});
+
+/**
+ * Aggregates venue events, external events, services, workshops and participants for the V2 dashboard.
+ * @summary Get V2 dashboard aggregate
+ */
+export const GetDashboardV2Response = zod.object({
+  summary: zod.object({
+    todayCount: zod.number(),
+    nextSevenDaysCount: zod.number(),
+    totalReceived: zod.number(),
+    totalPending: zod.number(),
+  }),
+  areas: zod.object({
+    venueEvents: zod.object({
+      totalCount: zod.number(),
+      upcomingCount: zod.number(),
+      nextSevenDaysCount: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+    }),
+    externalEvents: zod.object({
+      totalCount: zod.number(),
+      upcomingCount: zod.number(),
+      nextSevenDaysCount: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+    }),
+    workshops: zod
+      .object({
+        totalCount: zod.number(),
+        upcomingCount: zod.number(),
+        nextSevenDaysCount: zod.number(),
+        received: zod.number(),
+        pending: zod.number(),
+      })
+      .and(
+        zod.object({
+          activeParticipantsCount: zod.number(),
+          availableSeats: zod.number(),
+        }),
+      ),
+  }),
+  agenda: zod.array(
+    zod.object({
+      id: zod.string(),
+      type: zod.enum(["venue_events", "external_events", "workshops"]),
+      typeLabel: zod.string(),
+      title: zod.string(),
+      date: zod.string(),
+      time: zod.string(),
+      location: zod.string().nullable(),
+      status: zod.string(),
+      paymentStatus: zod.enum(["unpaid", "partial", "paid", "none"]),
+      total: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+      nextAction: zod.string(),
+      href: zod.string(),
+      services: zod.array(zod.string()),
+    }),
+  ),
+});
+
+/**
+ * Aggregates V2 venue events, external events, workshops and participants for the operational calendar.
+ * @summary Get V2 calendar aggregate
+ */
+export const getCalendarV2QueryStartDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+export const getCalendarV2QueryEndDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+
+export const GetCalendarV2QueryParams = zod.object({
+  startDate: zod.coerce
+    .string()
+    .regex(getCalendarV2QueryStartDateRegExp)
+    .optional(),
+  endDate: zod.coerce
+    .string()
+    .regex(getCalendarV2QueryEndDateRegExp)
+    .optional(),
+});
+
+export const GetCalendarV2Response = zod.object({
+  summary: zod.object({
+    startDate: zod.string(),
+    endDate: zod.string(),
+    totalItems: zod.number(),
+    spaceOccupyingItems: zod.number(),
+    externalItems: zod.number(),
+    workshops: zod.number(),
+    freeDays: zod.number(),
+    busyDays: zod.number(),
+    almostFullDays: zod.number(),
+    fullDays: zod.number(),
+  }),
+  days: zod.array(
+    zod.object({
+      date: zod.string(),
+      status: zod.enum(["free", "busy", "almost_full", "full"]),
+      spaceSlotsUsed: zod.number(),
+      spaceSlotsTotal: zod.number(),
+      items: zod.array(
+        zod.object({
+          id: zod.string(),
+          type: zod.enum(["venue_event", "external_event", "workshop"]),
+          title: zod.string(),
+          date: zod.string(),
+          startTime: zod.string(),
+          endTime: zod.string().nullable(),
+          customerName: zod.string().nullable(),
+          location: zod.string().nullable(),
+          servicesLabels: zod.array(zod.string()),
+          paymentStatus: zod.string().nullable(),
+          amountPaid: zod.number().nullable(),
+          totalPrice: zod.number().nullable(),
+          pendingAmount: zod.number().nullable(),
+          capacity: zod.number().nullable(),
+          activeParticipantsCount: zod.number().nullable(),
+          availableSeats: zod.number().nullable(),
+          totalReceived: zod.number().nullable(),
+          totalPending: zod.number().nullable(),
+          occupiesSpace: zod.boolean(),
+          status: zod.string(),
+        }),
+      ),
+    }),
+  ),
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      type: zod.enum(["venue_event", "external_event", "workshop"]),
+      title: zod.string(),
+      date: zod.string(),
+      startTime: zod.string(),
+      endTime: zod.string().nullable(),
+      customerName: zod.string().nullable(),
+      location: zod.string().nullable(),
+      servicesLabels: zod.array(zod.string()),
+      paymentStatus: zod.string().nullable(),
+      amountPaid: zod.number().nullable(),
+      totalPrice: zod.number().nullable(),
+      pendingAmount: zod.number().nullable(),
+      capacity: zod.number().nullable(),
+      activeParticipantsCount: zod.number().nullable(),
+      availableSeats: zod.number().nullable(),
+      totalReceived: zod.number().nullable(),
+      totalPending: zod.number().nullable(),
+      occupiesSpace: zod.boolean(),
+      status: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * Aggregates V2 venue events, external events, services, workshops and participants for business reports.
+ * @summary Get V2 reports aggregate
+ */
+export const getReportsV2QueryStartDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+export const getReportsV2QueryEndDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+
+export const GetReportsV2QueryParams = zod.object({
+  startDate: zod.coerce
+    .string()
+    .regex(getReportsV2QueryStartDateRegExp)
+    .optional(),
+  endDate: zod.coerce.string().regex(getReportsV2QueryEndDateRegExp).optional(),
+});
+
+export const GetReportsV2Response = zod.object({
+  summary: zod.object({
+    startDate: zod.string(),
+    endDate: zod.string(),
+    totalRevenue: zod.number(),
+    totalReceived: zod.number(),
+    totalPending: zod.number(),
+    eventCount: zod.number(),
+    averageTicket: zod.number(),
+  }),
+  areas: zod.object({
+    venueEvents: zod.object({
+      eventCount: zod.number(),
+      revenue: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+      averageTicket: zod.number(),
+    }),
+    externalEvents: zod.object({
+      eventCount: zod.number(),
+      revenue: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+      averageTicket: zod.number(),
+    }),
+    workshops: zod.object({
+      eventCount: zod.number(),
+      revenue: zod.number(),
+      received: zod.number(),
+      pending: zod.number(),
+      averageTicket: zod.number(),
+    }),
+  }),
+  venueEvents: zod.object({
+    partyCount: zod.number(),
+    revenue: zod.number(),
+    received: zod.number(),
+    pending: zod.number(),
+    topPacks: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    revenueByPack: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    averageChildren: zod.number(),
+    sources: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+  }),
+  externalEvents: zod.object({
+    eventCount: zod.number(),
+    revenue: zod.number(),
+    received: zod.number(),
+    pending: zod.number(),
+    topServices: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    revenueByServiceType: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    serviceCombinations: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        revenue: zod.number(),
+        percentage: zod.number(),
+      }),
+    ),
+    averageTicket: zod.number(),
+  }),
+  workshops: zod.object({
+    workshopCount: zod.number(),
+    activeRegistrations: zod.number(),
+    occupiedSeats: zod.number(),
+    freeSeats: zod.number(),
+    occupancyRate: zod.number(),
+    received: zod.number(),
+    pending: zod.number(),
+    participantsByPaymentStatus: zod.object({
+      paid: zod.number(),
+      partial: zod.number(),
+      unpaid: zod.number(),
+    }),
+  }),
 });
 
 /**
@@ -264,6 +1490,37 @@ export const GetUpcomingReservationsResponseItem = zod.object({
   notes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  reservationType: zod
+    .enum(["venue_party", "external_service", "workshop"])
+    .optional(),
+  customerEmail: zod.string().nullish(),
+  customerNif: zod.string().nullish(),
+  paymentMethod: zod.string().nullish(),
+  reservationSource: zod.string().nullish(),
+  reservationStatus: zod
+    .enum(["draft", "confirmed", "completed", "cancelled"])
+    .optional(),
+  birthdayChildName: zod.string().nullish(),
+  birthdayChildAge: zod.number().nullish(),
+  partyTheme: zod.string().nullish(),
+  decorationNotes: zod.string().nullish(),
+  cateringOption: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  imageAuthorization: zod
+    .union([
+      zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+      zod.null(),
+    ])
+    .optional(),
+  termsAccepted: zod.boolean().nullish(),
+  eventLocation: zod.string().nullish(),
+  guestCount: zod.number().nullish(),
+  eventType: zod.string().nullish(),
+  eventTheme: zod.string().nullish(),
+  externalServiceNotes: zod.string().nullish(),
+  workshopName: zod.string().nullish(),
+  participantCount: zod.number().nullish(),
+  workshopNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
   createdAt: zod.string(),
@@ -470,6 +1727,37 @@ export const GetCalendarReservationsResponseItem = zod.object({
       notes: zod.string().nullish(),
       totalPrice: zod.number(),
       amountPaid: zod.number(),
+      reservationType: zod
+        .enum(["venue_party", "external_service", "workshop"])
+        .optional(),
+      customerEmail: zod.string().nullish(),
+      customerNif: zod.string().nullish(),
+      paymentMethod: zod.string().nullish(),
+      reservationSource: zod.string().nullish(),
+      reservationStatus: zod
+        .enum(["draft", "confirmed", "completed", "cancelled"])
+        .optional(),
+      birthdayChildName: zod.string().nullish(),
+      birthdayChildAge: zod.number().nullish(),
+      partyTheme: zod.string().nullish(),
+      decorationNotes: zod.string().nullish(),
+      cateringOption: zod.string().nullish(),
+      allergies: zod.string().nullish(),
+      imageAuthorization: zod
+        .union([
+          zod.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]),
+          zod.null(),
+        ])
+        .optional(),
+      termsAccepted: zod.boolean().nullish(),
+      eventLocation: zod.string().nullish(),
+      guestCount: zod.number().nullish(),
+      eventType: zod.string().nullish(),
+      eventTheme: zod.string().nullish(),
+      externalServiceNotes: zod.string().nullish(),
+      workshopName: zod.string().nullish(),
+      participantCount: zod.number().nullish(),
+      workshopNotes: zod.string().nullish(),
       remainingBalance: zod.number(),
       paymentStatus: zod.enum(["paid", "partial", "unpaid"]),
       createdAt: zod.string(),

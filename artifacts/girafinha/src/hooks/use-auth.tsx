@@ -53,7 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (error || !data.session) {
-      return { ok: false, error: "Credenciais invalidas" };
+      const message = error?.message?.toLowerCase().includes("invalid login credentials")
+        ? "Credenciais invalidas"
+        : error?.message ?? "Nao foi possivel ligar ao Supabase";
+      return { ok: false, error: message };
     }
 
     setEmail(data.user.email ?? null);

@@ -21,6 +21,125 @@ export const ServiceType = {
   Workshops: "Workshops",
 } as const;
 
+export type ReservationType =
+  (typeof ReservationType)[keyof typeof ReservationType];
+
+export const ReservationType = {
+  venue_party: "venue_party",
+  external_service: "external_service",
+  workshop: "workshop",
+} as const;
+
+export type ReservationStatus =
+  (typeof ReservationStatus)[keyof typeof ReservationStatus];
+
+export const ReservationStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type VenueEventStatus =
+  (typeof VenueEventStatus)[keyof typeof VenueEventStatus];
+
+export const VenueEventStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type VenueEventPaymentStatus =
+  (typeof VenueEventPaymentStatus)[keyof typeof VenueEventPaymentStatus];
+
+export const VenueEventPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+} as const;
+
+export type VenueEventImageAuthorization =
+  (typeof VenueEventImageAuthorization)[keyof typeof VenueEventImageAuthorization];
+
+export const VenueEventImageAuthorization = {
+  rosto_visivel: "rosto_visivel",
+  rosto_tapado: "rosto_tapado",
+  nao_autorizo: "nao_autorizo",
+} as const;
+
+export type ExternalEventStatus =
+  (typeof ExternalEventStatus)[keyof typeof ExternalEventStatus];
+
+export const ExternalEventStatus = {
+  draft: "draft",
+  confirmed: "confirmed",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type ExternalEventPaymentStatus =
+  (typeof ExternalEventPaymentStatus)[keyof typeof ExternalEventPaymentStatus];
+
+export const ExternalEventPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+} as const;
+
+export type ExternalEventServiceType =
+  (typeof ExternalEventServiceType)[keyof typeof ExternalEventServiceType];
+
+export const ExternalEventServiceType = {
+  decoracao: "decoracao",
+  catering: "catering",
+  organizacao_evento: "organizacao_evento",
+  animacao: "animacao",
+  insuflavel: "insuflavel",
+  baloes: "baloes",
+  outro: "outro",
+} as const;
+
+export type ExternalEventServiceStatus =
+  (typeof ExternalEventServiceStatus)[keyof typeof ExternalEventServiceStatus];
+
+export const ExternalEventServiceStatus = {
+  planned: "planned",
+  in_progress: "in_progress",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type WorkshopStatus =
+  (typeof WorkshopStatus)[keyof typeof WorkshopStatus];
+
+export const WorkshopStatus = {
+  draft: "draft",
+  open: "open",
+  full: "full",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export type WorkshopParticipantStatus =
+  (typeof WorkshopParticipantStatus)[keyof typeof WorkshopParticipantStatus];
+
+export const WorkshopParticipantStatus = {
+  registered: "registered",
+  confirmed: "confirmed",
+  attended: "attended",
+  cancelled: "cancelled",
+} as const;
+
+export type WorkshopParticipantPaymentStatus =
+  (typeof WorkshopParticipantPaymentStatus)[keyof typeof WorkshopParticipantPaymentStatus];
+
+export const WorkshopParticipantPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+} as const;
+
 export type ReservationPack =
   (typeof ReservationPack)[keyof typeof ReservationPack];
 
@@ -65,6 +184,47 @@ export interface Reservation {
   notes?: string | null;
   totalPrice: number;
   amountPaid: number;
+  reservationType?: ReservationType;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerNif?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  reservationSource?: string | null;
+  reservationStatus?: ReservationStatus;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringOption?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: "rosto_visivel" | "rosto_tapado" | "nao_autorizo" | null;
+  /** @nullable */
+  termsAccepted?: boolean | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  /** @nullable */
+  guestCount?: number | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  externalServiceNotes?: string | null;
+  /** @nullable */
+  workshopName?: string | null;
+  /** @nullable */
+  participantCount?: number | null;
+  /** @nullable */
+  workshopNotes?: string | null;
   remainingBalance: number;
   paymentStatus: ReservationPaymentStatus;
   createdAt: string;
@@ -105,6 +265,47 @@ export interface CreateReservationBody {
   notes?: string | null;
   totalPrice: number;
   amountPaid: number;
+  reservationType?: ReservationType;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerNif?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  reservationSource?: string | null;
+  reservationStatus?: ReservationStatus;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringOption?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: "rosto_visivel" | "rosto_tapado" | "nao_autorizo" | null;
+  /** @nullable */
+  termsAccepted?: boolean | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  /** @nullable */
+  guestCount?: number | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  externalServiceNotes?: string | null;
+  /** @nullable */
+  workshopName?: string | null;
+  /** @nullable */
+  participantCount?: number | null;
+  /** @nullable */
+  workshopNotes?: string | null;
 }
 
 export type UpdateReservationBodyPack =
@@ -141,6 +342,439 @@ export interface UpdateReservationBody {
   notes?: string | null;
   totalPrice?: number;
   amountPaid?: number;
+  reservationType?: ReservationType;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerNif?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  reservationSource?: string | null;
+  reservationStatus?: ReservationStatus;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringOption?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: "rosto_visivel" | "rosto_tapado" | "nao_autorizo" | null;
+  /** @nullable */
+  termsAccepted?: boolean | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  /** @nullable */
+  guestCount?: number | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  externalServiceNotes?: string | null;
+  /** @nullable */
+  workshopName?: string | null;
+  /** @nullable */
+  participantCount?: number | null;
+  /** @nullable */
+  workshopNotes?: string | null;
+}
+
+export interface VenueEvent {
+  id: string;
+  customerName: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  status: VenueEventStatus;
+  paymentStatus: VenueEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  packName: string;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  childrenCount: number;
+  /** @nullable */
+  childrenAges?: string | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringNotes?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: VenueEventImageAuthorization | null;
+  termsAccepted: boolean;
+  totalPrice: number;
+  amountPaid: number;
+  remainingBalance: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateVenueEventBody {
+  customerName: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  status?: VenueEventStatus;
+  /** @nullable */
+  source?: string | null;
+  packName: string;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  childrenCount?: number;
+  /** @nullable */
+  childrenAges?: string | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringNotes?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: VenueEventImageAuthorization | null;
+  termsAccepted?: boolean;
+  totalPrice: number;
+  amountPaid: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface UpdateVenueEventBody {
+  customerName?: string;
+  phone?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate?: string;
+  startTime?: string;
+  /** @nullable */
+  endTime?: string | null;
+  status?: VenueEventStatus;
+  paymentStatus?: VenueEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  packName?: string;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  childrenCount?: number;
+  /** @nullable */
+  childrenAges?: string | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringNotes?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: VenueEventImageAuthorization | null;
+  termsAccepted?: boolean;
+  totalPrice?: number;
+  amountPaid?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface ExternalEventService {
+  id: string;
+  externalEventId: string;
+  serviceType: ExternalEventServiceType;
+  serviceLabel: string;
+  price: number;
+  status: ExternalEventServiceStatus;
+  /** @nullable */
+  notes?: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExternalEventServiceInput {
+  serviceType: ExternalEventServiceType;
+  serviceLabel: string;
+  price?: number;
+  status?: ExternalEventServiceStatus;
+  /** @nullable */
+  notes?: string | null;
+  sortOrder?: number;
+}
+
+export interface ExternalEvent {
+  id: string;
+  customerName: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  status: ExternalEventStatus;
+  paymentStatus: ExternalEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  guestCount: number;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  setupNotes?: string | null;
+  /** @nullable */
+  teardownNotes?: string | null;
+  /** @nullable */
+  accessNotes?: string | null;
+  totalPrice: number;
+  amountPaid: number;
+  remainingBalance: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  services: ExternalEventService[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExternalEventBody {
+  customerName: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  status?: ExternalEventStatus;
+  paymentStatus?: ExternalEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  guestCount?: number;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  setupNotes?: string | null;
+  /** @nullable */
+  teardownNotes?: string | null;
+  /** @nullable */
+  accessNotes?: string | null;
+  totalPrice: number;
+  amountPaid: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @minItems 1 */
+  services: ExternalEventServiceInput[];
+}
+
+export interface UpdateExternalEventBody {
+  customerName?: string;
+  phone?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  eventDate?: string;
+  startTime?: string;
+  /** @nullable */
+  endTime?: string | null;
+  status?: ExternalEventStatus;
+  paymentStatus?: ExternalEventPaymentStatus;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  guestCount?: number;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  setupNotes?: string | null;
+  /** @nullable */
+  teardownNotes?: string | null;
+  /** @nullable */
+  accessNotes?: string | null;
+  totalPrice?: number;
+  amountPaid?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  services?: ExternalEventServiceInput[];
+}
+
+export interface WorkshopParticipant {
+  id: string;
+  workshopId: string;
+  name: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  amountPaid: number;
+  amountDue: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  paymentStatus: WorkshopParticipantPaymentStatus;
+  status: WorkshopParticipantStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Workshop {
+  id: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  date: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  capacity: number;
+  price: number;
+  kitIncluded: boolean;
+  status: WorkshopStatus;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  participantsCount: number;
+  activeParticipantsCount: number;
+  availableSeats: number;
+  totalReceived: number;
+  totalPending: number;
+  participants?: WorkshopParticipant[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWorkshopBody {
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  date: string;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  /** @minimum 0 */
+  capacity: number;
+  /** @minimum 0 */
+  price: number;
+  kitIncluded?: boolean;
+  status?: WorkshopStatus;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface UpdateWorkshopBody {
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  date?: string;
+  startTime?: string;
+  /** @nullable */
+  endTime?: string | null;
+  /** @minimum 0 */
+  capacity?: number;
+  /** @minimum 0 */
+  price?: number;
+  kitIncluded?: boolean;
+  status?: WorkshopStatus;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface CreateWorkshopParticipantBody {
+  name: string;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  /** @minimum 0 */
+  amountPaid?: number;
+  /** @minimum 0 */
+  amountDue?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  paymentStatus?: WorkshopParticipantPaymentStatus;
+  status?: WorkshopParticipantStatus;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface UpdateWorkshopParticipantBody {
+  name?: string;
+  phone?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  nif?: string | null;
+  /** @minimum 0 */
+  amountPaid?: number;
+  /** @minimum 0 */
+  amountDue?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  paymentStatus?: WorkshopParticipantPaymentStatus;
+  status?: WorkshopParticipantStatus;
+  /** @nullable */
+  notes?: string | null;
 }
 
 export interface DashboardStats {
@@ -152,6 +786,235 @@ export interface DashboardStats {
   paidCount: number;
   partialCount: number;
   unpaidCount: number;
+}
+
+export interface DashboardV2Summary {
+  todayCount: number;
+  nextSevenDaysCount: number;
+  totalReceived: number;
+  totalPending: number;
+}
+
+export interface DashboardV2AreaSummary {
+  totalCount: number;
+  upcomingCount: number;
+  nextSevenDaysCount: number;
+  received: number;
+  pending: number;
+}
+
+export type DashboardV2WorkshopAreaSummary = DashboardV2AreaSummary & {
+  activeParticipantsCount: number;
+  availableSeats: number;
+};
+
+export interface DashboardV2Areas {
+  venueEvents: DashboardV2AreaSummary;
+  externalEvents: DashboardV2AreaSummary;
+  workshops: DashboardV2WorkshopAreaSummary;
+}
+
+export type DashboardV2AgendaItemType =
+  (typeof DashboardV2AgendaItemType)[keyof typeof DashboardV2AgendaItemType];
+
+export const DashboardV2AgendaItemType = {
+  venue_events: "venue_events",
+  external_events: "external_events",
+  workshops: "workshops",
+} as const;
+
+export type DashboardV2AgendaItemPaymentStatus =
+  (typeof DashboardV2AgendaItemPaymentStatus)[keyof typeof DashboardV2AgendaItemPaymentStatus];
+
+export const DashboardV2AgendaItemPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+  none: "none",
+} as const;
+
+export interface DashboardV2AgendaItem {
+  id: string;
+  type: DashboardV2AgendaItemType;
+  typeLabel: string;
+  title: string;
+  date: string;
+  time: string;
+  /** @nullable */
+  location: string | null;
+  status: string;
+  paymentStatus: DashboardV2AgendaItemPaymentStatus;
+  total: number;
+  received: number;
+  pending: number;
+  nextAction: string;
+  href: string;
+  services: string[];
+}
+
+export interface DashboardV2 {
+  summary: DashboardV2Summary;
+  areas: DashboardV2Areas;
+  agenda: DashboardV2AgendaItem[];
+}
+
+export interface CalendarV2Summary {
+  startDate: string;
+  endDate: string;
+  totalItems: number;
+  spaceOccupyingItems: number;
+  externalItems: number;
+  workshops: number;
+  freeDays: number;
+  busyDays: number;
+  almostFullDays: number;
+  fullDays: number;
+}
+
+export type CalendarV2DayStatus =
+  (typeof CalendarV2DayStatus)[keyof typeof CalendarV2DayStatus];
+
+export const CalendarV2DayStatus = {
+  free: "free",
+  busy: "busy",
+  almost_full: "almost_full",
+  full: "full",
+} as const;
+
+export type CalendarV2ItemType =
+  (typeof CalendarV2ItemType)[keyof typeof CalendarV2ItemType];
+
+export const CalendarV2ItemType = {
+  venue_event: "venue_event",
+  external_event: "external_event",
+  workshop: "workshop",
+} as const;
+
+export interface CalendarV2Item {
+  id: string;
+  type: CalendarV2ItemType;
+  title: string;
+  date: string;
+  startTime: string;
+  /** @nullable */
+  endTime: string | null;
+  /** @nullable */
+  customerName: string | null;
+  /** @nullable */
+  location: string | null;
+  servicesLabels: string[];
+  /** @nullable */
+  paymentStatus: string | null;
+  /** @nullable */
+  amountPaid: number | null;
+  /** @nullable */
+  totalPrice: number | null;
+  /** @nullable */
+  pendingAmount: number | null;
+  /** @nullable */
+  capacity: number | null;
+  /** @nullable */
+  activeParticipantsCount: number | null;
+  /** @nullable */
+  availableSeats: number | null;
+  /** @nullable */
+  totalReceived: number | null;
+  /** @nullable */
+  totalPending: number | null;
+  occupiesSpace: boolean;
+  status: string;
+}
+
+export interface CalendarV2Day {
+  date: string;
+  status: CalendarV2DayStatus;
+  spaceSlotsUsed: number;
+  spaceSlotsTotal: number;
+  items: CalendarV2Item[];
+}
+
+export interface CalendarV2 {
+  summary: CalendarV2Summary;
+  days: CalendarV2Day[];
+  items: CalendarV2Item[];
+}
+
+export interface ReportsV2Summary {
+  startDate: string;
+  endDate: string;
+  totalRevenue: number;
+  totalReceived: number;
+  totalPending: number;
+  eventCount: number;
+  averageTicket: number;
+}
+
+export interface ReportsV2AreaSummary {
+  eventCount: number;
+  revenue: number;
+  received: number;
+  pending: number;
+  averageTicket: number;
+}
+
+export interface ReportsV2Areas {
+  venueEvents: ReportsV2AreaSummary;
+  externalEvents: ReportsV2AreaSummary;
+  workshops: ReportsV2AreaSummary;
+}
+
+export interface ReportsV2RevenueStat {
+  label: string;
+  count: number;
+  revenue: number;
+  percentage: number;
+}
+
+export interface ReportsV2VenueEvents {
+  partyCount: number;
+  revenue: number;
+  received: number;
+  pending: number;
+  topPacks: ReportsV2RevenueStat[];
+  revenueByPack: ReportsV2RevenueStat[];
+  averageChildren: number;
+  sources: ReportsV2RevenueStat[];
+}
+
+export interface ReportsV2ExternalEvents {
+  eventCount: number;
+  revenue: number;
+  received: number;
+  pending: number;
+  topServices: ReportsV2RevenueStat[];
+  revenueByServiceType: ReportsV2RevenueStat[];
+  serviceCombinations: ReportsV2RevenueStat[];
+  averageTicket: number;
+}
+
+export interface ReportsV2PaymentStatusCounts {
+  paid: number;
+  partial: number;
+  unpaid: number;
+}
+
+export interface ReportsV2Workshops {
+  workshopCount: number;
+  activeRegistrations: number;
+  occupiedSeats: number;
+  freeSeats: number;
+  occupancyRate: number;
+  received: number;
+  pending: number;
+  participantsByPaymentStatus: ReportsV2PaymentStatusCounts;
+}
+
+export interface ReportsV2 {
+  summary: ReportsV2Summary;
+  areas: ReportsV2Areas;
+  venueEvents: ReportsV2VenueEvents;
+  externalEvents: ReportsV2ExternalEvents;
+  workshops: ReportsV2Workshops;
 }
 
 export interface Task {
@@ -286,6 +1149,51 @@ export const ListReservationsStatus = {
   partial: "partial",
   unpaid: "unpaid",
 } as const;
+
+export type ListVenueEventsParams = {
+  search?: string;
+  status?: VenueEventStatus;
+  paymentStatus?: VenueEventPaymentStatus;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type ListExternalEventsParams = {
+  search?: string;
+  status?: ExternalEventStatus;
+  paymentStatus?: ExternalEventPaymentStatus;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type ListWorkshopsParams = {
+  search?: string;
+  status?: WorkshopStatus;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export type GetCalendarV2Params = {
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  startDate?: string;
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  endDate?: string;
+};
+
+export type GetReportsV2Params = {
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  startDate?: string;
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  endDate?: string;
+};
 
 export type GetTasksSummaryParams = {
   /**

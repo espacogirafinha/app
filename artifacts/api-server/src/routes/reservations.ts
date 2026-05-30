@@ -22,10 +22,21 @@ function getServiceType(pack: string): string {
   return "Festas no espaço";
 }
 
+function getReservationType(pack: string): "venue_party" | "external_service" | "workshop" {
+  const serviceType = getServiceType(pack);
+  if (serviceType === "Workshops") return "workshop";
+  if (serviceType === "ServiÃ§os externos") return "external_service";
+  return "venue_party";
+}
+
 function computePaymentStatus(totalPrice: number, amountPaid: number): string {
   if (amountPaid >= totalPrice) return "paid";
   if (amountPaid > 0) return "partial";
   return "unpaid";
+}
+
+function compactObject<T extends Record<string, unknown>>(value: T): Partial<T> {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>;
 }
 
 function formatReservation(r: typeof reservationsTable.$inferSelect) {
@@ -46,6 +57,28 @@ function formatReservation(r: typeof reservationsTable.$inferSelect) {
     notes: r.notes,
     totalPrice: total,
     amountPaid: paid,
+    reservationType: r.reservationType,
+    customerEmail: r.customerEmail,
+    customerNif: r.customerNif,
+    paymentMethod: r.paymentMethod,
+    reservationSource: r.reservationSource,
+    reservationStatus: r.reservationStatus,
+    birthdayChildName: r.birthdayChildName,
+    birthdayChildAge: r.birthdayChildAge,
+    partyTheme: r.partyTheme,
+    decorationNotes: r.decorationNotes,
+    cateringOption: r.cateringOption,
+    allergies: r.allergies,
+    imageAuthorization: r.imageAuthorization,
+    termsAccepted: r.termsAccepted,
+    eventLocation: r.eventLocation,
+    guestCount: r.guestCount,
+    eventType: r.eventType,
+    eventTheme: r.eventTheme,
+    externalServiceNotes: r.externalServiceNotes,
+    workshopName: r.workshopName,
+    participantCount: r.participantCount,
+    workshopNotes: r.workshopNotes,
     remainingBalance: remaining,
     paymentStatus: computePaymentStatus(total, paid),
     createdAt: r.createdAt.toISOString(),
@@ -207,15 +240,18 @@ router.post("/reservations", async (req, res): Promise<void> => {
   }
 
   const { totalPrice, amountPaid, serviceType: _serviceType, ...rest } = parsed.data;
+  const values = compactObject({
+    ...rest,
+    reservationType: rest.reservationType ?? getReservationType(rest.pack),
+    reservationStatus: rest.reservationStatus ?? "draft",
+    totalPrice: String(totalPrice),
+    amountPaid: String(amountPaid),
+  });
 
   const row = await db.transaction(async (tx) => {
     const [created] = await tx
       .insert(reservationsTable)
-      .values({
-        ...rest,
-        totalPrice: String(totalPrice),
-        amountPaid: String(amountPaid),
-      })
+      .values(values as typeof reservationsTable.$inferInsert)
       .returning();
 
     const defaultTasks = DEFAULT_TASKS_BY_PACK[created.pack] ?? [];
@@ -269,7 +305,7 @@ router.patch("/reservations/:id", async (req, res): Promise<void> => {
   }
 
   const { serviceType: _serviceType, ...body } = parsed.data;
-  const updateData: Record<string, unknown> = { ...body };
+  const updateData: Record<string, unknown> = compactObject({ ...body });
   if (parsed.data.totalPrice !== undefined) {
     updateData.totalPrice = String(parsed.data.totalPrice);
   }

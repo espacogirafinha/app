@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreateReservationBodyPack } from "./createReservationBodyPack";
+import type { ReservationStatus } from "./reservationStatus";
+import type { ReservationType } from "./reservationType";
 import type { ServiceType } from "./serviceType";
 
 export interface CreateReservationBody {
@@ -23,4 +25,45 @@ export interface CreateReservationBody {
   notes?: string | null;
   totalPrice: number;
   amountPaid: number;
+  reservationType?: ReservationType;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerNif?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  reservationSource?: string | null;
+  reservationStatus?: ReservationStatus;
+  /** @nullable */
+  birthdayChildName?: string | null;
+  /** @nullable */
+  birthdayChildAge?: number | null;
+  /** @nullable */
+  partyTheme?: string | null;
+  /** @nullable */
+  decorationNotes?: string | null;
+  /** @nullable */
+  cateringOption?: string | null;
+  /** @nullable */
+  allergies?: string | null;
+  imageAuthorization?: "rosto_visivel" | "rosto_tapado" | "nao_autorizo" | null;
+  /** @nullable */
+  termsAccepted?: boolean | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  /** @nullable */
+  guestCount?: number | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventTheme?: string | null;
+  /** @nullable */
+  externalServiceNotes?: string | null;
+  /** @nullable */
+  workshopName?: string | null;
+  /** @nullable */
+  participantCount?: number | null;
+  /** @nullable */
+  workshopNotes?: string | null;
 }
