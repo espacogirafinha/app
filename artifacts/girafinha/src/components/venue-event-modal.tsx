@@ -18,9 +18,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   getListVenueEventsQueryKey,
   useCreateVenueEvent,
+  useListVenuePacks,
   useUpdateVenueEvent,
 } from "@workspace/api-client-react";
-import type { CreateVenueEventBody, VenueEvent } from "@workspace/api-client-react";
+import type { CreateVenueEventBody, VenueEvent, VenuePack } from "@workspace/api-client-react";
 
 type VenueEventFormState = {
   customerName: string;
@@ -58,7 +59,21 @@ const PACK_PRICES: Record<string, number> = {
   "Pack Personalizado": 0,
 };
 
-const PACKS = Object.keys(PACK_PRICES);
+type PackOption = {
+  name: string;
+  basePrice: number;
+  defaultStartTime?: string | null;
+  defaultEndTime?: string | null;
+  sortOrder: number;
+};
+
+const FALLBACK_PACKS: PackOption[] = Object.entries(PACK_PRICES).map(([name, basePrice], index) => ({
+  name,
+  basePrice,
+  defaultStartTime: null,
+  defaultEndTime: null,
+  sortOrder: index,
+}));
 
 const initialState: VenueEventFormState = {
   customerName: "",
@@ -98,6 +113,7 @@ export function VenueEventModal({
   const [form, setForm] = useState<VenueEventFormState>(() => toFormState(event));
   const createVenueEvent = useCreateVenueEvent();
   const updateVenueEvent = useUpdateVenueEvent();
+  const venuePacksQuery = useListVenuePacks();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isEditing = Boolean(event);
@@ -110,6 +126,7 @@ export function VenueEventModal({
   const amountPaid = toNumber(form.amountPaid);
   const remainingBalance = Math.max(0, totalPrice - amountPaid);
   const isPending = createVenueEvent.isPending || updateVenueEvent.isPending;
+  const packOptions = useMemo(() => buildPackOptions(venuePacksQuery.data), [venuePacksQuery.data]);
 
   const activeSlot = useMemo(() => {
     if (form.startTime === "10:00" && form.endTime === "13:00") return "morning";
@@ -119,8 +136,16 @@ export function VenueEventModal({
 
   const patch = (value: Partial<VenueEventFormState>) => setForm((current) => ({ ...current, ...value }));
 
-  const selectPack = (packName: string) => {
-    patch({ packName, totalPrice: String(PACK_PRICES[packName] ?? 0) });
+  const selectPack = (pack: PackOption) => {
+    const nextPatch: Partial<VenueEventFormState> = {
+      packName: pack.name,
+      totalPrice: formatMoneyInput(pack.basePrice),
+    };
+
+    if (pack.defaultStartTime && !form.startTime) nextPatch.startTime = pack.defaultStartTime;
+    if (pack.defaultEndTime && !form.endTime) nextPatch.endTime = pack.defaultEndTime;
+
+    patch(nextPatch);
   };
 
   const selectSlot = (slot: "morning" | "afternoon" | "custom") => {
@@ -220,17 +245,17 @@ export function VenueEventModal({
             <div className="space-y-2 md:col-span-2">
               <Label>Pack</Label>
               <div className="grid gap-2 sm:grid-cols-2">
-                {PACKS.map((pack) => (
+                {packOptions.map((pack) => (
                   <button
-                    key={pack}
+                    key={pack.name}
                     type="button"
                     onClick={() => selectPack(pack)}
                     className={`rounded-xl border p-3 text-left transition-colors ${
-                      form.packName === pack ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-muted/40"
+                      form.packName === pack.name ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-muted/40"
                     }`}
                   >
-                    <span className="block font-semibold">{pack}</span>
-                    <span className="text-sm text-muted-foreground">{PACK_PRICES[pack].toFixed(2)} €</span>
+                    <span className="block font-semibold">{pack.name}</span>
+                    <span className="text-sm text-muted-foreground">{pack.basePrice.toFixed(2)} €</span>
                   </button>
                 ))}
               </div>
@@ -344,6 +369,26 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
+function buildPackOptions(packs?: VenuePack[]): PackOption[] {
+  const activePacks = (packs ?? [])
+    .filter((pack) => pack.isActive)
+    .map((pack) => ({
+      name: pack.name,
+      basePrice: pack.basePrice,
+      defaultStartTime: pack.defaultStartTime,
+      defaultEndTime: pack.defaultEndTime,
+      sortOrder: pack.sortOrder,
+    }))
+    .sort(comparePackOptions);
+
+  return activePacks.length > 0 ? activePacks : FALLBACK_PACKS;
+}
+
+function comparePackOptions(first: PackOption, second: PackOption) {
+  if (first.sortOrder !== second.sortOrder) return first.sortOrder - second.sortOrder;
+  return first.name.localeCompare(second.name, "pt");
+}
+
 function toFormState(event?: VenueEvent): VenueEventFormState {
   if (!event) return initialState;
 
@@ -412,4 +457,8 @@ function emptyToNull(value: string) {
 function toNumber(value: string | number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatMoneyInput(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }

@@ -14,14 +14,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ExternalEventServicesSelector, type ExternalServiceDraft } from "@/components/external-event-services-selector";
+import {
+  ExternalEventServicesSelector,
+  FALLBACK_SERVICE_OPTIONS,
+  type ExternalServiceDraft,
+  type ExternalServiceOption,
+} from "@/components/external-event-services-selector";
 import { useToast } from "@/hooks/use-toast";
 import {
   getListExternalEventsQueryKey,
   useCreateExternalEvent,
+  useListExternalServices,
   useUpdateExternalEvent,
 } from "@workspace/api-client-react";
-import type { CreateExternalEventBody, ExternalEvent } from "@workspace/api-client-react";
+import type { CreateExternalEventBody, ExternalEvent, ExternalEventServiceType, ExternalServiceCatalog } from "@workspace/api-client-react";
 
 type ExternalEventFormState = {
   customerName: string;
@@ -82,6 +88,7 @@ export function ExternalEventModal({
   const [isTotalManual, setIsTotalManual] = useState(false);
   const createExternalEvent = useCreateExternalEvent();
   const updateExternalEvent = useUpdateExternalEvent();
+  const externalServicesQuery = useListExternalServices();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isEditing = Boolean(event);
@@ -103,6 +110,7 @@ export function ExternalEventModal({
   const amountPaid = toNumber(form.amountPaid);
   const remainingBalance = Math.max(0, totalPrice - amountPaid);
   const isPending = createExternalEvent.isPending || updateExternalEvent.isPending;
+  const serviceOptions = useMemo(() => buildServiceOptions(externalServicesQuery.data), [externalServicesQuery.data]);
 
   useEffect(() => {
     if (!open || isTotalManual) return;
@@ -212,7 +220,7 @@ export function ExternalEventModal({
           </FormSection>
 
           <section className="space-y-3 rounded-xl border border-border p-3 md:p-4">
-            <ExternalEventServicesSelector services={services} onChange={setServices} />
+            <ExternalEventServicesSelector services={services} options={serviceOptions} onChange={setServices} />
             <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted/30 p-3 text-sm md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="font-semibold text-foreground">Subtotal dos serviços: {servicesTotal.toFixed(2)} €</p>
@@ -308,6 +316,39 @@ function Field({ label, required, children }: { label: string; required?: boolea
       {children}
     </div>
   );
+}
+
+const serviceTypeValues = new Set<ExternalEventServiceType>([
+  "decoracao",
+  "catering",
+  "organizacao_evento",
+  "animacao",
+  "insuflavel",
+  "baloes",
+  "outro",
+]);
+
+function buildServiceOptions(services?: ExternalServiceCatalog[]): ExternalServiceOption[] {
+  const activeServices = (services ?? [])
+    .filter((service) => service.isActive)
+    .map((service) => ({
+      type: toServiceType(service.code),
+      label: service.name,
+      price: service.basePrice,
+      sortOrder: service.sortOrder,
+    }))
+    .sort(compareServiceOptions);
+
+  return activeServices.length > 0 ? activeServices : FALLBACK_SERVICE_OPTIONS;
+}
+
+function toServiceType(code: string): ExternalEventServiceType {
+  return serviceTypeValues.has(code as ExternalEventServiceType) ? (code as ExternalEventServiceType) : "outro";
+}
+
+function compareServiceOptions(first: ExternalServiceOption, second: ExternalServiceOption) {
+  if (first.sortOrder !== second.sortOrder) return first.sortOrder - second.sortOrder;
+  return first.label.localeCompare(second.label, "pt");
 }
 
 function toFormState(event?: ExternalEvent): ExternalEventFormState {

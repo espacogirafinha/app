@@ -9,31 +9,40 @@ export type ExternalServiceDraft = ExternalEventServiceInput & {
   localId: string;
 };
 
-const SERVICE_OPTIONS: Array<{ type: ExternalEventServiceType; label: string }> = [
-  { type: "decoracao", label: "Decoração" },
-  { type: "catering", label: "Catering / Brunch" },
-  { type: "organizacao_evento", label: "Organização de evento" },
-  { type: "animacao", label: "Animação" },
-  { type: "insuflavel", label: "Aluguer de insuflável" },
-  { type: "baloes", label: "Balões" },
-  { type: "outro", label: "Outro" },
+export type ExternalServiceOption = {
+  type: ExternalEventServiceType;
+  label: string;
+  price: number;
+  sortOrder: number;
+};
+
+export const FALLBACK_SERVICE_OPTIONS: ExternalServiceOption[] = [
+  { type: "decoracao", label: "Decoração", price: 0, sortOrder: 0 },
+  { type: "catering", label: "Catering / Brunch", price: 0, sortOrder: 1 },
+  { type: "organizacao_evento", label: "Organização de evento", price: 0, sortOrder: 2 },
+  { type: "animacao", label: "Animação", price: 0, sortOrder: 3 },
+  { type: "insuflavel", label: "Aluguer de insuflável", price: 0, sortOrder: 4 },
+  { type: "baloes", label: "Balões", price: 0, sortOrder: 5 },
+  { type: "outro", label: "Outro", price: 0, sortOrder: 6 },
 ];
 
 export function ExternalEventServicesSelector({
   services,
+  options = FALLBACK_SERVICE_OPTIONS,
   onChange,
 }: {
   services: ExternalServiceDraft[];
+  options?: ExternalServiceOption[];
   onChange: (services: ExternalServiceDraft[]) => void;
 }) {
-  const addService = (type: ExternalEventServiceType, label: string) => {
+  const addService = (option: ExternalServiceOption) => {
     onChange([
       ...services,
       {
-        localId: `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        serviceType: type,
-        serviceLabel: label,
-        price: 0,
+        localId: `${option.type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        serviceType: option.type,
+        serviceLabel: option.label,
+        price: option.price,
         status: "planned",
         notes: null,
         sortOrder: services.length + 1,
@@ -54,10 +63,11 @@ export function ExternalEventServicesSelector({
       <div>
         <Label>Serviços incluídos</Label>
         <div className="mt-2 flex flex-wrap gap-2">
-          {SERVICE_OPTIONS.map((option) => (
-            <Button key={option.type} type="button" variant="outline" size="sm" className="rounded-full" onClick={() => addService(option.type, option.label)}>
+          {options.map((option) => (
+            <Button key={`${option.type}-${option.label}`} type="button" variant="outline" size="sm" className="rounded-full" onClick={() => addService(option)}>
               <Plus className="h-4 w-4" />
-              {option.label}
+              <span>{option.label}</span>
+              {option.price > 0 && <span className="text-xs text-muted-foreground">{option.price.toFixed(2)} â‚¬</span>}
             </Button>
           ))}
         </div>
