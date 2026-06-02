@@ -18,6 +18,8 @@ tags:
     description: External event management
   - name: workshops
     description: Workshop and participant management
+  - name: settings-catalogs
+    description: Operational settings catalogs
   - name: dashboard
     description: Dashboard and analytics
 
@@ -685,6 +687,231 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /settings/venue-packs:
+    get:
+      operationId: listVenuePacks
+      tags: [settings-catalogs]
+      summary: List venue packs
+      responses:
+        "200":
+          description: List of venue packs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VenuePack"
+
+    post:
+      operationId: createVenuePack
+      tags: [settings-catalogs]
+      summary: Create a venue pack
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVenuePackBody"
+      responses:
+        "201":
+          description: Venue pack created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenuePack"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /settings/venue-packs/{id}:
+    patch:
+      operationId: updateVenuePack
+      tags: [settings-catalogs]
+      summary: Update a venue pack
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVenuePackBody"
+      responses:
+        "200":
+          description: Venue pack updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenuePack"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /settings/external-services:
+    get:
+      operationId: listExternalServices
+      tags: [settings-catalogs]
+      summary: List external service catalog items
+      responses:
+        "200":
+          description: List of external service catalog items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExternalServiceCatalog"
+
+    post:
+      operationId: createExternalService
+      tags: [settings-catalogs]
+      summary: Create an external service catalog item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExternalServiceBody"
+      responses:
+        "201":
+          description: External service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalServiceCatalog"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /settings/external-services/{id}:
+    patch:
+      operationId: updateExternalService
+      tags: [settings-catalogs]
+      summary: Update an external service catalog item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExternalServiceBody"
+      responses:
+        "200":
+          description: External service updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalServiceCatalog"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /settings/event-extras:
+    get:
+      operationId: listEventExtras
+      tags: [settings-catalogs]
+      summary: List event extras
+      responses:
+        "200":
+          description: List of event extras
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventExtra"
+
+    post:
+      operationId: createEventExtra
+      tags: [settings-catalogs]
+      summary: Create an event extra
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventExtraBody"
+      responses:
+        "201":
+          description: Event extra created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventExtra"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /settings/event-extras/{id}:
+    patch:
+      operationId: updateEventExtra
+      tags: [settings-catalogs]
+      summary: Update an event extra
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEventExtraBody"
+      responses:
+        "200":
+          description: Event extra updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventExtra"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /dashboard-v2:
     get:
       operationId: getDashboardV2
@@ -1276,6 +1503,252 @@ components:
         participantCount:
           type: ["integer", "null"]
         workshopNotes:
+          type: ["string", "null"]
+
+    EventExtraAppliesTo:
+      type: string
+      enum: [all, venue_events, external_events, workshops]
+
+    VenuePack:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        defaultStartTime:
+          type: ["string", "null"]
+        defaultEndTime:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        internalNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - basePrice
+        - isActive
+        - sortOrder
+        - createdAt
+        - updatedAt
+
+    CreateVenuePackBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        defaultStartTime:
+          type: ["string", "null"]
+        defaultEndTime:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        internalNotes:
+          type: ["string", "null"]
+      required:
+        - name
+        - basePrice
+
+    UpdateVenuePackBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        defaultStartTime:
+          type: ["string", "null"]
+        defaultEndTime:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        internalNotes:
+          type: ["string", "null"]
+
+    ExternalServiceCatalog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        operationalNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - code
+        - name
+        - basePrice
+        - isActive
+        - sortOrder
+        - createdAt
+        - updatedAt
+
+    CreateExternalServiceBody:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        operationalNotes:
+          type: ["string", "null"]
+      required:
+        - code
+        - name
+        - basePrice
+
+    UpdateExternalServiceBody:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        operationalNotes:
+          type: ["string", "null"]
+
+    EventExtra:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        appliesTo:
+          $ref: "#/components/schemas/EventExtraAppliesTo"
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        internalNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - basePrice
+        - appliesTo
+        - isActive
+        - sortOrder
+        - createdAt
+        - updatedAt
+
+    CreateEventExtraBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        category:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        appliesTo:
+          $ref: "#/components/schemas/EventExtraAppliesTo"
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        internalNotes:
+          type: ["string", "null"]
+      required:
+        - name
+        - basePrice
+
+    UpdateEventExtraBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        category:
+          type: ["string", "null"]
+        basePrice:
+          type: number
+          minimum: 0
+        appliesTo:
+          $ref: "#/components/schemas/EventExtraAppliesTo"
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        internalNotes:
           type: ["string", "null"]
 
     VenueEvent:

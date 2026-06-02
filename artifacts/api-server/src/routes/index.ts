@@ -9,6 +9,7 @@ import tasksRouter from "./tasks";
 import venueEventsRouter from "./venue-events";
 import externalEventsRouter from "./external-events";
 import workshopsRouter from "./workshops";
+import settingsCatalogsRouter from "./settings-catalogs";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(tasksRouter);
 router.use(venueEventsRouter);
 router.use(externalEventsRouter);
 router.use(workshopsRouter);
+router.use(settingsCatalogsRouter);
 
 export default router;
