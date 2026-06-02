@@ -7,6 +7,7 @@
  */
 
 export interface CreateExternalServiceBody {
+  id?: string;
   /** @minLength 1 */
   code: string;
   /** @minLength 1 */

@@ -38,6 +38,13 @@ function getErrorCode(error: unknown) {
     : undefined;
 }
 
+function bodyId(body: unknown) {
+  if (typeof body !== "object" || body === null || !("id" in body)) return undefined;
+
+  const id = (body as { id?: unknown }).id;
+  return typeof id === "string" && id.trim() ? id : undefined;
+}
+
 type VenuePackRow = typeof venuePacksTable.$inferSelect;
 type ExternalServiceCatalogRow = typeof externalServiceCatalogTable.$inferSelect;
 type EventExtraRow = typeof eventExtrasTable.$inferSelect;
@@ -104,12 +111,36 @@ router.post("/settings/venue-packs", async (req, res): Promise<void> => {
     return;
   }
 
+  const id = bodyId(req.body);
   const body = parsed.data;
+  const { basePrice, ...payload } = body;
+
+  if (id) {
+    const updateData = compactObject({
+      ...payload,
+      basePrice: String(basePrice),
+    }) as Partial<typeof venuePacksTable.$inferInsert>;
+
+    const [row] = await db
+      .update(venuePacksTable)
+      .set(updateData)
+      .where(eq(venuePacksTable.id, id))
+      .returning();
+
+    if (!row) {
+      res.status(404).json({ error: "Venue pack not found" });
+      return;
+    }
+
+    res.json(formatVenuePack(row));
+    return;
+  }
+
   const [row] = await db
     .insert(venuePacksTable)
     .values(compactObject({
-      ...body,
-      basePrice: String(body.basePrice),
+      ...payload,
+      basePrice: String(basePrice),
       isActive: body.isActive ?? true,
       sortOrder: body.sortOrder ?? 0,
     }) as typeof venuePacksTable.$inferInsert)
@@ -167,14 +198,37 @@ router.post("/settings/external-services", async (req, res): Promise<void> => {
     return;
   }
 
+  const id = bodyId(req.body);
   const body = parsed.data;
+  const { basePrice, ...payload } = body;
 
   try {
+    if (id) {
+      const updateData = compactObject({
+        ...payload,
+        basePrice: String(basePrice),
+      }) as Partial<typeof externalServiceCatalogTable.$inferInsert>;
+
+      const [row] = await db
+        .update(externalServiceCatalogTable)
+        .set(updateData)
+        .where(eq(externalServiceCatalogTable.id, id))
+        .returning();
+
+      if (!row) {
+        res.status(404).json({ error: "External service not found" });
+        return;
+      }
+
+      res.json(formatExternalService(row));
+      return;
+    }
+
     const [row] = await db
       .insert(externalServiceCatalogTable)
       .values(compactObject({
-        ...body,
-        basePrice: String(body.basePrice),
+        ...payload,
+        basePrice: String(basePrice),
         isActive: body.isActive ?? true,
         sortOrder: body.sortOrder ?? 0,
       }) as typeof externalServiceCatalogTable.$inferInsert)
@@ -249,12 +303,36 @@ router.post("/settings/event-extras", async (req, res): Promise<void> => {
     return;
   }
 
+  const id = bodyId(req.body);
   const body = parsed.data;
+  const { basePrice, ...payload } = body;
+
+  if (id) {
+    const updateData = compactObject({
+      ...payload,
+      basePrice: String(basePrice),
+    }) as Partial<typeof eventExtrasTable.$inferInsert>;
+
+    const [row] = await db
+      .update(eventExtrasTable)
+      .set(updateData)
+      .where(eq(eventExtrasTable.id, id))
+      .returning();
+
+    if (!row) {
+      res.status(404).json({ error: "Event extra not found" });
+      return;
+    }
+
+    res.json(formatEventExtra(row));
+    return;
+  }
+
   const [row] = await db
     .insert(eventExtrasTable)
     .values(compactObject({
-      ...body,
-      basePrice: String(body.basePrice),
+      ...payload,
+      basePrice: String(basePrice),
       appliesTo: body.appliesTo ?? "all",
       isActive: body.isActive ?? true,
       sortOrder: body.sortOrder ?? 0,

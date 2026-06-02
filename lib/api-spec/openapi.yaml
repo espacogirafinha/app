@@ -706,6 +706,7 @@ paths:
       operationId: createVenuePack
       tags: [settings-catalogs]
       summary: Create a venue pack
+      description: Creates a venue pack. If `id` is provided in the body, updates that venue pack instead.
       requestBody:
         required: true
         content:
@@ -715,6 +716,12 @@ paths:
       responses:
         "201":
           description: Venue pack created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenuePack"
+        "200":
+          description: Venue pack updated
           content:
             application/json:
               schema:
@@ -777,6 +784,7 @@ paths:
       operationId: createExternalService
       tags: [settings-catalogs]
       summary: Create an external service catalog item
+      description: Creates an external service catalog item. If `id` is provided in the body, updates that service instead.
       requestBody:
         required: true
         content:
@@ -786,6 +794,12 @@ paths:
       responses:
         "201":
           description: External service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalServiceCatalog"
+        "200":
+          description: External service updated
           content:
             application/json:
               schema:
@@ -860,6 +874,7 @@ paths:
       operationId: createEventExtra
       tags: [settings-catalogs]
       summary: Create an event extra
+      description: Creates an event extra. If `id` is provided in the body, updates that extra instead.
       requestBody:
         required: true
         content:
@@ -869,6 +884,12 @@ paths:
       responses:
         "201":
           description: Event extra created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventExtra"
+        "200":
+          description: Event extra updated
           content:
             application/json:
               schema:
@@ -1548,6 +1569,9 @@ components:
     CreateVenuePackBody:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         name:
           type: string
           minLength: 1
@@ -1630,6 +1654,9 @@ components:
     CreateExternalServiceBody:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         code:
           type: string
           minLength: 1
@@ -1711,6 +1738,9 @@ components:
     CreateEventExtraBody:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         name:
           type: string
           minLength: 1

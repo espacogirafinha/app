@@ -415,6 +415,7 @@ export interface VenuePack {
 }
 
 export interface CreateVenuePackBody {
+  id?: string;
   /** @minLength 1 */
   name: string;
   /** @nullable */
@@ -465,6 +466,7 @@ export interface ExternalServiceCatalog {
 }
 
 export interface CreateExternalServiceBody {
+  id?: string;
   /** @minLength 1 */
   code: string;
   /** @minLength 1 */
@@ -511,6 +513,7 @@ export interface EventExtra {
 }
 
 export interface CreateEventExtraBody {
+  id?: string;
   /** @minLength 1 */
   name: string;
   /** @nullable */

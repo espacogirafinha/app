@@ -1181,12 +1181,14 @@ export const ListVenuePacksResponseItem = zod.object({
 export const ListVenuePacksResponse = zod.array(ListVenuePacksResponseItem);
 
 /**
+ * Creates a venue pack. If `id` is provided in the body, updates that venue pack instead.
  * @summary Create a venue pack
  */
 
 export const createVenuePackBodyBasePriceMin = 0;
 
 export const CreateVenuePackBody = zod.object({
+  id: zod.string().uuid().optional(),
   name: zod.string().min(1),
   description: zod.string().nullish(),
   basePrice: zod.number().min(createVenuePackBodyBasePriceMin),
@@ -1195,6 +1197,22 @@ export const CreateVenuePackBody = zod.object({
   isActive: zod.boolean().optional(),
   sortOrder: zod.number().optional(),
   internalNotes: zod.string().nullish(),
+});
+
+export const createVenuePackResponseBasePriceMin = 0;
+
+export const CreateVenuePackResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  basePrice: zod.number().min(createVenuePackResponseBasePriceMin),
+  defaultStartTime: zod.string().nullish(),
+  defaultEndTime: zod.string().nullish(),
+  isActive: zod.boolean(),
+  sortOrder: zod.number(),
+  internalNotes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
 });
 
 /**
@@ -1255,12 +1273,14 @@ export const ListExternalServicesResponse = zod.array(
 );
 
 /**
+ * Creates an external service catalog item. If `id` is provided in the body, updates that service instead.
  * @summary Create an external service catalog item
  */
 
 export const createExternalServiceBodyBasePriceMin = 0;
 
 export const CreateExternalServiceBody = zod.object({
+  id: zod.string().uuid().optional(),
   code: zod.string().min(1),
   name: zod.string().min(1),
   description: zod.string().nullish(),
@@ -1268,6 +1288,21 @@ export const CreateExternalServiceBody = zod.object({
   isActive: zod.boolean().optional(),
   sortOrder: zod.number().optional(),
   operationalNotes: zod.string().nullish(),
+});
+
+export const createExternalServiceResponseBasePriceMin = 0;
+
+export const CreateExternalServiceResponse = zod.object({
+  id: zod.string().uuid(),
+  code: zod.string(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  basePrice: zod.number().min(createExternalServiceResponseBasePriceMin),
+  isActive: zod.boolean(),
+  sortOrder: zod.number(),
+  operationalNotes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
 });
 
 /**
@@ -1324,12 +1359,14 @@ export const ListEventExtrasResponseItem = zod.object({
 export const ListEventExtrasResponse = zod.array(ListEventExtrasResponseItem);
 
 /**
+ * Creates an event extra. If `id` is provided in the body, updates that extra instead.
  * @summary Create an event extra
  */
 
 export const createEventExtraBodyBasePriceMin = 0;
 
 export const CreateEventExtraBody = zod.object({
+  id: zod.string().uuid().optional(),
   name: zod.string().min(1),
   category: zod.string().nullish(),
   basePrice: zod.number().min(createEventExtraBodyBasePriceMin),
@@ -1339,6 +1376,21 @@ export const CreateEventExtraBody = zod.object({
   isActive: zod.boolean().optional(),
   sortOrder: zod.number().optional(),
   internalNotes: zod.string().nullish(),
+});
+
+export const createEventExtraResponseBasePriceMin = 0;
+
+export const CreateEventExtraResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  category: zod.string().nullish(),
+  basePrice: zod.number().min(createEventExtraResponseBasePriceMin),
+  appliesTo: zod.enum(["all", "venue_events", "external_events", "workshops"]),
+  isActive: zod.boolean(),
+  sortOrder: zod.number(),
+  internalNotes: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
 });
 
 /**

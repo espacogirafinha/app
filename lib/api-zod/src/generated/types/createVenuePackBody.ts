@@ -7,6 +7,7 @@
  */
 
 export interface CreateVenuePackBody {
+  id?: string;
   /** @minLength 1 */
   name: string;
   /** @nullable */

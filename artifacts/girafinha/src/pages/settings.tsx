@@ -35,9 +35,6 @@ import {
   useListEventExtras,
   useListExternalServices,
   useListVenuePacks,
-  useUpdateEventExtra,
-  useUpdateExternalService,
-  useUpdateVenuePack,
 } from "@workspace/api-client-react";
 import type {
   CreateEventExtraBody,
@@ -45,16 +42,16 @@ import type {
   CreateVenuePackBody,
   EventExtra,
   ExternalServiceCatalog,
-  UpdateEventExtraBody,
-  UpdateExternalServiceBody,
-  UpdateVenuePackBody,
   VenuePack,
 } from "@workspace/api-client-react";
 
 type CatalogKind = "venue-packs" | "external-services" | "event-extras";
 type CatalogItem = VenuePack | ExternalServiceCatalog | EventExtra;
 type CatalogCreatePayload = CreateVenuePackBody | CreateExternalServiceBody | CreateEventExtraBody;
-type CatalogUpdatePayload = UpdateVenuePackBody | UpdateExternalServiceBody | UpdateEventExtraBody;
+type CatalogSavePayload =
+  | (CreateVenuePackBody & { id?: string })
+  | (CreateExternalServiceBody & { id?: string })
+  | (CreateEventExtraBody & { id?: string });
 
 type CatalogFormState = {
   code: string;
@@ -112,9 +109,6 @@ export default function SettingsPage() {
   const createVenuePack = useCreateVenuePack();
   const createExternalService = useCreateExternalService();
   const createEventExtra = useCreateEventExtra();
-  const updateVenuePack = useUpdateVenuePack();
-  const updateExternalService = useUpdateExternalService();
-  const updateEventExtra = useUpdateEventExtra();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -191,10 +185,9 @@ export default function SettingsPage() {
             suggestedLabel="Adicionar packs sugeridos"
             items={venuePacksQuery.data ?? []}
             isLoading={venuePacksQuery.isLoading}
-            isSaving={createVenuePack.isPending || updateVenuePack.isPending}
+            isSaving={createVenuePack.isPending}
             isAddingSuggested={createVenuePack.isPending}
-            onCreate={(data) => createVenuePack.mutateAsync({ data: data as CreateVenuePackBody })}
-            onUpdate={(id, data) => updateVenuePack.mutateAsync({ id, data: data as UpdateVenuePackBody })}
+            onSave={(data) => createVenuePack.mutateAsync({ data: data as CreateVenuePackBody })}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: getListVenuePacksQueryKey() })}
             onAddSuggested={addSuggestedVenuePacks}
           />
@@ -209,10 +202,9 @@ export default function SettingsPage() {
             suggestedLabel="Adicionar serviços sugeridos"
             items={externalServicesQuery.data ?? []}
             isLoading={externalServicesQuery.isLoading}
-            isSaving={createExternalService.isPending || updateExternalService.isPending}
+            isSaving={createExternalService.isPending}
             isAddingSuggested={createExternalService.isPending}
-            onCreate={(data) => createExternalService.mutateAsync({ data: data as CreateExternalServiceBody })}
-            onUpdate={(id, data) => updateExternalService.mutateAsync({ id, data: data as UpdateExternalServiceBody })}
+            onSave={(data) => createExternalService.mutateAsync({ data: data as CreateExternalServiceBody })}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: getListExternalServicesQueryKey() })}
             onAddSuggested={addSuggestedExternalServices}
           />
@@ -226,9 +218,8 @@ export default function SettingsPage() {
             createLabel="Criar extra"
             items={eventExtrasQuery.data ?? []}
             isLoading={eventExtrasQuery.isLoading}
-            isSaving={createEventExtra.isPending || updateEventExtra.isPending}
-            onCreate={(data) => createEventExtra.mutateAsync({ data: data as CreateEventExtraBody })}
-            onUpdate={(id, data) => updateEventExtra.mutateAsync({ id, data: data as UpdateEventExtraBody })}
+            isSaving={createEventExtra.isPending}
+            onSave={(data) => createEventExtra.mutateAsync({ data: data as CreateEventExtraBody })}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: getListEventExtrasQueryKey() })}
           />
         </TabsContent>
@@ -247,8 +238,7 @@ function CatalogSection({
   isLoading,
   isSaving,
   isAddingSuggested,
-  onCreate,
-  onUpdate,
+  onSave,
   onRefresh,
   onAddSuggested,
 }: {
@@ -261,8 +251,7 @@ function CatalogSection({
   isLoading: boolean;
   isSaving: boolean;
   isAddingSuggested?: boolean;
-  onCreate: (data: CatalogCreatePayload) => Promise<unknown>;
-  onUpdate: (id: string, data: CatalogUpdatePayload) => Promise<unknown>;
+  onSave: (data: CatalogSavePayload) => Promise<unknown>;
   onRefresh: () => Promise<unknown>;
   onAddSuggested?: () => Promise<void>;
 }) {
@@ -330,7 +319,7 @@ function CatalogSection({
                 isSaving={isSaving}
                 onEdit={() => setModal({ open: true, item })}
                 onToggle={async () => {
-                  await onUpdate(item.id, { isActive: !item.isActive });
+                  await onSave(toPayload(kind, toFormState(kind, item), item.id, { isActive: !item.isActive }));
                   await onRefresh();
                 }}
               />
@@ -345,11 +334,7 @@ function CatalogSection({
         isSaving={isSaving}
         onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
         onSubmit={async (data) => {
-          if (modal.item) {
-            await onUpdate(modal.item.id, data as CatalogUpdatePayload);
-          } else {
-            await onCreate(data as CatalogCreatePayload);
-          }
+          await onSave(data);
           await onRefresh();
           setModal({ open: false });
         }}
@@ -433,7 +418,7 @@ function CatalogModal({
   open: boolean;
   isSaving: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: CatalogCreatePayload | CatalogUpdatePayload) => Promise<void>;
+  onSubmit: (data: CatalogSavePayload) => Promise<void>;
 }) {
   const [form, setForm] = useState<CatalogFormState>(emptyForm);
   const { toast } = useToast();
@@ -472,7 +457,7 @@ function CatalogModal({
     }
 
     try {
-      await onSubmit(toPayload(kind, form));
+      await onSubmit(toPayload(kind, form, item?.id));
       toast({ title: isEditing ? "Catálogo atualizado" : "Catálogo criado" });
     } catch {
       toast({ title: "Não foi possível guardar", description: "Verifique os dados e tente novamente.", variant: "destructive" });
@@ -625,43 +610,52 @@ function toFormState(kind: CatalogKind, item?: CatalogItem): CatalogFormState {
   };
 }
 
-function toPayload(kind: CatalogKind, form: CatalogFormState): CatalogCreatePayload | CatalogUpdatePayload {
-  const basePrice = toNumber(form.basePrice);
-  const sortOrder = Number.parseInt(form.sortOrder || "0", 10);
+function toPayload(
+  kind: CatalogKind,
+  form: CatalogFormState,
+  id?: string,
+  overrides: Partial<CatalogFormState> = {},
+): CatalogSavePayload {
+  const nextForm = { ...form, ...overrides };
+  const basePrice = toNumber(nextForm.basePrice);
+  const sortOrder = Number.parseInt(nextForm.sortOrder || "0", 10);
 
   if (kind === "venue-packs") {
     return {
-      name: form.name.trim(),
-      description: nullable(form.description),
+      id,
+      name: nextForm.name.trim(),
+      description: nullable(nextForm.description),
       basePrice,
-      defaultStartTime: nullable(form.defaultStartTime),
-      defaultEndTime: nullable(form.defaultEndTime),
-      isActive: form.isActive,
+      defaultStartTime: nullable(nextForm.defaultStartTime),
+      defaultEndTime: nullable(nextForm.defaultEndTime),
+      isActive: nextForm.isActive,
       sortOrder,
-      internalNotes: nullable(form.internalNotes),
+      internalNotes: nullable(nextForm.internalNotes),
     };
   }
 
   if (kind === "external-services") {
     return {
-      code: form.code.trim(),
-      name: form.name.trim(),
-      description: nullable(form.description),
+      id,
+      code: nextForm.code.trim(),
+      name: nextForm.name.trim(),
+      description: nullable(nextForm.description),
       basePrice,
-      isActive: form.isActive,
+      isActive: nextForm.isActive,
       sortOrder,
-      operationalNotes: nullable(form.operationalNotes),
+      operationalNotes: nullable(nextForm.operationalNotes),
     };
   }
 
   return {
-    name: form.name.trim(),
-    category: nullable(form.category),
+    id,
+    name: nextForm.name.trim(),
+    category: nullable(nextForm.category),
     basePrice,
-    appliesTo: form.appliesTo,
-    isActive: form.isActive,
+    appliesTo: nextForm.appliesTo,
+    isActive: nextForm.isActive,
     sortOrder,
-    internalNotes: nullable(form.internalNotes),
+    internalNotes: nullable(nextForm.internalNotes),
   };
 }
 

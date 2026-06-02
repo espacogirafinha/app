@@ -8,6 +8,7 @@
 import type { EventExtraAppliesTo } from "./eventExtraAppliesTo";
 
 export interface CreateEventExtraBody {
+  id?: string;
   /** @minLength 1 */
   name: string;
   /** @nullable */

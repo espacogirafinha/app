@@ -2274,6 +2274,7 @@ export function useListVenuePacks<
 }
 
 /**
+ * Creates a venue pack. If `id` is provided in the body, updates that venue pack instead.
  * @summary Create a venue pack
  */
 export const getCreateVenuePackUrl = () => {
@@ -2522,6 +2523,7 @@ export function useListExternalServices<
 }
 
 /**
+ * Creates an external service catalog item. If `id` is provided in the body, updates that service instead.
  * @summary Create an external service catalog item
  */
 export const getCreateExternalServiceUrl = () => {
@@ -2772,6 +2774,7 @@ export function useListEventExtras<
 }
 
 /**
+ * Creates an event extra. If `id` is provided in the body, updates that extra instead.
  * @summary Create an event extra
  */
 export const getCreateEventExtraUrl = () => {
