@@ -385,6 +385,162 @@ export interface UpdateReservationBody {
   workshopNotes?: string | null;
 }
 
+export type EventExtraAppliesTo =
+  (typeof EventExtraAppliesTo)[keyof typeof EventExtraAppliesTo];
+
+export const EventExtraAppliesTo = {
+  all: "all",
+  venue_events: "venue_events",
+  external_events: "external_events",
+  workshops: "workshops",
+} as const;
+
+export interface VenuePack {
+  id: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minimum 0 */
+  basePrice: number;
+  /** @nullable */
+  defaultStartTime?: string | null;
+  /** @nullable */
+  defaultEndTime?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  /** @nullable */
+  internalNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateVenuePackBody {
+  id?: string;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minimum 0 */
+  basePrice: number;
+  /** @nullable */
+  defaultStartTime?: string | null;
+  /** @nullable */
+  defaultEndTime?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+  /** @nullable */
+  internalNotes?: string | null;
+}
+
+export interface UpdateVenuePackBody {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minimum 0 */
+  basePrice?: number;
+  /** @nullable */
+  defaultStartTime?: string | null;
+  /** @nullable */
+  defaultEndTime?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+  /** @nullable */
+  internalNotes?: string | null;
+}
+
+export interface ExternalServiceCatalog {
+  id: string;
+  code: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minimum 0 */
+  basePrice: number;
+  isActive: boolean;
+  sortOrder: number;
+  /** @nullable */
+  operationalNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExternalServiceBody {
+  id?: string;
+  /** @minLength 1 */
+  code: string;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minimum 0 */
+  basePrice: number;
+  isActive?: boolean;
+  sortOrder?: number;
+  /** @nullable */
+  operationalNotes?: string | null;
+}
+
+export interface UpdateExternalServiceBody {
+  /** @minLength 1 */
+  code?: string;
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minimum 0 */
+  basePrice?: number;
+  isActive?: boolean;
+  sortOrder?: number;
+  /** @nullable */
+  operationalNotes?: string | null;
+}
+
+export interface EventExtra {
+  id: string;
+  name: string;
+  /** @nullable */
+  category?: string | null;
+  /** @minimum 0 */
+  basePrice: number;
+  appliesTo: EventExtraAppliesTo;
+  isActive: boolean;
+  sortOrder: number;
+  /** @nullable */
+  internalNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEventExtraBody {
+  id?: string;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  category?: string | null;
+  /** @minimum 0 */
+  basePrice: number;
+  appliesTo?: EventExtraAppliesTo;
+  isActive?: boolean;
+  sortOrder?: number;
+  /** @nullable */
+  internalNotes?: string | null;
+}
+
+export interface UpdateEventExtraBody {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  category?: string | null;
+  /** @minimum 0 */
+  basePrice?: number;
+  appliesTo?: EventExtraAppliesTo;
+  isActive?: boolean;
+  sortOrder?: number;
+  /** @nullable */
+  internalNotes?: string | null;
+}
+
 export interface VenueEvent {
   id: string;
   customerName: string;

@@ -146,6 +146,46 @@ type Workshop = {
   updatedAt: string;
 };
 
+type VenuePack = {
+  id: string;
+  name: string;
+  description: string | null;
+  basePrice: number;
+  defaultStartTime: string | null;
+  defaultEndTime: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  internalNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ExternalServiceCatalog = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  basePrice: number;
+  isActive: boolean;
+  sortOrder: number;
+  operationalNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type EventExtra = {
+  id: string;
+  name: string;
+  category: string | null;
+  basePrice: number;
+  appliesTo: "all" | "venue_events" | "external_events" | "workshops";
+  isActive: boolean;
+  sortOrder: number;
+  internalNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const ADMIN_EMAIL = "admin@espacogirafinha.pt";
 const ADMIN_PASSWORD = "girafinha2026";
 const SESSION_COOKIE = "girafinha_dev_session";
@@ -274,6 +314,9 @@ let externalEvents: ExternalEvent[] = [];
 let externalEventServices: ExternalEventService[] = [];
 let workshops: Workshop[] = [];
 let workshopParticipants: WorkshopParticipant[] = [];
+let venuePacks: VenuePack[] = [];
+let externalServiceCatalog: ExternalServiceCatalog[] = [];
+let eventExtras: EventExtra[] = [];
 
 const DEFAULT_TASKS_BY_PACK: Record<string, string[]> = {
   "Aluguer do Espaço": ["Confirmar sinal", "Confirmar caução", "Preparar espaço", "Limpeza final"],
@@ -1186,6 +1229,171 @@ export function devApiPlugin(): Plugin {
 
         if (path === "/reports") {
           return json(res, 200, reportFor(Number(url.searchParams.get("year")), Number(url.searchParams.get("month"))));
+        }
+
+        if (path === "/settings/venue-packs" && method === "GET") {
+          return json(res, 200, [...venuePacks].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)));
+        }
+        if (path === "/settings/venue-packs" && method === "POST") {
+          const body = await readBody(req);
+          if (!String(body.name ?? "").trim()) return json(res, 400, { error: "name is required" });
+          const basePrice = Number(body.basePrice ?? 0);
+          if (basePrice < 0) return json(res, 400, { error: "basePrice must be greater than or equal to 0" });
+          const pack: VenuePack = {
+            id: randomUUID(),
+            name: String(body.name).trim(),
+            description: body.description ? String(body.description) : null,
+            basePrice,
+            defaultStartTime: body.defaultStartTime ? String(body.defaultStartTime) : null,
+            defaultEndTime: body.defaultEndTime ? String(body.defaultEndTime) : null,
+            isActive: body.isActive === undefined ? true : Boolean(body.isActive),
+            sortOrder: Number(body.sortOrder ?? 0),
+            internalNotes: body.internalNotes ? String(body.internalNotes) : null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          venuePacks.push(pack);
+          return json(res, 201, pack);
+        }
+
+        const venuePackMatch = path.match(/^\/settings\/venue-packs\/([0-9a-f-]+)$/i);
+        if (venuePackMatch && method === "PATCH") {
+          const id = venuePackMatch[1];
+          const current = venuePacks.find((pack) => pack.id === id);
+          if (!current) return json(res, 404, { error: "Venue pack not found" });
+          const body = await readBody(req);
+          const basePrice = body.basePrice === undefined ? current.basePrice : Number(body.basePrice);
+          if (basePrice < 0) return json(res, 400, { error: "basePrice must be greater than or equal to 0" });
+          venuePacks = venuePacks.map((pack) =>
+            pack.id === id
+              ? {
+                  ...pack,
+                  ...body,
+                  name: body.name === undefined ? pack.name : String(body.name).trim(),
+                  basePrice,
+                  isActive: body.isActive === undefined ? pack.isActive : Boolean(body.isActive),
+                  sortOrder: body.sortOrder === undefined ? pack.sortOrder : Number(body.sortOrder),
+                  updatedAt: new Date().toISOString(),
+                } as VenuePack
+              : pack,
+          );
+          return json(res, 200, venuePacks.find((pack) => pack.id === id));
+        }
+
+        if (path === "/settings/external-services" && method === "GET") {
+          return json(res, 200, [...externalServiceCatalog].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)));
+        }
+        if (path === "/settings/external-services" && method === "POST") {
+          const body = await readBody(req);
+          const code = String(body.code ?? "").trim();
+          if (!code) return json(res, 400, { error: "code is required" });
+          if (!String(body.name ?? "").trim()) return json(res, 400, { error: "name is required" });
+          if (externalServiceCatalog.some((service) => service.code === code)) {
+            return json(res, 409, { error: "External service code already exists" });
+          }
+          const basePrice = Number(body.basePrice ?? 0);
+          if (basePrice < 0) return json(res, 400, { error: "basePrice must be greater than or equal to 0" });
+          const service: ExternalServiceCatalog = {
+            id: randomUUID(),
+            code,
+            name: String(body.name).trim(),
+            description: body.description ? String(body.description) : null,
+            basePrice,
+            isActive: body.isActive === undefined ? true : Boolean(body.isActive),
+            sortOrder: Number(body.sortOrder ?? 0),
+            operationalNotes: body.operationalNotes ? String(body.operationalNotes) : null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          externalServiceCatalog.push(service);
+          return json(res, 201, service);
+        }
+
+        const externalServiceMatch = path.match(/^\/settings\/external-services\/([0-9a-f-]+)$/i);
+        if (externalServiceMatch && method === "PATCH") {
+          const id = externalServiceMatch[1];
+          const current = externalServiceCatalog.find((service) => service.id === id);
+          if (!current) return json(res, 404, { error: "External service not found" });
+          const body = await readBody(req);
+          const code = body.code === undefined ? current.code : String(body.code).trim();
+          if (!code) return json(res, 400, { error: "code is required" });
+          if (externalServiceCatalog.some((service) => service.id !== id && service.code === code)) {
+            return json(res, 409, { error: "External service code already exists" });
+          }
+          const basePrice = body.basePrice === undefined ? current.basePrice : Number(body.basePrice);
+          if (basePrice < 0) return json(res, 400, { error: "basePrice must be greater than or equal to 0" });
+          externalServiceCatalog = externalServiceCatalog.map((service) =>
+            service.id === id
+              ? {
+                  ...service,
+                  ...body,
+                  code,
+                  name: body.name === undefined ? service.name : String(body.name).trim(),
+                  basePrice,
+                  isActive: body.isActive === undefined ? service.isActive : Boolean(body.isActive),
+                  sortOrder: body.sortOrder === undefined ? service.sortOrder : Number(body.sortOrder),
+                  updatedAt: new Date().toISOString(),
+                } as ExternalServiceCatalog
+              : service,
+          );
+          return json(res, 200, externalServiceCatalog.find((service) => service.id === id));
+        }
+
+        if (path === "/settings/event-extras" && method === "GET") {
+          return json(res, 200, [...eventExtras].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)));
+        }
+        if (path === "/settings/event-extras" && method === "POST") {
+          const body = await readBody(req);
+          if (!String(body.name ?? "").trim()) return json(res, 400, { error: "name is required" });
+          const basePrice = Number(body.basePrice ?? 0);
+          if (basePrice < 0) return json(res, 400, { error: "basePrice must be greater than or equal to 0" });
+          const appliesTo = (body.appliesTo as EventExtra["appliesTo"]) ?? "all";
+          if (!["all", "venue_events", "external_events", "workshops"].includes(appliesTo)) {
+            return json(res, 400, { error: "Invalid appliesTo" });
+          }
+          const extra: EventExtra = {
+            id: randomUUID(),
+            name: String(body.name).trim(),
+            category: body.category ? String(body.category) : null,
+            basePrice,
+            appliesTo,
+            isActive: body.isActive === undefined ? true : Boolean(body.isActive),
+            sortOrder: Number(body.sortOrder ?? 0),
+            internalNotes: body.internalNotes ? String(body.internalNotes) : null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          eventExtras.push(extra);
+          return json(res, 201, extra);
+        }
+
+        const eventExtraMatch = path.match(/^\/settings\/event-extras\/([0-9a-f-]+)$/i);
+        if (eventExtraMatch && method === "PATCH") {
+          const id = eventExtraMatch[1];
+          const current = eventExtras.find((extra) => extra.id === id);
+          if (!current) return json(res, 404, { error: "Event extra not found" });
+          const body = await readBody(req);
+          const basePrice = body.basePrice === undefined ? current.basePrice : Number(body.basePrice);
+          if (basePrice < 0) return json(res, 400, { error: "basePrice must be greater than or equal to 0" });
+          const appliesTo = (body.appliesTo as EventExtra["appliesTo"]) ?? current.appliesTo;
+          if (!["all", "venue_events", "external_events", "workshops"].includes(appliesTo)) {
+            return json(res, 400, { error: "Invalid appliesTo" });
+          }
+          eventExtras = eventExtras.map((extra) =>
+            extra.id === id
+              ? {
+                  ...extra,
+                  ...body,
+                  name: body.name === undefined ? extra.name : String(body.name).trim(),
+                  basePrice,
+                  appliesTo,
+                  isActive: body.isActive === undefined ? extra.isActive : Boolean(body.isActive),
+                  sortOrder: body.sortOrder === undefined ? extra.sortOrder : Number(body.sortOrder),
+                  updatedAt: new Date().toISOString(),
+                } as EventExtra
+              : extra,
+          );
+          return json(res, 200, eventExtras.find((extra) => extra.id === id));
         }
 
         if (path === "/venue-events" && method === "GET") {
