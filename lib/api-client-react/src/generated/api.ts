@@ -22,6 +22,7 @@ import type {
   CreateEventExtraBody,
   CreateExternalEventBody,
   CreateExternalServiceBody,
+  CreateMessageTemplateBody,
   CreateReservationBody,
   CreateTaskBody,
   CreateVenueEventBody,
@@ -44,6 +45,7 @@ import type {
   ListReservationsParams,
   ListVenueEventsParams,
   ListWorkshopsParams,
+  MessageTemplate,
   ReportsData,
   ReportsV2,
   Reservation,
@@ -2945,6 +2947,168 @@ export const useUpdateEventExtra = <
   TContext
 > => {
   return useMutation(getUpdateEventExtraMutationOptions(options));
+};
+
+/**
+ * @summary List message templates
+ */
+export const getListMessageTemplatesUrl = () => {
+  return `/api/settings/message-templates`;
+};
+
+export const listMessageTemplates = async (
+  options?: RequestInit,
+): Promise<MessageTemplate[]> => {
+  return customFetch<MessageTemplate[]>(getListMessageTemplatesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMessageTemplatesQueryKey = () => {
+  return [`/api/settings/message-templates`] as const;
+};
+
+export const getListMessageTemplatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMessageTemplates>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMessageTemplates>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMessageTemplatesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMessageTemplates>>
+  > = ({ signal }) => listMessageTemplates({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMessageTemplates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMessageTemplatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMessageTemplates>>
+>;
+export type ListMessageTemplatesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List message templates
+ */
+
+export function useListMessageTemplates<
+  TData = Awaited<ReturnType<typeof listMessageTemplates>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMessageTemplates>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMessageTemplatesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update a message template
+ */
+export const getCreateMessageTemplateUrl = () => {
+  return `/api/settings/message-templates`;
+};
+
+export const createMessageTemplate = async (
+  createMessageTemplateBody: CreateMessageTemplateBody,
+  options?: RequestInit,
+): Promise<MessageTemplate> => {
+  return customFetch<MessageTemplate>(getCreateMessageTemplateUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createMessageTemplateBody),
+  });
+};
+
+export const getCreateMessageTemplateMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMessageTemplate>>,
+    TError,
+    { data: BodyType<CreateMessageTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMessageTemplate>>,
+  TError,
+  { data: BodyType<CreateMessageTemplateBody> },
+  TContext
+> => {
+  const mutationKey = ["createMessageTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMessageTemplate>>,
+    { data: BodyType<CreateMessageTemplateBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createMessageTemplate(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMessageTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMessageTemplate>>
+>;
+export type CreateMessageTemplateMutationBody =
+  BodyType<CreateMessageTemplateBody>;
+export type CreateMessageTemplateMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create or update a message template
+ */
+export const useCreateMessageTemplate = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMessageTemplate>>,
+    TError,
+    { data: BodyType<CreateMessageTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createMessageTemplate>>,
+  TError,
+  { data: BodyType<CreateMessageTemplateBody> },
+  TContext
+> => {
+  return useMutation(getCreateMessageTemplateMutationOptions(options));
 };
 
 /**

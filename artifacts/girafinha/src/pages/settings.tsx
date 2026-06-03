@@ -24,6 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { SettingsMessageTemplates } from "@/components/settings-message-templates";
 import { useToast } from "@/hooks/use-toast";
 import {
   getListEventExtrasQueryKey,
@@ -170,10 +171,11 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="venue-packs" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-1 gap-1 sm:grid-cols-3">
+        <TabsList className="grid h-auto w-full grid-cols-1 gap-1 sm:grid-cols-4">
           <TabsTrigger value="venue-packs" className="min-h-10">Packs de Festas</TabsTrigger>
           <TabsTrigger value="external-services" className="min-h-10">Serviços Externos</TabsTrigger>
           <TabsTrigger value="event-extras" className="min-h-10">Extras</TabsTrigger>
+          <TabsTrigger value="message-templates" className="min-h-10">Templates WhatsApp</TabsTrigger>
         </TabsList>
 
         <TabsContent value="venue-packs">
@@ -222,6 +224,10 @@ export default function SettingsPage() {
             onSave={(data) => createEventExtra.mutateAsync({ data: data as CreateEventExtraBody })}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: getListEventExtrasQueryKey() })}
           />
+        </TabsContent>
+
+        <TabsContent value="message-templates">
+          <SettingsMessageTemplates />
         </TabsContent>
       </Tabs>
     </div>

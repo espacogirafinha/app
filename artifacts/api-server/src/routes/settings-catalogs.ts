@@ -4,11 +4,13 @@ import {
   db,
   eventExtrasTable,
   externalServiceCatalogTable,
+  messageTemplatesTable,
   venuePacksTable,
 } from "@workspace/db";
 import {
   CreateEventExtraBody,
   CreateExternalServiceBody,
+  CreateMessageTemplateBody,
   CreateVenuePackBody,
   UpdateEventExtraBody,
   UpdateEventExtraParams,
@@ -48,6 +50,7 @@ function bodyId(body: unknown) {
 type VenuePackRow = typeof venuePacksTable.$inferSelect;
 type ExternalServiceCatalogRow = typeof externalServiceCatalogTable.$inferSelect;
 type EventExtraRow = typeof eventExtrasTable.$inferSelect;
+type MessageTemplateRow = typeof messageTemplatesTable.$inferSelect;
 
 function formatVenuePack(row: VenuePackRow) {
   return {
@@ -90,6 +93,21 @@ function formatEventExtra(row: EventExtraRow) {
     isActive: row.isActive,
     sortOrder: row.sortOrder,
     internalNotes: row.internalNotes,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  };
+}
+
+function formatMessageTemplate(row: MessageTemplateRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    module: row.module,
+    triggerType: row.triggerType,
+    body: row.body,
+    variables: row.variables,
+    isActive: row.isActive,
+    sortOrder: row.sortOrder,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };
@@ -373,6 +391,63 @@ router.patch("/settings/event-extras/:id", async (req, res): Promise<void> => {
   }
 
   res.json(formatEventExtra(row));
+});
+
+router.get("/settings/message-templates", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(messageTemplatesTable)
+    .orderBy(
+      asc(messageTemplatesTable.module),
+      asc(messageTemplatesTable.triggerType),
+      asc(messageTemplatesTable.sortOrder),
+      asc(messageTemplatesTable.name),
+    );
+
+  res.json(rows.map(formatMessageTemplate));
+});
+
+router.post("/settings/message-templates", async (req, res): Promise<void> => {
+  const parsed = CreateMessageTemplateBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const id = bodyId(req.body);
+  const body = parsed.data;
+  const payload = compactObject({
+    name: body.name,
+    module: body.module,
+    triggerType: body.triggerType,
+    body: body.body,
+    variables: body.variables,
+    isActive: body.isActive ?? true,
+    sortOrder: body.sortOrder ?? 0,
+  }) as Partial<typeof messageTemplatesTable.$inferInsert>;
+
+  if (id) {
+    const [row] = await db
+      .update(messageTemplatesTable)
+      .set(payload)
+      .where(eq(messageTemplatesTable.id, id))
+      .returning();
+
+    if (!row) {
+      res.status(404).json({ error: "Message template not found" });
+      return;
+    }
+
+    res.json(formatMessageTemplate(row));
+    return;
+  }
+
+  const [row] = await db
+    .insert(messageTemplatesTable)
+    .values(payload as typeof messageTemplatesTable.$inferInsert)
+    .returning();
+
+  res.status(201).json(formatMessageTemplate(row));
 });
 
 export default router;

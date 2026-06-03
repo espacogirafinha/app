@@ -19,15 +19,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VenueEventModal } from "@/components/venue-event-modal";
 import { useToast } from "@/hooks/use-toast";
+import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import {
   getListVenueEventsQueryKey,
   useDeleteVenueEvent,
   useListVenueEvents,
+  useListMessageTemplates,
 } from "@workspace/api-client-react";
-import type { VenueEvent } from "@workspace/api-client-react";
+import type { MessageTemplate, VenueEvent } from "@workspace/api-client-react";
 
 export default function VenueEventsPage() {
   const { data: events, isLoading } = useListVenueEvents();
+  const { data: messageTemplates } = useListMessageTemplates();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const deleteVenueEvent = useDeleteVenueEvent();
   const queryClient = useQueryClient();
@@ -144,15 +147,17 @@ function VenueEventRow({
   onToggle,
   onDelete,
   deleting,
+  messageTemplates,
 }: {
   event: VenueEvent;
   expanded: boolean;
   onToggle: () => void;
   onDelete: () => void;
   deleting: boolean;
+  messageTemplates?: MessageTemplate[];
 }) {
   const date = parseISO(event.eventDate);
-  const whatsappUrl = buildWhatsAppUrl(event);
+  const whatsappUrl = buildWhatsAppUrl(event, messageTemplates);
 
   return (
     <div className="p-4 transition-colors hover:bg-muted/30">
@@ -313,11 +318,13 @@ function Info({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function buildWhatsAppUrl(event: VenueEvent) {
-  const phone = event.phone.replace(/\D/g, "");
-  const normalizedPhone = phone.startsWith("351") ? phone : `351${phone}`;
-  const message = encodeURIComponent(
-    `Olá ${event.customerName}! A sua festa no Espaço Girafinha está registada para ${event.eventDate} às ${event.startTime}.`,
-  );
-  return `https://wa.me/${normalizedPhone}?text=${message}`;
+function buildWhatsAppUrl(event: VenueEvent, templates?: MessageTemplate[]) {
+  const fallback = `Ola ${event.customerName}! A sua festa no Espaco Girafinha esta registada para ${event.eventDate} as ${event.startTime}.`;
+  return buildTemplatedWhatsAppUrl(event.phone, fallback, templates, "venue_events", {
+    customerName: event.customerName,
+    eventDate: event.eventDate,
+    startTime: event.startTime,
+    amountDue: formatAmount(event.remainingBalance),
+    packName: event.packName,
+  });
 }

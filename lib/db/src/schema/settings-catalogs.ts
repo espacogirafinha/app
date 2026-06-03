@@ -42,6 +42,19 @@ export const eventExtrasTable = pgTable("event_extras", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
 });
 
+export const messageTemplatesTable = pgTable("message_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  module: text("module").notNull(),
+  triggerType: text("trigger_type").notNull(),
+  body: text("body").notNull(),
+  variables: text("variables"),
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
+});
+
 export const insertVenuePackSchema = createInsertSchema(venuePacksTable).omit({
   id: true,
   createdAt: true,
@@ -60,6 +73,13 @@ export const insertEventExtraSchema = createInsertSchema(eventExtrasTable).omit(
   updatedAt: true,
 });
 
+
+export const insertMessageTemplateSchema = createInsertSchema(messageTemplatesTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertVenuePack = z.infer<typeof insertVenuePackSchema>;
 export type VenuePack = typeof venuePacksTable.$inferSelect;
 
@@ -68,3 +88,6 @@ export type ExternalServiceCatalog = typeof externalServiceCatalogTable.$inferSe
 
 export type InsertEventExtra = z.infer<typeof insertEventExtraSchema>;
 export type EventExtra = typeof eventExtrasTable.$inferSelect;
+
+export type InsertMessageTemplate = z.infer<typeof insertMessageTemplateSchema>;
+export type MessageTemplate = typeof messageTemplatesTable.$inferSelect;
