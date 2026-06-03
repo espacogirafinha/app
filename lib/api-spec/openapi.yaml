@@ -1,9 +1,9 @@
-openapi: 3.1.0
+﻿openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Espaço Girafinha reservation management API
+  description: EspaÃ§o Girafinha reservation management API
 servers:
   - url: /api
     description: Base API path
@@ -1238,6 +1238,196 @@ paths:
                 items:
                   $ref: "#/components/schemas/CalendarDay"
 
+  /settings/checklist-templates:
+    get:
+      operationId: listChecklistTemplates
+      tags: [settings]
+      responses:
+        "200":
+          description: Checklist templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChecklistTemplate"
+    post:
+      operationId: createChecklistTemplate
+      tags: [settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChecklistTemplateBody"
+      responses:
+        "200":
+          description: Updated checklist template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplate"
+        "201":
+          description: Created checklist template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplate"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /settings/checklist-templates/{id}/items:
+    post:
+      operationId: createChecklistTemplateItemForTemplate
+      tags: [settings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChecklistTemplateItemBody"
+      responses:
+        "200":
+          description: Updated template item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateItem"
+        "201":
+          description: Created template item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateItem"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /settings/checklist-template-items/{id}:
+    post:
+      operationId: updateChecklistTemplateItem
+      tags: [settings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChecklistTemplateItemBody"
+      responses:
+        "200":
+          description: Updated template item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateItem"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /checklists:
+    get:
+      operationId: listChecklists
+      tags: [checklists]
+      parameters:
+        - name: module
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ChecklistModule"
+        - name: entityId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Operational checklists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventChecklist"
+    post:
+      operationId: createChecklist
+      tags: [checklists]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChecklistBody"
+      responses:
+        "200":
+          description: Updated checklist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventChecklist"
+        "201":
+          description: Created checklist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventChecklist"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /checklist-items/{id}:
+    post:
+      operationId: updateChecklistItem
+      tags: [checklists]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateChecklistItemBody"
+      responses:
+        "200":
+          description: Updated checklist item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventChecklistItem"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -1385,7 +1575,7 @@ components:
           type: string
         pack:
           type: string
-          enum: ["Aluguer do Espaço", "Pack Simples", "Pack com Decoração", "Pack Completo", "Decoração Externa", "Catering / Brunch", "Animação", "Aluguer de Insuflável", "Workshop Balões Nível 1", "Workshop Balões + Kit Inicial", "Só Espaço", "Espaço + Lanche", "Espaço + Decoração"]
+          enum: ["Aluguer do EspaÃ§o", "Pack Simples", "Pack com DecoraÃ§Ã£o", "Pack Completo", "DecoraÃ§Ã£o Externa", "Catering / Brunch", "AnimaÃ§Ã£o", "Aluguer de InsuflÃ¡vel", "Workshop BalÃµes NÃ­vel 1", "Workshop BalÃµes + Kit Inicial", "SÃ³ EspaÃ§o", "EspaÃ§o + Lanche", "EspaÃ§o + DecoraÃ§Ã£o"]
         serviceType:
           $ref: "#/components/schemas/ServiceType"
         numChildren:
@@ -1486,7 +1676,7 @@ components:
           type: string
         pack:
           type: string
-          enum: ["Aluguer do Espaço", "Pack Simples", "Pack com Decoração", "Pack Completo", "Decoração Externa", "Catering / Brunch", "Animação", "Aluguer de Insuflável", "Workshop Balões Nível 1", "Workshop Balões + Kit Inicial", "Só Espaço", "Espaço + Lanche", "Espaço + Decoração"]
+          enum: ["Aluguer do EspaÃ§o", "Pack Simples", "Pack com DecoraÃ§Ã£o", "Pack Completo", "DecoraÃ§Ã£o Externa", "Catering / Brunch", "AnimaÃ§Ã£o", "Aluguer de InsuflÃ¡vel", "Workshop BalÃµes NÃ­vel 1", "Workshop BalÃµes + Kit Inicial", "SÃ³ EspaÃ§o", "EspaÃ§o + Lanche", "EspaÃ§o + DecoraÃ§Ã£o"]
         serviceType:
           $ref: "#/components/schemas/ServiceType"
         numChildren:
@@ -1572,7 +1762,7 @@ components:
           type: string
         pack:
           type: string
-          enum: ["Aluguer do Espaço", "Pack Simples", "Pack com Decoração", "Pack Completo", "Decoração Externa", "Catering / Brunch", "Animação", "Aluguer de Insuflável", "Workshop Balões Nível 1", "Workshop Balões + Kit Inicial", "Só Espaço", "Espaço + Lanche", "Espaço + Decoração"]
+          enum: ["Aluguer do EspaÃ§o", "Pack Simples", "Pack com DecoraÃ§Ã£o", "Pack Completo", "DecoraÃ§Ã£o Externa", "Catering / Brunch", "AnimaÃ§Ã£o", "Aluguer de InsuflÃ¡vel", "Workshop BalÃµes NÃ­vel 1", "Workshop BalÃµes + Kit Inicial", "SÃ³ EspaÃ§o", "EspaÃ§o + Lanche", "EspaÃ§o + DecoraÃ§Ã£o"]
         serviceType:
           $ref: "#/components/schemas/ServiceType"
         numChildren:
@@ -3338,3 +3528,175 @@ components:
       required:
         - date
         - reservations
+    ChecklistModule:
+      type: string
+      enum: [venue_events, external_events, workshops, general]
+
+    ChecklistTemplateItem:
+      type: object
+      required: [id, templateId, label, isRequired, sortOrder, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        templateId:
+          type: string
+        label:
+          type: string
+        description:
+          type: ["string", "null"]
+        isRequired:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ChecklistTemplate:
+      type: object
+      required: [id, name, module, isActive, sortOrder, items, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        module:
+          $ref: "#/components/schemas/ChecklistModule"
+        eventType:
+          type: ["string", "null"]
+        serviceType:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChecklistTemplateItem"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    CreateChecklistTemplateBody:
+      type: object
+      required: [name, module]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        module:
+          $ref: "#/components/schemas/ChecklistModule"
+        eventType:
+          type: ["string", "null"]
+        serviceType:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    CreateChecklistTemplateItemBody:
+      type: object
+      required: [label]
+      properties:
+        id:
+          type: string
+        templateId:
+          type: string
+        label:
+          type: string
+        description:
+          type: ["string", "null"]
+        isRequired:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    EventChecklistItem:
+      type: object
+      required: [id, checklistId, label, isRequired, isDone, sortOrder, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        checklistId:
+          type: string
+        label:
+          type: string
+        description:
+          type: ["string", "null"]
+        isRequired:
+          type: boolean
+        isDone:
+          type: boolean
+        sortOrder:
+          type: integer
+        completedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    EventChecklist:
+      type: object
+      required: [id, module, entityId, title, items, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        module:
+          $ref: "#/components/schemas/ChecklistModule"
+        entityId:
+          type: string
+        templateId:
+          type: ["string", "null"]
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventChecklistItem"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    CreateChecklistBody:
+      type: object
+      required: [module, entityId, title]
+      properties:
+        id:
+          type: string
+        module:
+          $ref: "#/components/schemas/ChecklistModule"
+        entityId:
+          type: string
+        templateId:
+          type: ["string", "null"]
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateChecklistTemplateItemBody"
+
+    UpdateChecklistItemBody:
+      type: object
+      properties:
+        label:
+          type: string
+        description:
+          type: ["string", "null"]
+        isRequired:
+          type: boolean
+        isDone:
+          type: boolean
+        sortOrder:
+          type: integer
+        completedAt:
+          type: ["string", "null"]
+
+

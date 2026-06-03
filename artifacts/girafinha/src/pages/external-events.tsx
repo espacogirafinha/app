@@ -1,4 +1,4 @@
-import { differenceInDays, format, parseISO } from "date-fns";
+﻿import { differenceInDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, ChevronDown, Loader2, MapPin, MessageCircle, Pencil, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalEventModal } from "@/components/external-event-modal";
+import { OperationalChecklist } from "@/components/operational-checklist";
 import { useToast } from "@/hooks/use-toast";
 import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import {
@@ -29,12 +30,12 @@ import {
 import type { ExternalEvent, ExternalEventServiceType, MessageTemplate } from "@workspace/api-client-react";
 
 const SERVICE_LABELS: Record<ExternalEventServiceType, string> = {
-  decoracao: "Decoração",
+  decoracao: "DecoraÃ§Ã£o",
   catering: "Catering / Brunch",
-  organizacao_evento: "Organização",
-  animacao: "Animação",
-  insuflavel: "Insuflável",
-  baloes: "Balões",
+  organizacao_evento: "OrganizaÃ§Ã£o",
+  animacao: "AnimaÃ§Ã£o",
+  insuflavel: "InsuflÃ¡vel",
+  baloes: "BalÃµes",
   outro: "Outro",
 };
 
@@ -72,10 +73,10 @@ export default function ExternalEventsPage() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListExternalEventsQueryKey() });
-          toast({ title: "Serviço apagado", description: `${event.customerName} foi removido dos Serviços Externos.` });
+          toast({ title: "ServiÃ§o apagado", description: `${event.customerName} foi removido dos ServiÃ§os Externos.` });
         },
         onError: () => {
-          toast({ title: "Não foi possível apagar o serviço externo", variant: "destructive" });
+          toast({ title: "NÃ£o foi possÃ­vel apagar o serviÃ§o externo", variant: "destructive" });
         },
       },
     );
@@ -85,25 +86,25 @@ export default function ExternalEventsPage() {
     <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Serviços Externos</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">ServiÃ§os Externos</h1>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
-            Gestão de decoração, catering, animação, insufláveis e serviços fora do espaço.
+            GestÃ£o de decoraÃ§Ã£o, catering, animaÃ§Ã£o, insuflÃ¡veis e serviÃ§os fora do espaÃ§o.
           </p>
         </div>
         <ExternalEventModal />
       </div>
 
       <section className="grid gap-2 grid-cols-2 lg:grid-cols-4">
-        <SummaryCard label="Próximos serviços" value={String(summary.upcoming)} loading={isLoading} />
-        <SummaryCard label="Por receber" value={`${summary.pending.toFixed(2)} €`} loading={isLoading} />
+        <SummaryCard label="PrÃ³ximos serviÃ§os" value={String(summary.upcoming)} loading={isLoading} />
+        <SummaryCard label="Por receber" value={`${summary.pending.toFixed(2)} â‚¬`} loading={isLoading} />
         <SummaryCard label="Pagos" value={String(summary.paid)} loading={isLoading} />
-        <SummaryCard label="Próximos 7 dias" value={String(summary.nextSevenDays)} loading={isLoading} />
+        <SummaryCard label="PrÃ³ximos 7 dias" value={String(summary.nextSevenDays)} loading={isLoading} />
       </section>
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
         <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
-          <CardTitle className="text-lg">Lista de serviços externos</CardTitle>
-          <CardDescription>Eventos fora do espaço com um ou vários serviços associados.</CardDescription>
+          <CardTitle className="text-lg">Lista de serviÃ§os externos</CardTitle>
+          <CardDescription>Eventos fora do espaÃ§o com um ou vÃ¡rios serviÃ§os associados.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -120,14 +121,15 @@ export default function ExternalEventsPage() {
                   onToggle={() => setExpandedId((current) => (current === event.id ? null : event.id))}
                   onDelete={() => handleDelete(event)}
                   deleting={deleteExternalEvent.isPending}
+                  messageTemplates={messageTemplates}
                 />
               ))}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
               <CalendarDays className="mb-3 h-12 w-12 text-muted-foreground/30" />
-              <p className="font-medium text-foreground">Ainda não há serviços externos registados.</p>
-              <p className="mt-1 text-sm">Crie o primeiro evento externo usando o botão “Novo Serviço”.</p>
+              <p className="font-medium text-foreground">Ainda nÃ£o hÃ¡ serviÃ§os externos registados.</p>
+              <p className="mt-1 text-sm">Crie o primeiro evento externo usando o botÃ£o â€œNovo ServiÃ§oâ€.</p>
             </div>
           )}
         </CardContent>
@@ -205,7 +207,7 @@ function ExternalEventRow({
             <div className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">Em falta</span>
               <span className={event.remainingBalance > 0 ? "font-bold text-rose-700" : "font-bold text-emerald-700"}>
-                {event.remainingBalance.toFixed(2)} €
+                {event.remainingBalance.toFixed(2)} â‚¬
               </span>
             </div>
           </div>
@@ -236,15 +238,15 @@ function ExternalEventRow({
             </DetailsBlock>
             <DetailsBlock title="Dados do evento">
               <Info label="Data" value={event.eventDate} />
-              <Info label="Horário" value={`${event.startTime}${event.endTime ? `-${event.endTime}` : ""}`} />
+              <Info label="HorÃ¡rio" value={`${event.startTime}${event.endTime ? `-${event.endTime}` : ""}`} />
               <Info label="Local" value={event.eventLocation} />
               <Info label="Tipo" value={event.eventType} />
               <Info label="Tema" value={event.eventTheme} />
             </DetailsBlock>
-            <DetailsBlock title="Pagamento e ações">
-              <Info label="Total" value={`${event.totalPrice.toFixed(2)} €`} />
-              <Info label="Pago" value={`${event.amountPaid.toFixed(2)} €`} />
-              <Info label="Método" value={event.paymentMethod} />
+            <DetailsBlock title="Pagamento e aÃ§Ãµes">
+              <Info label="Total" value={`${event.totalPrice.toFixed(2)} â‚¬`} />
+              <Info label="Pago" value={`${event.amountPaid.toFixed(2)} â‚¬`} />
+              <Info label="MÃ©todo" value={event.paymentMethod} />
               <div className="mt-3 flex flex-wrap gap-2">
                 <ExternalEventModal
                   event={event}
@@ -264,9 +266,9 @@ function ExternalEventRow({
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Apagar este serviço externo?</AlertDialogTitle>
+                      <AlertDialogTitle>Apagar este serviÃ§o externo?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação remove o evento externo e todos os serviços associados.
+                        Esta aÃ§Ã£o remove o evento externo e todos os serviÃ§os associados.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -282,27 +284,30 @@ function ExternalEventRow({
           </div>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <DetailsBlock title="Serviços incluídos">
+            <DetailsBlock title="ServiÃ§os incluÃ­dos">
               {event.services.length > 0 ? (
                 event.services.map((service) => (
                   <div key={service.id} className="rounded-lg border border-border p-3 text-sm">
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-semibold">{service.serviceLabel}</span>
-                      <span className="font-bold">{service.price.toFixed(2)} €</span>
+                      <span className="font-bold">{service.price.toFixed(2)} â‚¬</span>
                     </div>
                     {service.notes && <p className="mt-1 text-muted-foreground">{service.notes}</p>}
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">Sem serviços associados.</p>
+                <p className="text-sm text-muted-foreground">Sem serviÃ§os associados.</p>
               )}
             </DetailsBlock>
             <DetailsBlock title="Notas operacionais">
               <Info label="Montagem" value={event.setupNotes} />
               <Info label="Desmontagem" value={event.teardownNotes} />
               <Info label="Acessos" value={event.accessNotes} />
-              <Info label="Observações" value={event.notes} />
+              <Info label="ObservaÃ§Ãµes" value={event.notes} />
             </DetailsBlock>
+          </div>
+          <div className="mt-4">
+            <OperationalChecklist module="external_events" entityId={event.id} title={`Checklist ${event.customerName}`} />
           </div>
         </div>
       )}
@@ -318,9 +323,9 @@ function PaymentBadge({ status }: { status: ExternalEvent["paymentStatus"] }) {
 
 function StatusBadge({ status }: { status: ExternalEvent["status"] }) {
   const labels = {
-    draft: "Em preparação",
+    draft: "Em preparaÃ§Ã£o",
     confirmed: "Confirmado",
-    completed: "Concluído",
+    completed: "ConcluÃ­do",
     cancelled: "Cancelado",
   };
   return <Badge variant="outline" className="rounded-md">{labels[status]}</Badge>;
@@ -354,4 +359,6 @@ function buildWhatsAppUrl(event: ExternalEvent, templates?: MessageTemplate[]) {
     eventLocation: event.eventLocation,
   });
 }
+
+
 

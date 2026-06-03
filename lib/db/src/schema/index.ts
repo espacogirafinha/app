@@ -1,4 +1,4 @@
-// Export your models here. Add one export per file
+﻿// Export your models here. Add one export per file
 // export * from "./posts";
 //
 // Each model/table should ideally be split into different files.
@@ -23,3 +23,5 @@ export * from "./venue-events";
 export * from "./external-events";
 export * from "./workshops";
 export * from "./settings-catalogs";
+export * from "./checklists";
+
