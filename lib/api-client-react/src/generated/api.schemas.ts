@@ -40,6 +40,56 @@ export const ReservationStatus = {
   cancelled: "cancelled",
 } as const;
 
+export type MessageTemplateModule =
+  (typeof MessageTemplateModule)[keyof typeof MessageTemplateModule];
+
+export const MessageTemplateModule = {
+  venue_events: "venue_events",
+  external_events: "external_events",
+  workshops: "workshops",
+  workshop_participants: "workshop_participants",
+  general: "general",
+} as const;
+
+export type MessageTemplateTriggerType =
+  (typeof MessageTemplateTriggerType)[keyof typeof MessageTemplateTriggerType];
+
+export const MessageTemplateTriggerType = {
+  confirmation: "confirmation",
+  payment_request: "payment_request",
+  payment_reminder: "payment_reminder",
+  event_reminder: "event_reminder",
+  post_event: "post_event",
+  cancellation: "cancellation",
+  custom: "custom",
+} as const;
+
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  module: MessageTemplateModule;
+  triggerType: MessageTemplateTriggerType;
+  body: string;
+  variables?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateMessageTemplateBody {
+  id?: string;
+  /** @minLength 1 */
+  name: string;
+  module: MessageTemplateModule;
+  triggerType: MessageTemplateTriggerType;
+  /** @minLength 1 */
+  body: string;
+  variables?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
 export type VenueEventStatus =
   (typeof VenueEventStatus)[keyof typeof VenueEventStatus];
 

@@ -19,12 +19,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalEventModal } from "@/components/external-event-modal";
 import { useToast } from "@/hooks/use-toast";
+import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import {
   getListExternalEventsQueryKey,
   useDeleteExternalEvent,
   useListExternalEvents,
+  useListMessageTemplates,
 } from "@workspace/api-client-react";
-import type { ExternalEvent, ExternalEventServiceType } from "@workspace/api-client-react";
+import type { ExternalEvent, ExternalEventServiceType, MessageTemplate } from "@workspace/api-client-react";
 
 const SERVICE_LABELS: Record<ExternalEventServiceType, string> = {
   decoracao: "Decoração",
@@ -38,6 +40,7 @@ const SERVICE_LABELS: Record<ExternalEventServiceType, string> = {
 
 export default function ExternalEventsPage() {
   const { data: events, isLoading } = useListExternalEvents();
+  const { data: messageTemplates } = useListMessageTemplates();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const deleteExternalEvent = useDeleteExternalEvent();
   const queryClient = useQueryClient();
@@ -154,15 +157,17 @@ function ExternalEventRow({
   onToggle,
   onDelete,
   deleting,
+  messageTemplates,
 }: {
   event: ExternalEvent;
   expanded: boolean;
   onToggle: () => void;
   onDelete: () => void;
   deleting: boolean;
+  messageTemplates?: MessageTemplate[];
 }) {
   const date = parseISO(event.eventDate);
-  const whatsappUrl = buildWhatsAppUrl(event);
+  const whatsappUrl = buildWhatsAppUrl(event, messageTemplates);
 
   return (
     <div className="p-4 transition-colors hover:bg-muted/30">
@@ -339,12 +344,14 @@ function Info({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function buildWhatsAppUrl(event: ExternalEvent) {
-  const phone = event.phone.replace(/\D/g, "");
-  const normalizedPhone = phone.startsWith("351") ? phone : `351${phone}`;
-  const message = encodeURIComponent(
-    `Olá ${event.customerName}, confirmamos o seu evento/serviço externo para dia ${event.eventDate} às ${event.startTime}.`,
-  );
-  return `https://wa.me/${normalizedPhone}?text=${message}`;
+function buildWhatsAppUrl(event: ExternalEvent, templates?: MessageTemplate[]) {
+  const fallback = `Ola ${event.customerName}, confirmamos o seu evento/servico externo para dia ${event.eventDate} as ${event.startTime}.`;
+  return buildTemplatedWhatsAppUrl(event.phone, fallback, templates, "external_events", {
+    customerName: event.customerName,
+    eventDate: event.eventDate,
+    startTime: event.startTime,
+    amountDue: formatAmount(event.remainingBalance),
+    eventLocation: event.eventLocation,
+  });
 }
 

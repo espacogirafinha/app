@@ -23,15 +23,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import { WorkshopParticipantModal } from "@/components/workshop-participant-modal";
 import {
   getGetWorkshopQueryKey,
   getListWorkshopsQueryKey,
   useDeleteWorkshopParticipant,
   useGetWorkshop,
+  useListMessageTemplates,
   useUpdateWorkshopParticipant,
 } from "@workspace/api-client-react";
-import type { Workshop, WorkshopParticipant } from "@workspace/api-client-react";
+import type { MessageTemplate, Workshop, WorkshopParticipant } from "@workspace/api-client-react";
 
 export function WorkshopParticipantsPanel({
   workshop,
@@ -42,6 +44,7 @@ export function WorkshopParticipantsPanel({
 }) {
   const [open, setOpen] = useState(false);
   const query = useGetWorkshop(workshop.id, { query: { enabled: open, queryKey: getGetWorkshopQueryKey(workshop.id) } });
+  const { data: messageTemplates } = useListMessageTemplates();
   const fullWorkshop = query.data ?? workshop;
   const participants = fullWorkshop.participants ?? [];
   const updateParticipant = useUpdateWorkshopParticipant();
@@ -148,15 +151,17 @@ function ParticipantCard({
   onCancel,
   onRemove,
   isMutating,
+  messageTemplates,
 }: {
   workshop: Workshop;
   participant: WorkshopParticipant;
   onCancel: () => void;
   onRemove: () => void;
   isMutating: boolean;
+  messageTemplates?: MessageTemplate[];
 }) {
   const isCancelled = participant.status === "cancelled";
-  const whatsappUrl = buildWhatsAppUrl(workshop, participant);
+  const whatsappUrl = buildWhatsAppUrl(workshop, participant, messageTemplates);
 
   return (
     <div className={`rounded-xl border border-border bg-background p-4 ${isCancelled ? "opacity-65" : ""}`}>
@@ -293,11 +298,13 @@ function Info({ label, value, highlight }: { label: string; value?: string | nul
   );
 }
 
-function buildWhatsAppUrl(workshop: Workshop, participant: WorkshopParticipant) {
-  const phone = participant.phone.replace(/\D/g, "");
-  const normalizedPhone = phone.startsWith("351") ? phone : `351${phone}`;
-  const message = encodeURIComponent(
-    `Olá ${participant.name}, confirmamos a sua inscrição no workshop ${workshop.name}, no dia ${workshop.date} às ${workshop.startTime}. Obrigada, Espaço Girafinha.`,
-  );
-  return `https://wa.me/${normalizedPhone}?text=${message}`;
+function buildWhatsAppUrl(workshop: Workshop, participant: WorkshopParticipant, templates?: MessageTemplate[]) {
+  const fallback = `Ola ${participant.name}, confirmamos a sua inscricao no workshop ${workshop.name}, no dia ${workshop.date} as ${workshop.startTime}. Obrigada, Espaco Girafinha.`;
+  return buildTemplatedWhatsAppUrl(participant.phone, fallback, templates, "workshop_participants", {
+    participantName: participant.name,
+    workshopName: workshop.name,
+    eventDate: workshop.date,
+    startTime: workshop.startTime,
+    amountDue: formatAmount(participant.amountDue),
+  });
 }

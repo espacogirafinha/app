@@ -933,6 +933,53 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+
+  /settings/message-templates:
+    get:
+      operationId: listMessageTemplates
+      summary: List message templates
+      tags:
+        - Settings
+      responses:
+        "200":
+          description: Message templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageTemplate"
+    post:
+      operationId: createMessageTemplate
+      summary: Create or update a message template
+      tags:
+        - Settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageTemplateBody"
+      responses:
+        "201":
+          description: Message template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageTemplate"
+        "200":
+          description: Message template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageTemplate"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /dashboard-v2:
     get:
       operationId: getDashboardV2
@@ -1220,6 +1267,68 @@ components:
     ReservationStatus:
       type: string
       enum: [draft, confirmed, completed, cancelled]
+
+
+    MessageTemplateModule:
+      type: string
+      enum: [venue_events, external_events, workshops, workshop_participants, general]
+    MessageTemplateTriggerType:
+      type: string
+      enum: [confirmation, payment_request, payment_reminder, event_reminder, post_event, cancellation, custom]
+    MessageTemplate:
+      type: object
+      required: [id, name, module, triggerType, body, isActive, sortOrder, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        module:
+          $ref: "#/components/schemas/MessageTemplateModule"
+        triggerType:
+          $ref: "#/components/schemas/MessageTemplateTriggerType"
+        body:
+          type: string
+        variables:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateMessageTemplateBody:
+      type: object
+      required: [name, module, triggerType, body]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        module:
+          $ref: "#/components/schemas/MessageTemplateModule"
+        triggerType:
+          $ref: "#/components/schemas/MessageTemplateTriggerType"
+        body:
+          type: string
+          minLength: 1
+        variables:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+          default: true
+        sortOrder:
+          type: integer
+          default: 0
 
     VenueEventStatus:
       type: string

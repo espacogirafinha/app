@@ -1430,6 +1430,98 @@ export const UpdateEventExtraResponse = zod.object({
 });
 
 /**
+ * @summary List message templates
+ */
+export const ListMessageTemplatesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  module: zod.enum([
+    "venue_events",
+    "external_events",
+    "workshops",
+    "workshop_participants",
+    "general",
+  ]),
+  triggerType: zod.enum([
+    "confirmation",
+    "payment_request",
+    "payment_reminder",
+    "event_reminder",
+    "post_event",
+    "cancellation",
+    "custom",
+  ]),
+  body: zod.string(),
+  variables: zod.string().nullish(),
+  isActive: zod.boolean(),
+  sortOrder: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListMessageTemplatesResponse = zod.array(
+  ListMessageTemplatesResponseItem,
+);
+
+/**
+ * @summary Create or update a message template
+ */
+
+export const createMessageTemplateBodyIsActiveDefault = true;
+export const createMessageTemplateBodySortOrderDefault = 0;
+
+export const CreateMessageTemplateBody = zod.object({
+  id: zod.string().uuid().optional(),
+  name: zod.string().min(1),
+  module: zod.enum([
+    "venue_events",
+    "external_events",
+    "workshops",
+    "workshop_participants",
+    "general",
+  ]),
+  triggerType: zod.enum([
+    "confirmation",
+    "payment_request",
+    "payment_reminder",
+    "event_reminder",
+    "post_event",
+    "cancellation",
+    "custom",
+  ]),
+  body: zod.string().min(1),
+  variables: zod.string().nullish(),
+  isActive: zod.boolean().default(createMessageTemplateBodyIsActiveDefault),
+  sortOrder: zod.number().default(createMessageTemplateBodySortOrderDefault),
+});
+
+export const CreateMessageTemplateResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  module: zod.enum([
+    "venue_events",
+    "external_events",
+    "workshops",
+    "workshop_participants",
+    "general",
+  ]),
+  triggerType: zod.enum([
+    "confirmation",
+    "payment_request",
+    "payment_reminder",
+    "event_reminder",
+    "post_event",
+    "cancellation",
+    "custom",
+  ]),
+  body: zod.string(),
+  variables: zod.string().nullish(),
+  isActive: zod.boolean(),
+  sortOrder: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * Aggregates venue events, external events, services, workshops and participants for the V2 dashboard.
  * @summary Get V2 dashboard aggregate
  */
