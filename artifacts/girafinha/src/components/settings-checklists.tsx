@@ -95,28 +95,32 @@ export function SettingsChecklists() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: getListChecklistTemplatesQueryKey() });
 
   const addSuggested = async () => {
-    const existing = new Set(templates.map((template) => `${template.module}:${template.name.toLowerCase()}`));
-    const missing = suggestedTemplates.filter((template) => !existing.has(`${template.module}:${template.name.toLowerCase()}`));
-
-    if (missing.length === 0) {
-      toast({ title: "Checklists sugeridas ja existem" });
-      return;
-    }
+    let createdCount = 0;
+    let itemCount = 0;
 
     try {
-      for (const template of missing) {
-        const created = await createTemplate.mutateAsync({ data: {
-          name: template.name,
-          module: template.module,
-          isActive: true,
-          sortOrder: template.sortOrder,
-        } });
+      for (const template of suggestedTemplates) {
+        let target = templates.find((current) => current.module === template.module && current.name.toLowerCase() === template.name.toLowerCase());
+        if (!target) {
+          target = await createTemplate.mutateAsync({ data: {
+            name: template.name,
+            module: template.module,
+            isActive: true,
+            sortOrder: template.sortOrder,
+          } });
+          createdCount += 1;
+        }
+
+        const existingLabels = new Set((target.items ?? []).map((item) => item.label.toLowerCase()));
         for (const [index, label] of template.items.entries()) {
-          await createItem.mutateAsync({ id: created.id, data: { label, isRequired: false, sortOrder: (index + 1) * 10 } });
+          if (existingLabels.has(label.toLowerCase())) continue;
+          await createItem.mutateAsync({ id: target.id, data: { label, isRequired: false, sortOrder: (index + 1) * 10 } });
+          itemCount += 1;
         }
       }
+
       await refresh();
-      toast({ title: "Checklists sugeridas adicionadas", description: `${missing.length} template(s) criados.` });
+      toast({ title: "Checklists sugeridas adicionadas", description: `${createdCount} template(s), ${itemCount} item(ns).` });
     } catch {
       toast({ title: "Nao foi possivel adicionar checklists sugeridas", variant: "destructive" });
     }
@@ -380,4 +384,5 @@ function moduleLabel(module: ChecklistModule) {
   };
   return labels[module];
 }
+
 
