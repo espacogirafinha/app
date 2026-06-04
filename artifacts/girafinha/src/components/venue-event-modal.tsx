@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  calculateExtrasTotal,
+  EventExtrasSelector,
+  toEventExtraDrafts,
+  toSelectedExtraInputs,
+  type EventExtraDraft,
+} from "@/components/event-extras-selector";
 import { useToast } from "@/hooks/use-toast";
 import {
+  getListSelectedExtrasQueryKey,
   getListVenueEventsQueryKey,
   useCreateVenueEvent,
+  useListSelectedExtras,
   useListVenuePacks,
+  useReplaceSelectedExtras,
   useUpdateVenueEvent,
 } from "@workspace/api-client-react";
 import type { CreateVenueEventBody, VenueEvent, VenuePack } from "@workspace/api-client-react";
@@ -111,22 +121,62 @@ export function VenueEventModal({
 }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<VenueEventFormState>(() => toFormState(event));
+  const [extras, setExtras] = useState<EventExtraDraft[]>([]);
+  const [basePrice, setBasePrice] = useState(() => getFallbackPackPrice(event?.packName));
+  const [isTotalManual, setIsTotalManual] = useState(false);
+  const loadedExtrasEntityRef = useRef<string | null>(null);
   const createVenueEvent = useCreateVenueEvent();
   const updateVenueEvent = useUpdateVenueEvent();
+  const replaceSelectedExtras = useReplaceSelectedExtras();
   const venuePacksQuery = useListVenuePacks();
+  const selectedExtrasQuery = useListSelectedExtras(
+    { module: "venue_events", entityId: event?.id ?? "" },
+    {
+      query: {
+        enabled: open && Boolean(event?.id),
+        queryKey: getListSelectedExtrasQueryKey({ module: "venue_events", entityId: event?.id ?? "" }),
+      },
+    },
+  );
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isEditing = Boolean(event);
 
-  useEffect(() => {
-    if (open) setForm(toFormState(event));
-  }, [event, open]);
-
   const totalPrice = toNumber(form.totalPrice);
   const amountPaid = toNumber(form.amountPaid);
   const remainingBalance = Math.max(0, totalPrice - amountPaid);
-  const isPending = createVenueEvent.isPending || updateVenueEvent.isPending;
+  const extrasTotal = useMemo(() => calculateExtrasTotal(extras), [extras]);
+  const isPending = createVenueEvent.isPending || updateVenueEvent.isPending || replaceSelectedExtras.isPending;
   const packOptions = useMemo(() => buildPackOptions(venuePacksQuery.data), [venuePacksQuery.data]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const nextForm = toFormState(event);
+    const nextPackPrice = getFallbackPackPrice(nextForm.packName);
+    setForm(nextForm);
+    setExtras([]);
+    setBasePrice(nextPackPrice);
+    setIsTotalManual(Boolean(event) && Math.abs(toNumber(nextForm.totalPrice) - nextPackPrice) > 0.01);
+    loadedExtrasEntityRef.current = null;
+  }, [event, open]);
+
+  useEffect(() => {
+    if (!open || !event || !selectedExtrasQuery.data || loadedExtrasEntityRef.current === event.id) return;
+
+    const drafts = toEventExtraDrafts(selectedExtrasQuery.data);
+    const nextExtrasTotal = calculateExtrasTotal(drafts);
+    const nextPackPrice = findPackPrice(packOptions, event.packName, Math.max(0, event.totalPrice - nextExtrasTotal));
+    setExtras(drafts);
+    setBasePrice(nextPackPrice);
+    setIsTotalManual(Math.abs(event.totalPrice - (nextPackPrice + nextExtrasTotal)) > 0.01);
+    loadedExtrasEntityRef.current = event.id;
+  }, [event, open, packOptions, selectedExtrasQuery.data]);
+
+  useEffect(() => {
+    if (!open || isTotalManual) return;
+    setForm((current) => ({ ...current, totalPrice: formatMoneyInput(basePrice + extrasTotal) }));
+  }, [basePrice, extrasTotal, isTotalManual, open]);
 
   const activeSlot = useMemo(() => {
     if (form.startTime === "10:00" && form.endTime === "13:00") return "morning";
@@ -139,12 +189,14 @@ export function VenueEventModal({
   const selectPack = (pack: PackOption) => {
     const nextPatch: Partial<VenueEventFormState> = {
       packName: pack.name,
-      totalPrice: formatMoneyInput(pack.basePrice),
+      totalPrice: formatMoneyInput(pack.basePrice + extrasTotal),
     };
 
     if (pack.defaultStartTime && !form.startTime) nextPatch.startTime = pack.defaultStartTime;
     if (pack.defaultEndTime && !form.endTime) nextPatch.endTime = pack.defaultEndTime;
 
+    setBasePrice(pack.basePrice);
+    setIsTotalManual(false);
     patch(nextPatch);
   };
 
@@ -153,7 +205,17 @@ export function VenueEventModal({
     if (slot === "afternoon") patch({ startTime: "16:00", endTime: "19:00" });
   };
 
-  const handleSubmit = (submitEvent: React.FormEvent) => {
+  const updateTotalPrice = (value: string) => {
+    patch({ totalPrice: value });
+    setIsTotalManual(Math.abs(toNumber(value) - (basePrice + extrasTotal)) > 0.01);
+  };
+
+  const recalculateTotal = () => {
+    patch({ totalPrice: formatMoneyInput(basePrice + extrasTotal) });
+    setIsTotalManual(false);
+  };
+
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
     submitEvent.preventDefault();
 
     if (!form.customerName.trim() || !form.phone.trim() || !form.eventDate || !form.startTime || !form.packName) {
@@ -161,25 +223,29 @@ export function VenueEventModal({
       return;
     }
 
-    const body = toRequestBody(form);
-    const mutationOptions = {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListVenueEventsQueryKey() });
-        toast({
-          title: isEditing ? "Festa atualizada" : "Festa criada",
-          description: `${form.customerName} ficou guardado em Festas no Espaço.`,
-        });
-        setOpen(false);
-      },
-      onError: () => {
-        toast({ title: "Não foi possível guardar a festa", variant: "destructive" });
-      },
-    };
+    try {
+      const body = toRequestBody(form);
+      const savedEvent = event
+        ? await updateVenueEvent.mutateAsync({ id: event.id, data: body })
+        : await createVenueEvent.mutateAsync({ data: body });
 
-    if (event) {
-      updateVenueEvent.mutate({ id: event.id, data: body }, mutationOptions);
-    } else {
-      createVenueEvent.mutate({ data: body }, mutationOptions);
+      await replaceSelectedExtras.mutateAsync({
+        data: {
+          module: "venue_events",
+          entityId: savedEvent.id,
+          items: toSelectedExtraInputs(extras),
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: getListVenueEventsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListSelectedExtrasQueryKey({ module: "venue_events", entityId: savedEvent.id }) });
+      toast({
+        title: isEditing ? "Festa atualizada" : "Festa criada",
+        description: `${form.customerName} ficou guardado em Festas no Espaço.`,
+      });
+      setOpen(false);
+    } catch {
+      toast({ title: "Não foi possível guardar a festa e os extras", variant: "destructive" });
     }
   };
 
@@ -286,6 +352,8 @@ export function VenueEventModal({
             </Field>
           </FormSection>
 
+          <EventExtrasSelector module="venue_events" extras={extras} onChange={setExtras} />
+
           <FormSection title="Autorizações">
             <Field label="Autorização de imagem">
               <select
@@ -311,8 +379,16 @@ export function VenueEventModal({
           </FormSection>
 
           <FormSection title="Pagamento">
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">Valor base</p>
+              <p className="text-xl font-bold text-foreground">{basePrice.toFixed(2)} €</p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">Subtotal dos extras</p>
+              <p className="text-xl font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
+            </div>
             <Field label="Valor total">
-              <Input type="number" min="0" step="0.01" value={form.totalPrice} onChange={(event) => patch({ totalPrice: event.target.value })} />
+              <Input type="number" min="0" step="0.01" value={form.totalPrice} onChange={(event) => updateTotalPrice(event.target.value)} />
             </Field>
             <Field label="Valor pago/sinal">
               <Input type="number" min="0" step="0.01" value={form.amountPaid} onChange={(event) => patch({ amountPaid: event.target.value })} />
@@ -326,6 +402,14 @@ export function VenueEventModal({
                 {remainingBalance.toFixed(2)} €
               </p>
             </div>
+            {isTotalManual && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 md:col-span-2">
+                <p>Total final com ajuste manual.</p>
+                <Button type="button" variant="outline" size="sm" className="mt-2 rounded-xl" onClick={recalculateTotal}>
+                  Recalcular base + extras
+                </Button>
+              </div>
+            )}
           </FormSection>
 
           <div className="space-y-2">
@@ -461,4 +545,12 @@ function toNumber(value: string | number) {
 
 function formatMoneyInput(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function getFallbackPackPrice(packName?: string) {
+  return PACK_PRICES[packName ?? initialState.packName] ?? 0;
+}
+
+function findPackPrice(packOptions: PackOption[], packName: string, fallback = getFallbackPackPrice(packName)) {
+  return packOptions.find((pack) => pack.name === packName)?.basePrice ?? fallback;
 }

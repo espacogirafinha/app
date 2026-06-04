@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EventExtrasDetails } from "@/components/event-extras-selector";
 import { OperationalChecklist } from "@/components/operational-checklist";
 import { VenueEventModal } from "@/components/venue-event-modal";
 import { useToast } from "@/hooks/use-toast";
@@ -269,6 +270,7 @@ function VenueEventRow({
               </div>
             </DetailsBlock>
           </div>
+          <EventExtrasDetails module="venue_events" entityId={event.id} />
           <div className="mt-4">
             <OperationalChecklist module="venue_events" entityId={event.id} title={`Checklist ${event.customerName}`} />
           </div>
