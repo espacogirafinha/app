@@ -11,6 +11,7 @@ import externalEventsRouter from "./external-events";
 import workshopsRouter from "./workshops";
 import settingsCatalogsRouter from "./settings-catalogs";
 import checklistsRouter from "./checklists";
+import selectedExtrasRouter from "./selected-extras";
 
 const router: IRouter = Router();
 
@@ -26,6 +27,7 @@ router.use(externalEventsRouter);
 router.use(workshopsRouter);
 router.use(settingsCatalogsRouter);
 router.use(checklistsRouter);
+router.use(selectedExtrasRouter);
 
 export default router;
 

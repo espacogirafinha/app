@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  calculateExtrasTotal,
+  EventExtrasSelector,
+  toEventExtraDrafts,
+  toSelectedExtraInputs,
+  type EventExtraDraft,
+} from "@/components/event-extras-selector";
+import {
   ExternalEventServicesSelector,
   FALLBACK_SERVICE_OPTIONS,
   type ExternalServiceDraft,
@@ -22,9 +29,12 @@ import {
 } from "@/components/external-event-services-selector";
 import { useToast } from "@/hooks/use-toast";
 import {
+  getListSelectedExtrasQueryKey,
   getListExternalEventsQueryKey,
   useCreateExternalEvent,
   useListExternalServices,
+  useListSelectedExtras,
+  useReplaceSelectedExtras,
   useUpdateExternalEvent,
 } from "@workspace/api-client-react";
 import type { CreateExternalEventBody, ExternalEvent, ExternalEventServiceType, ExternalServiceCatalog } from "@workspace/api-client-react";
@@ -85,10 +95,22 @@ export function ExternalEventModal({
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<ExternalEventFormState>(() => toFormState(event));
   const [services, setServices] = useState<ExternalServiceDraft[]>(() => toServiceDrafts(event));
+  const [extras, setExtras] = useState<EventExtraDraft[]>([]);
   const [isTotalManual, setIsTotalManual] = useState(false);
+  const loadedExtrasEntityRef = useRef<string | null>(null);
   const createExternalEvent = useCreateExternalEvent();
   const updateExternalEvent = useUpdateExternalEvent();
+  const replaceSelectedExtras = useReplaceSelectedExtras();
   const externalServicesQuery = useListExternalServices();
+  const selectedExtrasQuery = useListSelectedExtras(
+    { module: "external_events", entityId: event?.id ?? "" },
+    {
+      query: {
+        enabled: open && Boolean(event?.id),
+        queryKey: getListSelectedExtrasQueryKey({ module: "external_events", entityId: event?.id ?? "" }),
+      },
+    },
+  );
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isEditing = Boolean(event);
@@ -102,35 +124,48 @@ export function ExternalEventModal({
 
     setForm(nextForm);
     setServices(nextServices);
+    setExtras([]);
     setIsTotalManual(Boolean(event) && Math.abs(initialTotal - initialSubtotal) > 0.01);
+    loadedExtrasEntityRef.current = null;
   }, [event, open]);
 
   const servicesTotal = useMemo(() => calculateServicesTotal(services), [services]);
+  const extrasTotal = useMemo(() => calculateExtrasTotal(extras), [extras]);
+  const automaticTotal = servicesTotal + extrasTotal;
   const totalPrice = toNumber(form.totalPrice);
   const amountPaid = toNumber(form.amountPaid);
   const remainingBalance = Math.max(0, totalPrice - amountPaid);
-  const isPending = createExternalEvent.isPending || updateExternalEvent.isPending;
+  const isPending = createExternalEvent.isPending || updateExternalEvent.isPending || replaceSelectedExtras.isPending;
   const serviceOptions = useMemo(() => buildServiceOptions(externalServicesQuery.data), [externalServicesQuery.data]);
 
   useEffect(() => {
+    if (!open || !event || !selectedExtrasQuery.data || loadedExtrasEntityRef.current === event.id) return;
+
+    const drafts = toEventExtraDrafts(selectedExtrasQuery.data);
+    setExtras(drafts);
+    setIsTotalManual(Math.abs(event.totalPrice - (calculateServicesTotal(toServiceDrafts(event)) + calculateExtrasTotal(drafts))) > 0.01);
+    loadedExtrasEntityRef.current = event.id;
+  }, [event, open, selectedExtrasQuery.data]);
+
+  useEffect(() => {
     if (!open || isTotalManual) return;
-    setForm((current) => ({ ...current, totalPrice: formatMoneyInput(servicesTotal) }));
-  }, [isTotalManual, open, servicesTotal]);
+    setForm((current) => ({ ...current, totalPrice: formatMoneyInput(automaticTotal) }));
+  }, [automaticTotal, isTotalManual, open]);
 
   const patch = (value: Partial<ExternalEventFormState>) => setForm((current) => ({ ...current, ...value }));
 
   const updateTotalPrice = (value: string) => {
     const nextTotal = toNumber(value);
     patch({ totalPrice: value });
-    setIsTotalManual(Math.abs(nextTotal - servicesTotal) > 0.01);
+    setIsTotalManual(Math.abs(nextTotal - automaticTotal) > 0.01);
   };
 
   const recalculateTotal = () => {
-    patch({ totalPrice: formatMoneyInput(servicesTotal) });
+    patch({ totalPrice: formatMoneyInput(automaticTotal) });
     setIsTotalManual(false);
   };
 
-  const handleSubmit = (submitEvent: React.FormEvent) => {
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
     submitEvent.preventDefault();
 
     if (!form.customerName.trim() || !form.phone.trim() || !form.eventDate || !form.startTime || services.length === 0) {
@@ -138,25 +173,29 @@ export function ExternalEventModal({
       return;
     }
 
-    const body = toRequestBody(form, services);
-    const mutationOptions = {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListExternalEventsQueryKey() });
-        toast({
-          title: isEditing ? "Serviço externo atualizado" : "Serviço externo criado",
-          description: `${form.customerName} ficou guardado em Serviços Externos.`,
-        });
-        setOpen(false);
-      },
-      onError: () => {
-        toast({ title: "Não foi possível guardar o serviço externo", variant: "destructive" });
-      },
-    };
+    try {
+      const body = toRequestBody(form, services);
+      const savedEvent = event
+        ? await updateExternalEvent.mutateAsync({ id: event.id, data: body })
+        : await createExternalEvent.mutateAsync({ data: body });
 
-    if (event) {
-      updateExternalEvent.mutate({ id: event.id, data: body }, mutationOptions);
-    } else {
-      createExternalEvent.mutate({ data: body }, mutationOptions);
+      await replaceSelectedExtras.mutateAsync({
+        data: {
+          module: "external_events",
+          entityId: savedEvent.id,
+          items: toSelectedExtraInputs(extras),
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: getListExternalEventsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListSelectedExtrasQueryKey({ module: "external_events", entityId: savedEvent.id }) });
+      toast({
+        title: isEditing ? "Serviço externo atualizado" : "Serviço externo criado",
+        description: `${form.customerName} ficou guardado em Serviços Externos.`,
+      });
+      setOpen(false);
+    } catch {
+      toast({ title: "Não foi possível guardar o serviço externo e os extras", variant: "destructive" });
     }
   };
 
@@ -227,16 +266,18 @@ export function ExternalEventModal({
                 <p className="text-xs text-muted-foreground">
                   {isTotalManual
                     ? "O total final tem um ajuste manual ativo."
-                    : "O total final acompanha automaticamente a soma dos serviços."}
+                    : "O total final acompanha automaticamente a soma dos serviços e extras."}
                 </p>
               </div>
               {isTotalManual && (
                 <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={recalculateTotal}>
-                  Recalcular pela soma dos serviços
+                  Recalcular serviços + extras
                 </Button>
               )}
             </div>
           </section>
+
+          <EventExtrasSelector module="external_events" extras={extras} onChange={setExtras} />
 
           <FormSection title="Notas operacionais">
             <Field label="Montagem">
@@ -255,6 +296,10 @@ export function ExternalEventModal({
               <p className="text-xs text-muted-foreground">Subtotal dos serviços</p>
               <p className="text-xl font-bold text-foreground">{servicesTotal.toFixed(2)} €</p>
             </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">Subtotal dos extras</p>
+              <p className="text-xl font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
+            </div>
             <Field label="Valor total">
               <Input type="number" min="0" step="0.01" value={form.totalPrice} onChange={(event) => updateTotalPrice(event.target.value)} />
             </Field>
@@ -272,7 +317,7 @@ export function ExternalEventModal({
             </div>
             {isTotalManual && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 md:col-span-2">
-                Total final com ajuste manual. Use "Recalcular pela soma dos serviços" para voltar ao subtotal atual.
+                Total final com ajuste manual. Use "Recalcular serviços + extras" para voltar ao total automático.
               </div>
             )}
           </FormSection>

@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EventExtrasDetails } from "@/components/event-extras-selector";
 import { ExternalEventModal } from "@/components/external-event-modal";
 import { OperationalChecklist } from "@/components/operational-checklist";
 import { useToast } from "@/hooks/use-toast";
@@ -306,6 +307,7 @@ function ExternalEventRow({
               <Info label="ObservaÃ§Ãµes" value={event.notes} />
             </DetailsBlock>
           </div>
+          <EventExtrasDetails module="external_events" entityId={event.id} />
           <div className="mt-4">
             <OperationalChecklist module="external_events" entityId={event.id} title={`Checklist ${event.customerName}`} />
           </div>

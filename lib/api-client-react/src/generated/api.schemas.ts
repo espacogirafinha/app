@@ -546,6 +546,57 @@ export interface UpdateExternalServiceBody {
   operationalNotes?: string | null;
 }
 
+export type SelectedExtraModule =
+  (typeof SelectedExtraModule)[keyof typeof SelectedExtraModule];
+
+export const SelectedExtraModule = {
+  venue_events: "venue_events",
+  external_events: "external_events",
+} as const;
+
+export interface SelectedExtraInput {
+  /** @nullable */
+  extraId?: string | null;
+  /** @minLength 1 */
+  extraName: string;
+  /** @nullable */
+  category?: string | null;
+  /** @minimum 0 */
+  unitPrice: number;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  totalPrice: number;
+  /** @nullable */
+  notes?: string | null;
+  sortOrder?: number;
+}
+
+export interface ReplaceSelectedExtrasBody {
+  module: SelectedExtraModule;
+  entityId: string;
+  items: SelectedExtraInput[];
+}
+
+export interface SelectedExtra {
+  id: string;
+  module: SelectedExtraModule;
+  entityId: string;
+  /** @nullable */
+  extraId?: string | null;
+  extraName: string;
+  /** @nullable */
+  category?: string | null;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+  /** @nullable */
+  notes?: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface EventExtra {
   id: string;
   name: string;
@@ -1486,6 +1537,11 @@ export type ListWorkshopsParams = {
   status?: WorkshopStatus;
   dateFrom?: string;
   dateTo?: string;
+};
+
+export type ListSelectedExtrasParams = {
+  module: SelectedExtraModule;
+  entityId: string;
 };
 
 export type GetCalendarV2Params = {

@@ -1161,6 +1161,81 @@ export const DeleteWorkshopParticipantParams = zod.object({
 });
 
 /**
+ * @summary List selected extras for an event
+ */
+export const ListSelectedExtrasQueryParams = zod.object({
+  module: zod.enum(["venue_events", "external_events"]),
+  entityId: zod.coerce.string().uuid(),
+});
+
+export const ListSelectedExtrasResponseItem = zod.object({
+  id: zod.string().uuid(),
+  module: zod.enum(["venue_events", "external_events"]),
+  entityId: zod.string().uuid(),
+  extraId: zod.string().uuid().nullish(),
+  extraName: zod.string(),
+  category: zod.string().nullish(),
+  unitPrice: zod.number(),
+  quantity: zod.number(),
+  totalPrice: zod.number(),
+  notes: zod.string().nullish(),
+  sortOrder: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListSelectedExtrasResponse = zod.array(
+  ListSelectedExtrasResponseItem,
+);
+
+/**
+ * @summary Replace the full selected extras list for an event
+ */
+
+export const replaceSelectedExtrasBodyItemsItemUnitPriceMin = 0;
+
+export const replaceSelectedExtrasBodyItemsItemTotalPriceMin = 0;
+
+export const ReplaceSelectedExtrasBody = zod.object({
+  module: zod.enum(["venue_events", "external_events"]),
+  entityId: zod.string().uuid(),
+  items: zod.array(
+    zod.object({
+      extraId: zod.string().uuid().nullish(),
+      extraName: zod.string().min(1),
+      category: zod.string().nullish(),
+      unitPrice: zod
+        .number()
+        .min(replaceSelectedExtrasBodyItemsItemUnitPriceMin),
+      quantity: zod.number().min(1),
+      totalPrice: zod
+        .number()
+        .min(replaceSelectedExtrasBodyItemsItemTotalPriceMin),
+      notes: zod.string().nullish(),
+      sortOrder: zod.number().optional(),
+    }),
+  ),
+});
+
+export const ReplaceSelectedExtrasResponseItem = zod.object({
+  id: zod.string().uuid(),
+  module: zod.enum(["venue_events", "external_events"]),
+  entityId: zod.string().uuid(),
+  extraId: zod.string().uuid().nullish(),
+  extraName: zod.string(),
+  category: zod.string().nullish(),
+  unitPrice: zod.number(),
+  quantity: zod.number(),
+  totalPrice: zod.number(),
+  notes: zod.string().nullish(),
+  sortOrder: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ReplaceSelectedExtrasResponse = zod.array(
+  ReplaceSelectedExtrasResponseItem,
+);
+
+/**
  * @summary List venue packs
  */
 export const listVenuePacksResponseBasePriceMin = 0;
