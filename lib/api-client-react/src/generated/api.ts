@@ -53,12 +53,15 @@ import type {
   ListChecklistsParams,
   ListExternalEventsParams,
   ListReservationsParams,
+  ListSelectedExtrasParams,
   ListVenueEventsParams,
   ListWorkshopsParams,
   MessageTemplate,
+  ReplaceSelectedExtrasBody,
   ReportsData,
   ReportsV2,
   Reservation,
+  SelectedExtra,
   Task,
   TaskSummary,
   UpdateChecklistItemBody,
@@ -2209,6 +2212,190 @@ export const useDeleteWorkshopParticipant = <
   TContext
 > => {
   return useMutation(getDeleteWorkshopParticipantMutationOptions(options));
+};
+
+/**
+ * @summary List selected extras for an event
+ */
+export const getListSelectedExtrasUrl = (params: ListSelectedExtrasParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/selected-extras?${stringifiedParams}`
+    : `/api/selected-extras`;
+};
+
+export const listSelectedExtras = async (
+  params: ListSelectedExtrasParams,
+  options?: RequestInit,
+): Promise<SelectedExtra[]> => {
+  return customFetch<SelectedExtra[]>(getListSelectedExtrasUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSelectedExtrasQueryKey = (
+  params?: ListSelectedExtrasParams,
+) => {
+  return [`/api/selected-extras`, ...(params ? [params] : [])] as const;
+};
+
+export const getListSelectedExtrasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSelectedExtras>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params: ListSelectedExtrasParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSelectedExtras>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSelectedExtrasQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSelectedExtras>>
+  > = ({ signal }) => listSelectedExtras(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSelectedExtras>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSelectedExtrasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSelectedExtras>>
+>;
+export type ListSelectedExtrasQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List selected extras for an event
+ */
+
+export function useListSelectedExtras<
+  TData = Awaited<ReturnType<typeof listSelectedExtras>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params: ListSelectedExtrasParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSelectedExtras>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSelectedExtrasQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace the full selected extras list for an event
+ */
+export const getReplaceSelectedExtrasUrl = () => {
+  return `/api/selected-extras`;
+};
+
+export const replaceSelectedExtras = async (
+  replaceSelectedExtrasBody: ReplaceSelectedExtrasBody,
+  options?: RequestInit,
+): Promise<SelectedExtra[]> => {
+  return customFetch<SelectedExtra[]>(getReplaceSelectedExtrasUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(replaceSelectedExtrasBody),
+  });
+};
+
+export const getReplaceSelectedExtrasMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof replaceSelectedExtras>>,
+    TError,
+    { data: BodyType<ReplaceSelectedExtrasBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof replaceSelectedExtras>>,
+  TError,
+  { data: BodyType<ReplaceSelectedExtrasBody> },
+  TContext
+> => {
+  const mutationKey = ["replaceSelectedExtras"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof replaceSelectedExtras>>,
+    { data: BodyType<ReplaceSelectedExtrasBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return replaceSelectedExtras(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReplaceSelectedExtrasMutationResult = NonNullable<
+  Awaited<ReturnType<typeof replaceSelectedExtras>>
+>;
+export type ReplaceSelectedExtrasMutationBody =
+  BodyType<ReplaceSelectedExtrasBody>;
+export type ReplaceSelectedExtrasMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Replace the full selected extras list for an event
+ */
+export const useReplaceSelectedExtras = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof replaceSelectedExtras>>,
+    TError,
+    { data: BodyType<ReplaceSelectedExtrasBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof replaceSelectedExtras>>,
+  TError,
+  { data: BodyType<ReplaceSelectedExtrasBody> },
+  TContext
+> => {
+  return useMutation(getReplaceSelectedExtrasMutationOptions(options));
 };
 
 /**

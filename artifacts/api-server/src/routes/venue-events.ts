@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
-import { db, venueEventsTable } from "@workspace/db";
+import { db, eventSelectedExtrasTable, venueEventsTable } from "@workspace/db";
 import {
   CreateVenueEventBody,
   DeleteVenueEventParams,
@@ -197,10 +197,21 @@ router.delete("/venue-events/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [row] = await db
-    .delete(venueEventsTable)
-    .where(eq(venueEventsTable.id, params.data.id))
-    .returning();
+  const row = await db.transaction(async (tx) => {
+    await tx
+      .delete(eventSelectedExtrasTable)
+      .where(and(
+        eq(eventSelectedExtrasTable.module, "venue_events"),
+        eq(eventSelectedExtrasTable.entityId, params.data.id),
+      ));
+
+    const [deleted] = await tx
+      .delete(venueEventsTable)
+      .where(eq(venueEventsTable.id, params.data.id))
+      .returning();
+
+    return deleted;
+  });
 
   if (!row) {
     res.status(404).json({ error: "Venue event not found" });

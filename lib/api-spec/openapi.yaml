@@ -687,6 +687,64 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /selected-extras:
+    get:
+      operationId: listSelectedExtras
+      tags: [selected-extras]
+      summary: List selected extras for an event
+      parameters:
+        - name: module
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/SelectedExtraModule"
+        - name: entityId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Selected extras
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SelectedExtra"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: replaceSelectedExtras
+      tags: [selected-extras]
+      summary: Replace the full selected extras list for an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceSelectedExtrasBody"
+      responses:
+        "200":
+          description: Replaced selected extras
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SelectedExtra"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /settings/venue-packs:
     get:
       operationId: listVenuePacks
@@ -2094,6 +2152,94 @@ components:
           type: integer
         operationalNotes:
           type: ["string", "null"]
+
+    SelectedExtraModule:
+      type: string
+      enum: [venue_events, external_events]
+
+    SelectedExtraInput:
+      type: object
+      properties:
+        extraId:
+          type: ["string", "null"]
+          format: uuid
+        extraName:
+          type: string
+          minLength: 1
+        category:
+          type: ["string", "null"]
+        unitPrice:
+          type: number
+          minimum: 0
+        quantity:
+          type: integer
+          minimum: 1
+        totalPrice:
+          type: number
+          minimum: 0
+        notes:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+      required: [extraName, unitPrice, quantity, totalPrice]
+
+    ReplaceSelectedExtrasBody:
+      type: object
+      properties:
+        module:
+          $ref: "#/components/schemas/SelectedExtraModule"
+        entityId:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SelectedExtraInput"
+      required: [module, entityId, items]
+
+    SelectedExtra:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        module:
+          $ref: "#/components/schemas/SelectedExtraModule"
+        entityId:
+          type: string
+          format: uuid
+        extraId:
+          type: ["string", "null"]
+          format: uuid
+        extraName:
+          type: string
+        category:
+          type: ["string", "null"]
+        unitPrice:
+          type: number
+        quantity:
+          type: integer
+        totalPrice:
+          type: number
+        notes:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - module
+        - entityId
+        - extraName
+        - unitPrice
+        - quantity
+        - totalPrice
+        - sortOrder
+        - createdAt
+        - updatedAt
 
     EventExtra:
       type: object

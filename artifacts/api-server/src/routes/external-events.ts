@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
-import { db, externalEventsTable, externalEventServicesTable } from "@workspace/db";
+import { db, eventSelectedExtrasTable, externalEventsTable, externalEventServicesTable } from "@workspace/db";
 import {
   CreateExternalEventBody,
   DeleteExternalEventParams,
@@ -272,10 +272,21 @@ router.delete("/external-events/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [row] = await db
-    .delete(externalEventsTable)
-    .where(eq(externalEventsTable.id, params.data.id))
-    .returning();
+  const row = await db.transaction(async (tx) => {
+    await tx
+      .delete(eventSelectedExtrasTable)
+      .where(and(
+        eq(eventSelectedExtrasTable.module, "external_events"),
+        eq(eventSelectedExtrasTable.entityId, params.data.id),
+      ));
+
+    const [deleted] = await tx
+      .delete(externalEventsTable)
+      .where(eq(externalEventsTable.id, params.data.id))
+      .returning();
+
+    return deleted;
+  });
 
   if (!row) {
     res.status(404).json({ error: "External event not found" });
