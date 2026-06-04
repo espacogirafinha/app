@@ -1436,6 +1436,8 @@ export interface CreateChecklistBody {
 }
 
 export interface UpdateChecklistItemBody {
+  id?: string;
+  checklistId?: string;
   label?: string;
   /** @nullable */
   description?: string | null;
@@ -1525,7 +1527,15 @@ export type GetCalendarReservationsParams = {
   month: number;
 };
 
+export type ListChecklistTemplateItemsParams = {
+  templateId?: string;
+};
+
 export type ListChecklistsParams = {
   module?: ChecklistModule;
   entityId?: string;
+};
+
+export type ListChecklistItemsParams = {
+  checklistId?: string;
 };

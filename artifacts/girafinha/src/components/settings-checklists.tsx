@@ -14,9 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   getListChecklistTemplatesQueryKey,
   useCreateChecklistTemplate,
-  useCreateChecklistTemplateItemForTemplate,
   useListChecklistTemplates,
-  useUpdateChecklistTemplateItem,
+  useUpsertChecklistTemplateItem,
 } from "@workspace/api-client-react";
 import type { ChecklistModule, ChecklistTemplate, ChecklistTemplateItem, CreateChecklistTemplateBody, CreateChecklistTemplateItemBody } from "@workspace/api-client-react";
 
@@ -80,8 +79,7 @@ const emptyTemplate: TemplateForm = {
 export function SettingsChecklists() {
   const templatesQuery = useListChecklistTemplates();
   const createTemplate = useCreateChecklistTemplate();
-  const createItem = useCreateChecklistTemplateItemForTemplate();
-  const updateItem = useUpdateChecklistTemplateItem();
+  const upsertItem = useUpsertChecklistTemplateItem();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [templateModal, setTemplateModal] = useState<{ open: boolean; template?: ChecklistTemplate }>({ open: false });
@@ -114,7 +112,7 @@ export function SettingsChecklists() {
         const existingLabels = new Set((target.items ?? []).map((item) => item.label.toLowerCase()));
         for (const [index, label] of template.items.entries()) {
           if (existingLabels.has(label.toLowerCase())) continue;
-          await createItem.mutateAsync({ id: target.id, data: { label, isRequired: false, sortOrder: (index + 1) * 10 } });
+          await upsertItem.mutateAsync({ data: { templateId: target.id, label, isRequired: false, sortOrder: (index + 1) * 10 } });
           itemCount += 1;
         }
       }
@@ -136,7 +134,7 @@ export function SettingsChecklists() {
               <CardDescription>Templates reutilizaveis para preparar festas e servicos externos.</CardDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button variant="outline" className="min-h-10" onClick={addSuggested} disabled={createTemplate.isPending || createItem.isPending}>
+              <Button variant="outline" className="min-h-10" onClick={addSuggested} disabled={createTemplate.isPending || upsertItem.isPending}>
                 <Sparkles className="h-4 w-4" />
                 Adicionar checklists sugeridas
               </Button>
@@ -231,22 +229,19 @@ export function SettingsChecklists() {
         open={itemModal.open}
         template={itemModal.template}
         item={itemModal.item}
-        isSaving={createItem.isPending || updateItem.isPending}
+        isSaving={upsertItem.isPending}
         onOpenChange={(open) => setItemModal((current) => ({ ...current, open }))}
         onSubmit={async (payload) => {
           if (!itemModal.template) return;
           const data: CreateChecklistTemplateItemBody = {
             id: payload.id,
+            templateId: itemModal.template.id,
             label: payload.label.trim(),
             description: payload.description.trim() || null,
             isRequired: payload.isRequired,
             sortOrder: Number.parseInt(payload.sortOrder || "0", 10) || 0,
           };
-          if (payload.id) {
-            await updateItem.mutateAsync({ id: payload.id, data });
-          } else {
-            await createItem.mutateAsync({ id: itemModal.template.id, data });
-          }
+          await upsertItem.mutateAsync({ data });
           await refresh();
           setItemModal({ open: false });
           toast({ title: payload.id ? "Item atualizado" : "Item criado" });

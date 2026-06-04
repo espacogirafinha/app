@@ -1316,6 +1316,54 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /settings/checklist-template-items:
+    get:
+      operationId: listChecklistTemplateItems
+      tags: [settings]
+      parameters:
+        - name: templateId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Checklist template items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChecklistTemplateItem"
+    post:
+      operationId: upsertChecklistTemplateItem
+      tags: [settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChecklistTemplateItemBody"
+      responses:
+        "200":
+          description: Updated template item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateItem"
+        "201":
+          description: Created template item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateItem"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /settings/checklist-template-items/{id}:
     post:
       operationId: updateChecklistTemplateItem
@@ -1392,6 +1440,54 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EventChecklist"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /checklist-items:
+    get:
+      operationId: listChecklistItems
+      tags: [checklists]
+      parameters:
+        - name: checklistId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Operational checklist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventChecklistItem"
+    post:
+      operationId: upsertChecklistItem
+      tags: [checklists]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateChecklistItemBody"
+      responses:
+        "200":
+          description: Updated checklist item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventChecklistItem"
+        "201":
+          description: Created checklist item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventChecklistItem"
         "400":
           description: Invalid request
           content:
@@ -3686,6 +3782,10 @@ components:
     UpdateChecklistItemBody:
       type: object
       properties:
+        id:
+          type: string
+        checklistId:
+          type: string
         label:
           type: string
         description:

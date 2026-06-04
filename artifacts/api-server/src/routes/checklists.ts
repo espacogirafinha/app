@@ -172,6 +172,53 @@ router.post("/settings/checklist-templates", async (req, res): Promise<void> => 
   res.status(201).json(formatTemplate(row));
 });
 
+router.get("/settings/checklist-template-items", async (req, res): Promise<void> => {
+  const templateId = typeof req.query.templateId === "string" ? req.query.templateId : undefined;
+  const rows = await db
+    .select()
+    .from(checklistTemplateItemsTable)
+    .where(templateId ? eq(checklistTemplateItemsTable.templateId, templateId) : undefined)
+    .orderBy(asc(checklistTemplateItemsTable.sortOrder), asc(checklistTemplateItemsTable.label));
+
+  res.json(rows.map(formatTemplateItem));
+});
+
+
+router.post("/settings/checklist-template-items", async (req, res): Promise<void> => {
+  const parsed = CreateChecklistTemplateItemForTemplateBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const id = bodyId(req.body);
+  const body = parsed.data;
+  if (!id && !body.templateId) {
+    res.status(400).json({ error: "templateId is required" });
+    return;
+  }
+
+  const payload = compactObject({
+    templateId: body.templateId,
+    label: body.label,
+    description: body.description,
+    isRequired: body.isRequired ?? false,
+    sortOrder: body.sortOrder ?? 0,
+  }) as Partial<typeof checklistTemplateItemsTable.$inferInsert>;
+
+  if (id) {
+    const [row] = await db.update(checklistTemplateItemsTable).set(payload).where(eq(checklistTemplateItemsTable.id, id)).returning();
+    if (!row) {
+      res.status(404).json({ error: "Checklist template item not found" });
+      return;
+    }
+    res.json(formatTemplateItem(row));
+    return;
+  }
+
+  const [row] = await db.insert(checklistTemplateItemsTable).values(payload as typeof checklistTemplateItemsTable.$inferInsert).returning();
+  res.status(201).json(formatTemplateItem(row));
+});
 router.post("/settings/checklist-templates/:id/items", async (req, res): Promise<void> => {
   const params = CreateChecklistTemplateItemForTemplateParams.safeParse(req.params);
   if (!params.success) {
@@ -291,6 +338,66 @@ router.post("/checklists", async (req, res): Promise<void> => {
   res.status(201).json(formatChecklist(row, items));
 });
 
+router.get("/checklist-items", async (req, res): Promise<void> => {
+  const checklistId = typeof req.query.checklistId === "string" ? req.query.checklistId : undefined;
+  const rows = await db
+    .select()
+    .from(eventChecklistItemsTable)
+    .where(checklistId ? eq(eventChecklistItemsTable.checklistId, checklistId) : undefined)
+    .orderBy(asc(eventChecklistItemsTable.sortOrder), asc(eventChecklistItemsTable.label));
+
+  res.json(rows.map(formatChecklistItem));
+});
+
+
+router.post("/checklist-items", async (req, res): Promise<void> => {
+  const parsed = UpdateChecklistItemBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const id = bodyId(req.body);
+  const body = parsed.data;
+  const isDone = body.isDone;
+  const payload = compactObject({
+    checklistId: body.checklistId,
+    label: body.label,
+    description: body.description,
+    isRequired: body.isRequired,
+    isDone,
+    sortOrder: body.sortOrder,
+    completedAt: isDone === undefined ? body.completedAt ? new Date(body.completedAt) : undefined : isDone ? new Date() : null,
+  }) as Partial<typeof eventChecklistItemsTable.$inferInsert>;
+
+  if (id) {
+    const [row] = await db.update(eventChecklistItemsTable).set(payload).where(eq(eventChecklistItemsTable.id, id)).returning();
+    if (!row) {
+      res.status(404).json({ error: "Checklist item not found" });
+      return;
+    }
+
+    res.json(formatChecklistItem(row));
+    return;
+  }
+
+  if (!body.checklistId || !body.label) {
+    res.status(400).json({ error: "checklistId and label are required" });
+    return;
+  }
+
+  const [row] = await db.insert(eventChecklistItemsTable).values({
+    checklistId: body.checklistId,
+    label: body.label,
+    description: body.description,
+    isRequired: body.isRequired ?? false,
+    isDone: body.isDone ?? false,
+    sortOrder: body.sortOrder ?? 0,
+    completedAt: body.isDone ? new Date() : null,
+  }).returning();
+
+  res.status(201).json(formatChecklistItem(row));
+});
 router.post("/checklist-items/:id", async (req, res): Promise<void> => {
   const params = UpdateChecklistItemParams.safeParse(req.params);
   if (!params.success) {
@@ -325,5 +432,6 @@ router.post("/checklist-items/:id", async (req, res): Promise<void> => {
 });
 
 export default router;
+
 
 

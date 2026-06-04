@@ -48,6 +48,8 @@ import type {
   GetReportsV2Params,
   GetTasksSummaryParams,
   HealthStatus,
+  ListChecklistItemsParams,
+  ListChecklistTemplateItemsParams,
   ListChecklistsParams,
   ListExternalEventsParams,
   ListReservationsParams,
@@ -4406,6 +4408,192 @@ export const useCreateChecklistTemplateItemForTemplate = <
   );
 };
 
+export const getListChecklistTemplateItemsUrl = (
+  params?: ListChecklistTemplateItemsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/settings/checklist-template-items?${stringifiedParams}`
+    : `/api/settings/checklist-template-items`;
+};
+
+export const listChecklistTemplateItems = async (
+  params?: ListChecklistTemplateItemsParams,
+  options?: RequestInit,
+): Promise<ChecklistTemplateItem[]> => {
+  return customFetch<ChecklistTemplateItem[]>(
+    getListChecklistTemplateItemsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListChecklistTemplateItemsQueryKey = (
+  params?: ListChecklistTemplateItemsParams,
+) => {
+  return [
+    `/api/settings/checklist-template-items`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListChecklistTemplateItemsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listChecklistTemplateItems>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListChecklistTemplateItemsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listChecklistTemplateItems>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListChecklistTemplateItemsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listChecklistTemplateItems>>
+  > = ({ signal }) =>
+    listChecklistTemplateItems(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listChecklistTemplateItems>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListChecklistTemplateItemsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listChecklistTemplateItems>>
+>;
+export type ListChecklistTemplateItemsQueryError = ErrorType<unknown>;
+
+export function useListChecklistTemplateItems<
+  TData = Awaited<ReturnType<typeof listChecklistTemplateItems>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListChecklistTemplateItemsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listChecklistTemplateItems>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListChecklistTemplateItemsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getUpsertChecklistTemplateItemUrl = () => {
+  return `/api/settings/checklist-template-items`;
+};
+
+export const upsertChecklistTemplateItem = async (
+  createChecklistTemplateItemBody: CreateChecklistTemplateItemBody,
+  options?: RequestInit,
+): Promise<ChecklistTemplateItem> => {
+  return customFetch<ChecklistTemplateItem>(
+    getUpsertChecklistTemplateItemUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createChecklistTemplateItemBody),
+    },
+  );
+};
+
+export const getUpsertChecklistTemplateItemMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertChecklistTemplateItem>>,
+    TError,
+    { data: BodyType<CreateChecklistTemplateItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertChecklistTemplateItem>>,
+  TError,
+  { data: BodyType<CreateChecklistTemplateItemBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertChecklistTemplateItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertChecklistTemplateItem>>,
+    { data: BodyType<CreateChecklistTemplateItemBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return upsertChecklistTemplateItem(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertChecklistTemplateItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertChecklistTemplateItem>>
+>;
+export type UpsertChecklistTemplateItemMutationBody =
+  BodyType<CreateChecklistTemplateItemBody>;
+export type UpsertChecklistTemplateItemMutationError = ErrorType<ErrorResponse>;
+
+export const useUpsertChecklistTemplateItem = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertChecklistTemplateItem>>,
+    TError,
+    { data: BodyType<CreateChecklistTemplateItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertChecklistTemplateItem>>,
+  TError,
+  { data: BodyType<CreateChecklistTemplateItemBody> },
+  TContext
+> => {
+  return useMutation(getUpsertChecklistTemplateItemMutationOptions(options));
+};
+
 export const getUpdateChecklistTemplateItemUrl = (id: string) => {
   return `/api/settings/checklist-template-items/${id}`;
 };
@@ -4656,6 +4844,176 @@ export const useCreateChecklist = <
   TContext
 > => {
   return useMutation(getCreateChecklistMutationOptions(options));
+};
+
+export const getListChecklistItemsUrl = (params?: ListChecklistItemsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/checklist-items?${stringifiedParams}`
+    : `/api/checklist-items`;
+};
+
+export const listChecklistItems = async (
+  params?: ListChecklistItemsParams,
+  options?: RequestInit,
+): Promise<EventChecklistItem[]> => {
+  return customFetch<EventChecklistItem[]>(getListChecklistItemsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListChecklistItemsQueryKey = (
+  params?: ListChecklistItemsParams,
+) => {
+  return [`/api/checklist-items`, ...(params ? [params] : [])] as const;
+};
+
+export const getListChecklistItemsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listChecklistItems>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListChecklistItemsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listChecklistItems>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListChecklistItemsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listChecklistItems>>
+  > = ({ signal }) => listChecklistItems(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listChecklistItems>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListChecklistItemsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listChecklistItems>>
+>;
+export type ListChecklistItemsQueryError = ErrorType<unknown>;
+
+export function useListChecklistItems<
+  TData = Awaited<ReturnType<typeof listChecklistItems>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListChecklistItemsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listChecklistItems>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListChecklistItemsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getUpsertChecklistItemUrl = () => {
+  return `/api/checklist-items`;
+};
+
+export const upsertChecklistItem = async (
+  updateChecklistItemBody: UpdateChecklistItemBody,
+  options?: RequestInit,
+): Promise<EventChecklistItem> => {
+  return customFetch<EventChecklistItem>(getUpsertChecklistItemUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateChecklistItemBody),
+  });
+};
+
+export const getUpsertChecklistItemMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertChecklistItem>>,
+    TError,
+    { data: BodyType<UpdateChecklistItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertChecklistItem>>,
+  TError,
+  { data: BodyType<UpdateChecklistItemBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertChecklistItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertChecklistItem>>,
+    { data: BodyType<UpdateChecklistItemBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return upsertChecklistItem(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertChecklistItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertChecklistItem>>
+>;
+export type UpsertChecklistItemMutationBody = BodyType<UpdateChecklistItemBody>;
+export type UpsertChecklistItemMutationError = ErrorType<ErrorResponse>;
+
+export const useUpsertChecklistItem = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertChecklistItem>>,
+    TError,
+    { data: BodyType<UpdateChecklistItemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertChecklistItem>>,
+  TError,
+  { data: BodyType<UpdateChecklistItemBody> },
+  TContext
+> => {
+  return useMutation(getUpsertChecklistItemMutationOptions(options));
 };
 
 export const getUpdateChecklistItemUrl = (id: string) => {

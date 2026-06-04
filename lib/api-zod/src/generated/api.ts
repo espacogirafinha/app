@@ -2215,6 +2215,44 @@ export const CreateChecklistTemplateItemForTemplateResponse = zod.object({
   updatedAt: zod.string(),
 });
 
+export const ListChecklistTemplateItemsQueryParams = zod.object({
+  templateId: zod.coerce.string().optional(),
+});
+
+export const ListChecklistTemplateItemsResponseItem = zod.object({
+  id: zod.string(),
+  templateId: zod.string(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  isRequired: zod.boolean(),
+  sortOrder: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListChecklistTemplateItemsResponse = zod.array(
+  ListChecklistTemplateItemsResponseItem,
+);
+
+export const UpsertChecklistTemplateItemBody = zod.object({
+  id: zod.string().optional(),
+  templateId: zod.string().optional(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  isRequired: zod.boolean().optional(),
+  sortOrder: zod.number().optional(),
+});
+
+export const UpsertChecklistTemplateItemResponse = zod.object({
+  id: zod.string(),
+  templateId: zod.string(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  isRequired: zod.boolean(),
+  sortOrder: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
 export const UpdateChecklistTemplateItemParams = zod.object({
   id: zod.coerce.string(),
 });
@@ -2315,11 +2353,57 @@ export const CreateChecklistResponse = zod.object({
   updatedAt: zod.string(),
 });
 
+export const ListChecklistItemsQueryParams = zod.object({
+  checklistId: zod.coerce.string().optional(),
+});
+
+export const ListChecklistItemsResponseItem = zod.object({
+  id: zod.string(),
+  checklistId: zod.string(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  isRequired: zod.boolean(),
+  isDone: zod.boolean(),
+  sortOrder: zod.number(),
+  completedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListChecklistItemsResponse = zod.array(
+  ListChecklistItemsResponseItem,
+);
+
+export const UpsertChecklistItemBody = zod.object({
+  id: zod.string().optional(),
+  checklistId: zod.string().optional(),
+  label: zod.string().optional(),
+  description: zod.string().nullish(),
+  isRequired: zod.boolean().optional(),
+  isDone: zod.boolean().optional(),
+  sortOrder: zod.number().optional(),
+  completedAt: zod.string().nullish(),
+});
+
+export const UpsertChecklistItemResponse = zod.object({
+  id: zod.string(),
+  checklistId: zod.string(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  isRequired: zod.boolean(),
+  isDone: zod.boolean(),
+  sortOrder: zod.number(),
+  completedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
 export const UpdateChecklistItemParams = zod.object({
   id: zod.coerce.string(),
 });
 
 export const UpdateChecklistItemBody = zod.object({
+  id: zod.string().optional(),
+  checklistId: zod.string().optional(),
   label: zod.string().optional(),
   description: zod.string().nullish(),
   isRequired: zod.boolean().optional(),

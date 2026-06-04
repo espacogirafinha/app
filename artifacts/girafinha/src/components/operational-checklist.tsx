@@ -11,7 +11,7 @@ import {
   useCreateChecklist,
   useListChecklists,
   useListChecklistTemplates,
-  useUpdateChecklistItem,
+  useUpsertChecklistItem,
 } from "@workspace/api-client-react";
 import type { ChecklistModule, ChecklistTemplate, EventChecklist } from "@workspace/api-client-react";
 
@@ -19,7 +19,7 @@ export function OperationalChecklist({ module, entityId, title }: { module: Extr
   const checklistsQuery = useListChecklists({ module, entityId });
   const templatesQuery = useListChecklistTemplates();
   const createChecklist = useCreateChecklist();
-  const updateItem = useUpdateChecklistItem();
+  const upsertItem = useUpsertChecklistItem();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -53,7 +53,7 @@ export function OperationalChecklist({ module, entityId, title }: { module: Extr
 
   const toggleItem = async (itemId: string, isDone: boolean) => {
     try {
-      await updateItem.mutateAsync({ id: itemId, data: { isDone } });
+      await upsertItem.mutateAsync({ data: { id: itemId, isDone } });
       await refresh();
     } catch {
       toast({ title: "Nao foi possivel atualizar item", variant: "destructive" });

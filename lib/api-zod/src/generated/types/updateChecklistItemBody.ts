@@ -7,6 +7,8 @@
  */
 
 export interface UpdateChecklistItemBody {
+  id?: string;
+  checklistId?: string;
   label?: string;
   /** @nullable */
   description?: string | null;
