@@ -42,8 +42,8 @@ export default function Dashboard() {
       <div className="flex min-h-[360px] items-center justify-center">
         <Card className="max-w-md border-border/70 shadow-sm">
           <CardHeader>
-            <CardTitle>Dashboard indisponivel</CardTitle>
-            <CardDescription>Nao foi possivel carregar o painel V2 neste momento.</CardDescription>
+            <CardTitle>Dashboard indisponível</CardTitle>
+            <CardDescription>Não foi possível carregar o painel V2 neste momento.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => refetch()} className="w-full rounded-xl">
@@ -59,21 +59,21 @@ export default function Dashboard() {
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Painel de gestao</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Painel de gestão</h1>
           <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            Festas, servicos externos e workshops num so lugar.
+            Festas, serviços externos e workshops num só lugar.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <QuickLink href="/venue-events" label="Nova festa" />
-          <QuickLink href="/external-events" label="Novo servico" />
+          <QuickLink href="/external-events" label="Novo serviço" />
           <QuickLink href="/workshops" label="Novo workshop" />
         </div>
       </header>
 
       <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         <MetricCard title="Hoje" value={String(data.summary.todayCount)} helper="Itens marcados" icon={CalendarIcon} />
-        <MetricCard title="Proximos 7 dias" value={String(data.summary.nextSevenDaysCount)} helper="Agenda ativa" icon={Clock} />
+        <MetricCard title="Próximos 7 dias" value={String(data.summary.nextSevenDaysCount)} helper="Agenda ativa" icon={Clock} />
         <MetricCard
           title="Por receber"
           value={formatMoney(data.summary.totalPending)}
@@ -92,8 +92,8 @@ export default function Dashboard() {
 
       <section className="grid gap-3 lg:grid-cols-3">
         <AreaCard
-          title="Festas no Espaco"
-          description="Aniversarios, packs, decoracao e catering no espaco."
+          title="Festas no Espaço"
+          description="Aniversários, packs, decoração e catering no espaço."
           href="/venue-events"
           cta="Ver festas"
           icon={PartyPopper}
@@ -101,17 +101,17 @@ export default function Dashboard() {
           tone="venue"
         />
         <AreaCard
-          title="Servicos Externos"
-          description="Decoracao, catering, animacao, insuflaveis e baloes."
+          title="Serviços Externos"
+          description="Decoração, catering, animação, insufláveis e balões."
           href="/external-events"
-          cta="Ver servicos"
+          cta="Ver serviços"
           icon={MapPin}
           area={data.areas.externalEvents}
           tone="external"
         />
         <AreaCard
-          title="Workshops/Formacoes"
-          description="Workshops, inscricoes, participantes e pagamentos."
+          title="Workshops/Formações"
+          description="Workshops, inscrições, participantes e pagamentos."
           href="/workshops"
           cta="Ver workshops"
           icon={GraduationCap}
@@ -123,7 +123,7 @@ export default function Dashboard() {
       <Card className="overflow-hidden border-border/70 shadow-sm">
         <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
           <CardTitle className="text-lg md:text-xl">Agenda operacional</CardTitle>
-          <CardDescription>Proximos itens V2 por ordem de data, sem depender da tabela antiga de reservas.</CardDescription>
+          <CardDescription>Próximos itens V2 por ordem de data, sem depender da tabela antiga de reservas.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {data.agenda.length > 0 ? (
@@ -135,8 +135,8 @@ export default function Dashboard() {
           ) : (
             <div className="flex flex-col items-center p-10 text-center text-muted-foreground">
               <CalendarIcon className="mb-3 h-12 w-12 text-muted-foreground/30" />
-              <p>Nao ha itens futuros nos modulos V2.</p>
-              <p className="mt-1 text-sm">Crie festas, servicos externos ou workshops para preencher a agenda.</p>
+              <p>Não há itens futuros nos módulos V2.</p>
+              <p className="mt-1 text-sm">Crie festas, serviços externos ou workshops para preencher a agenda.</p>
             </div>
           )}
         </CardContent>
@@ -219,7 +219,7 @@ function AreaCard({
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <SmallMetric label="Proximos" value={String(area.upcomingCount)} />
+          <SmallMetric label="Próximos" value={String(area.upcomingCount)} />
           <SmallMetric label="7 dias" value={String(area.nextSevenDaysCount)} />
           <SmallMetric label="Recebido" value={formatMoney(area.received)} tone="success" />
           <SmallMetric label="Por receber" value={formatMoney(area.pending)} tone="danger" />
@@ -227,7 +227,7 @@ function AreaCard({
 
         {isWorkshop && (
           <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-2">
-            <SmallMetric label="Inscricoes" value={String(area.activeParticipantsCount)} compact />
+            <SmallMetric label="Inscrições" value={String(area.activeParticipantsCount)} compact />
             <SmallMetric label="Vagas livres" value={String(area.availableSeats)} compact />
           </div>
         )}

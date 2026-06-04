@@ -21,27 +21,27 @@ import type { ChecklistModule, ChecklistTemplate, ChecklistTemplateItem, CreateC
 
 const suggestedTemplates = [
   {
-    name: "Checklist Festa no Espaco",
+    name: "Checklist Festa no Espaço",
     module: "venue_events" as ChecklistModule,
     sortOrder: 10,
     items: [
       "Confirmar dados da festa",
       "Confirmar pagamento/sinal",
-      "Confirmar tema e decoracao",
+      "Confirmar tema e decoração",
       "Confirmar catering",
-      "Preparar espaco",
+      "Preparar espaço",
       "Verificar limpeza final",
     ],
   },
   {
-    name: "Checklist Servico Externo",
+    name: "Checklist Serviço Externo",
     module: "external_events" as ChecklistModule,
     sortOrder: 20,
     items: [
-      "Confirmar morada e horario",
-      "Confirmar servicos contratados",
+      "Confirmar morada e horário",
+      "Confirmar serviços contratados",
       "Preparar materiais",
-      "Confirmar transporte/deslocacao",
+      "Confirmar transporte/deslocação",
       "Confirmar montagem",
       "Confirmar desmontagem",
     ],
@@ -120,7 +120,7 @@ export function SettingsChecklists() {
       await refresh();
       toast({ title: "Checklists sugeridas adicionadas", description: `${createdCount} template(s), ${itemCount} item(ns).` });
     } catch {
-      toast({ title: "Nao foi possivel adicionar checklists sugeridas", variant: "destructive" });
+      toast({ title: "Não foi possível adicionar checklists sugeridas", variant: "destructive" });
     }
   };
 
@@ -131,7 +131,7 @@ export function SettingsChecklists() {
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <CardTitle>Checklists operacionais</CardTitle>
-              <CardDescription>Templates reutilizaveis para preparar festas e servicos externos.</CardDescription>
+              <CardDescription>Templates reutilizáveis para preparar festas e serviços externos.</CardDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button variant="outline" className="min-h-10" onClick={addSuggested} disabled={createTemplate.isPending || upsertItem.isPending}>
@@ -153,7 +153,7 @@ export function SettingsChecklists() {
         <Card className="border-dashed border-border/70">
           <CardContent className="flex flex-col items-center gap-3 px-4 py-10 text-center">
             <ClipboardCheck className="h-8 w-8 text-muted-foreground" />
-            <p className="font-medium">Ainda nao existem templates de checklist.</p>
+            <p className="font-medium">Ainda não existem templates de checklist.</p>
             <p className="text-sm text-muted-foreground">Crie um template ou adicione as checklists sugeridas.</p>
           </CardContent>
         </Card>
@@ -185,7 +185,7 @@ export function SettingsChecklists() {
                       <div>
                         <p className="font-medium">{item.label}</p>
                         {item.description ? <p className="text-muted-foreground">{item.description}</p> : null}
-                        <p className="text-xs text-muted-foreground">Ordem {item.sortOrder}{item.isRequired ? " · obrigatorio" : ""}</p>
+                        <p className="text-xs text-muted-foreground">Ordem {item.sortOrder}{item.isRequired ? " · obrigatório" : ""}</p>
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => setItemModal({ open: true, template, item })}>Editar</Button>
                     </div>
@@ -193,7 +193,7 @@ export function SettingsChecklists() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-2">
-                  <span className="text-sm text-muted-foreground">{template.isActive ? "Disponivel para novas checklists" : "Oculto para novas checklists"}</span>
+                  <span className="text-sm text-muted-foreground">{template.isActive ? "Disponível para novas checklists" : "Oculto para novas checklists"}</span>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => setItemModal({ open: true, template })}>
                       <Plus className="h-4 w-4" />
@@ -281,12 +281,12 @@ function TemplateModal({ open, template, isSaving, onOpenChange, onSubmit }: {
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void onSubmit(templatePayload(form)); }}>
           <Field label="Nome"><Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Modulo">
+            <Field label="Módulo">
               <Select value={form.module} onValueChange={(value) => setForm({ ...form, module: value as ChecklistModule })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="venue_events">Festas no Espaco</SelectItem>
-                  <SelectItem value="external_events">Servicos Externos</SelectItem>
+                  <SelectItem value="venue_events">Festas no Espaço</SelectItem>
+                  <SelectItem value="external_events">Serviços Externos</SelectItem>
                   <SelectItem value="workshops">Workshops</SelectItem>
                   <SelectItem value="general">Geral</SelectItem>
                 </SelectContent>
@@ -296,7 +296,7 @@ function TemplateModal({ open, template, isSaving, onOpenChange, onSubmit }: {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Tipo de evento"><Input value={form.eventType} onChange={(event) => setForm({ ...form, eventType: event.target.value })} /></Field>
-            <Field label="Tipo de servico"><Input value={form.serviceType} onChange={(event) => setForm({ ...form, serviceType: event.target.value })} /></Field>
+            <Field label="Tipo de serviço"><Input value={form.serviceType} onChange={(event) => setForm({ ...form, serviceType: event.target.value })} /></Field>
           </div>
           <div className="flex items-center justify-between rounded-md border border-border/70 px-3 py-2">
             <span className="text-sm font-medium">Ativo</span>
@@ -338,11 +338,11 @@ function ItemModal({ open, template, item, isSaving, onOpenChange, onSubmit }: {
         <DialogHeader><DialogTitle>{item ? "Editar item" : "Adicionar item"}</DialogTitle></DialogHeader>
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void onSubmit(form); }}>
           <Field label="Tarefa"><Input value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} /></Field>
-          <Field label="Descricao"><Textarea rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Field>
+          <Field label="Descrição"><Textarea rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Ordem"><Input type="number" value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} /></Field>
             <div className="flex items-center justify-between rounded-md border border-border/70 px-3 py-2">
-              <span className="text-sm font-medium">Obrigatorio</span>
+              <span className="text-sm font-medium">Obrigatório</span>
               <Switch checked={form.isRequired} onCheckedChange={(checked) => setForm({ ...form, isRequired: checked })} />
             </div>
           </div>
@@ -372,8 +372,8 @@ function templatePayload(source: TemplateForm | ChecklistTemplate, overrides: Pa
 
 function moduleLabel(module: ChecklistModule) {
   const labels: Record<ChecklistModule, string> = {
-    venue_events: "Festas no Espaco",
-    external_events: "Servicos Externos",
+    venue_events: "Festas no Espaço",
+    external_events: "Serviços Externos",
     workshops: "Workshops",
     general: "Geral",
   };

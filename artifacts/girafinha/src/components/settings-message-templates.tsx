@@ -38,10 +38,10 @@ import type {
 
 const suggestedMessageTemplates: CreateMessageTemplateBody[] = [
   {
-    name: "Confirmacao de festa",
+    name: "Confirmação de festa",
     module: "venue_events",
     triggerType: "confirmation",
-    body: "Ola {customerName}! Confirmamos a sua festa no Espaco Girafinha para {eventDate} as {startTime}. Qualquer duvida estamos disponiveis. Obrigada!",
+    body: "Olá {customerName}! Confirmamos a sua festa no Espaço Girafinha para {eventDate} às {startTime}. Qualquer dúvida estamos disponíveis. Obrigada!",
     variables: "customerName,eventDate,startTime",
     isActive: true,
     sortOrder: 10,
@@ -50,25 +50,25 @@ const suggestedMessageTemplates: CreateMessageTemplateBody[] = [
     name: "Pedido de sinal",
     module: "venue_events",
     triggerType: "payment_request",
-    body: "Ola {customerName}! Para confirmarmos a reserva da festa, pedimos o pagamento do sinal. Valor em falta: {amountDue}. Obrigada!",
+    body: "Olá {customerName}! Para confirmarmos a reserva da festa, pedimos o pagamento do sinal. Valor em falta: {amountDue}. Obrigada!",
     variables: "customerName,amountDue",
     isActive: true,
     sortOrder: 20,
   },
   {
-    name: "Confirmacao servico externo",
+    name: "Confirmação serviço externo",
     module: "external_events",
     triggerType: "confirmation",
-    body: "Ola {customerName}! Confirmamos o servico externo para {eventDate}. Vamos preparar tudo com muito carinho. Obrigada!",
+    body: "Olá {customerName}! Confirmamos o serviço externo para {eventDate}. Vamos preparar tudo com muito carinho. Obrigada!",
     variables: "customerName,eventDate",
     isActive: true,
     sortOrder: 30,
   },
   {
-    name: "Confirmacao workshop",
+    name: "Confirmação workshop",
     module: "workshop_participants",
     triggerType: "confirmation",
-    body: "Ola {participantName}! A sua inscricao no workshop {workshopName} esta confirmada. Ate breve!",
+    body: "Olá {participantName}! A sua inscrição no workshop {workshopName} está confirmada. Até breve!",
     variables: "participantName,workshopName",
     isActive: true,
     sortOrder: 40,
@@ -87,19 +87,19 @@ const messageVariables = [
 ];
 
 const messageModuleOptions: { value: MessageTemplateModule; label: string }[] = [
-  { value: "venue_events", label: "Festas no Espaco" },
-  { value: "external_events", label: "Servicos Externos" },
-  { value: "workshops", label: "Workshops/Formacoes" },
+  { value: "venue_events", label: "Festas no Espaço" },
+  { value: "external_events", label: "Serviços Externos" },
+  { value: "workshops", label: "Workshops/Formações" },
   { value: "workshop_participants", label: "Participantes de Workshops" },
   { value: "general", label: "Geral" },
 ];
 
 const messageTriggerOptions: { value: MessageTemplateTriggerType; label: string }[] = [
-  { value: "confirmation", label: "Confirmacao" },
+  { value: "confirmation", label: "Confirmação" },
   { value: "payment_request", label: "Pedido de pagamento" },
   { value: "payment_reminder", label: "Lembrete de pagamento" },
   { value: "event_reminder", label: "Lembrete de evento" },
-  { value: "post_event", label: "Pos-evento" },
+  { value: "post_event", label: "Pós-evento" },
   { value: "cancellation", label: "Cancelamento" },
   { value: "custom", label: "Personalizado" },
 ];
@@ -138,7 +138,7 @@ export function SettingsMessageTemplates() {
     );
 
     if (missing.length === 0) {
-      toast({ title: "Templates sugeridos ja existem" });
+      toast({ title: "Templates sugeridos já existem" });
       return;
     }
 
@@ -147,9 +147,9 @@ export function SettingsMessageTemplates() {
         await createTemplate.mutateAsync({ data: template });
       }
       await refresh();
-      toast({ title: "Templates sugeridos adicionados", description: `${missing.length} template(s) ficaram disponiveis.` });
+      toast({ title: "Templates sugeridos adicionados", description: `${missing.length} template(s) ficaram disponíveis.` });
     } catch {
-      toast({ title: "Nao foi possivel adicionar os templates sugeridos", variant: "destructive" });
+      toast({ title: "Não foi possível adicionar os templates sugeridos", variant: "destructive" });
     }
   };
 
@@ -160,7 +160,7 @@ export function SettingsMessageTemplates() {
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <CardTitle>Templates WhatsApp</CardTitle>
-              <CardDescription className="mt-1">Cria mensagens padrao para usar nos botoes WhatsApp da app.</CardDescription>
+              <CardDescription className="mt-1">Cria mensagens padrão para usar nos botões WhatsApp da app.</CardDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button variant="outline" className="min-h-10" onClick={addSuggested} disabled={createTemplate.isPending}>
@@ -197,8 +197,8 @@ export function SettingsMessageTemplates() {
           <CardContent className="flex flex-col items-center gap-3 px-4 py-10 text-center">
             <MessageSquare className="h-8 w-8 text-muted-foreground" />
             <div>
-              <p className="font-medium">Ainda nao existem templates WhatsApp.</p>
-              <p className="mt-1 text-sm text-muted-foreground">Crie um template ou adicione os sugeridos para comecar.</p>
+              <p className="font-medium">Ainda não existem templates WhatsApp.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Crie um template ou adicione os sugeridos para começar.</p>
             </div>
             <Button className="min-h-10" onClick={() => setModal({ open: true })}>Criar template</Button>
           </CardContent>
@@ -274,7 +274,7 @@ function MessageTemplateCard({
         <p className="whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">{item.body}</p>
         {item.variables ? <p className="font-mono text-xs text-muted-foreground">{item.variables}</p> : null}
         <div className="flex items-center justify-between rounded-md border border-border/70 px-3 py-2">
-          <span className="text-sm font-medium">{item.isActive ? "Disponivel para WhatsApp" : "Inativo"}</span>
+          <span className="text-sm font-medium">{item.isActive ? "Disponível para WhatsApp" : "Inativo"}</span>
           <Switch checked={item.isActive} disabled={isSaving} onCheckedChange={() => void onToggle()} />
         </div>
       </CardContent>
@@ -308,14 +308,14 @@ function MessageTemplateModal({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!form.name.trim() || !form.module || !form.triggerType || !form.body.trim()) {
-      toast({ title: "Campos obrigatorios", description: "Nome, modulo, tipo e mensagem sao obrigatorios.", variant: "destructive" });
+      toast({ title: "Campos obrigatórios", description: "Nome, módulo, tipo e mensagem são obrigatórios.", variant: "destructive" });
       return;
     }
     try {
       await onSubmit({ ...form, name: form.name.trim(), body: form.body.trim(), variables: nullable(form.variables ?? "") });
       toast({ title: item ? "Template atualizado" : "Template criado" });
     } catch {
-      toast({ title: "Nao foi possivel guardar o template", variant: "destructive" });
+      toast({ title: "Não foi possível guardar o template", variant: "destructive" });
     }
   };
 
@@ -324,17 +324,17 @@ function MessageTemplateModal({
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{item ? "Editar template WhatsApp" : "Criar template WhatsApp"}</DialogTitle>
-          <DialogDescription>Configure a mensagem e veja uma pre-visualizacao antes de guardar.</DialogDescription>
+          <DialogDescription>Configure a mensagem e veja uma pré-visualização antes de guardar.</DialogDescription>
         </DialogHeader>
         <form className="space-y-5" onSubmit={submit}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Nome">
-              <Input value={form.name} onChange={(event) => patch({ name: event.target.value })} placeholder="Confirmacao de festa" />
+              <Input value={form.name} onChange={(event) => patch({ name: event.target.value })} placeholder="Confirmação de festa" />
             </Field>
             <Field label="Ordem">
               <Input type="number" value={String(form.sortOrder ?? 0)} onChange={(event) => patch({ sortOrder: Number.parseInt(event.target.value || "0", 10) })} />
             </Field>
-            <Field label="Modulo">
+            <Field label="Módulo">
               <Select value={form.module} onValueChange={(value) => patch({ module: value as MessageTemplateModule })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -352,19 +352,19 @@ function MessageTemplateModal({
             </Field>
           </div>
           <Field label="Mensagem">
-            <Textarea value={form.body} onChange={(event) => patch({ body: event.target.value })} rows={6} placeholder="Ola {customerName}..." />
+            <Textarea value={form.body} onChange={(event) => patch({ body: event.target.value })} rows={6} placeholder="Olá {customerName}..." />
           </Field>
-          <Field label="Variaveis usadas">
+          <Field label="Variáveis usadas">
             <Input value={form.variables ?? ""} onChange={(event) => patch({ variables: event.target.value })} placeholder="customerName,eventDate,startTime" />
           </Field>
           <div className="rounded-lg border border-border/70 bg-muted/40 p-3">
-            <div className="mb-2 flex items-center gap-2 text-sm font-medium"><MessageSquare className="h-4 w-4" />Pre-visualizar mensagem</div>
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{preview || "Escreva uma mensagem para pre-visualizar."}</p>
+            <div className="mb-2 flex items-center gap-2 text-sm font-medium"><MessageSquare className="h-4 w-4" />Pré-visualizar mensagem</div>
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{preview || "Escreva uma mensagem para pré-visualizar."}</p>
           </div>
           <div className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-3">
             <div>
               <p className="text-sm font-medium">Ativo</p>
-              <p className="text-xs text-muted-foreground">Templates inativos ficam guardados, mas nao sao usados nos botoes WhatsApp.</p>
+              <p className="text-xs text-muted-foreground">Templates inativos ficam guardados, mas não são usados nos botões WhatsApp.</p>
             </div>
             <Switch checked={form.isActive ?? true} onCheckedChange={(checked) => patch({ isActive: checked })} />
           </div>
@@ -405,10 +405,10 @@ function renderTemplatePreview(body: string) {
     customerName: "Ana Silva",
     eventDate: "12/06/2026",
     startTime: "10:00",
-    amountDue: "50,00 EUR",
+    amountDue: "50,00 €",
     packName: "Pack Simples",
-    eventLocation: "Espaco Girafinha",
-    workshopName: "Workshop Baloes Nivel 1",
+    eventLocation: "Espaço Girafinha",
+    workshopName: "Workshop Balões Nível 1",
     participantName: "Maria Santos",
   };
   return body.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, key: string) => values[key] ?? `{${key}}`);

@@ -47,7 +47,7 @@ export function OperationalChecklist({ module, entityId, title }: { module: Extr
       await refresh();
       toast({ title: "Checklist criada" });
     } catch {
-      toast({ title: "Nao foi possivel criar checklist", variant: "destructive" });
+      toast({ title: "Não foi possível criar checklist", variant: "destructive" });
     }
   };
 
@@ -56,7 +56,7 @@ export function OperationalChecklist({ module, entityId, title }: { module: Extr
       await upsertItem.mutateAsync({ data: { id: itemId, isDone } });
       await refresh();
     } catch {
-      toast({ title: "Nao foi possivel atualizar item", variant: "destructive" });
+      toast({ title: "Não foi possível atualizar item", variant: "destructive" });
     }
   };
 
@@ -71,7 +71,7 @@ export function OperationalChecklist({ module, entityId, title }: { module: Extr
           <div className="flex items-center gap-2">
             <ClipboardCheck className="h-4 w-4 text-primary" />
             <p className="font-semibold">Checklist operacional</p>
-            {checklist ? <Badge variant="outline">{done}/{total} concluidos</Badge> : null}
+            {checklist ? <Badge variant="outline">{done}/{total} concluídos</Badge> : null}
           </div>
           {!checklist ? (
             <Button size="sm" className="min-h-9" onClick={handleCreate} disabled={createChecklist.isPending}>
@@ -83,10 +83,10 @@ export function OperationalChecklist({ module, entityId, title }: { module: Extr
 
         {!checklist ? (
           <p className="text-sm text-muted-foreground">
-            {template ? "Sera usada a checklist ativa de Definicoes." : "Nao ha template ativo. Pode criar uma checklist vazia para este evento."}
+            {template ? "Será usada a checklist ativa de Definições." : "Não há template ativo. Pode criar uma checklist vazia para este evento."}
           </p>
         ) : checklist.items.length === 0 ? (
-          <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">Checklist vazia. Adicione itens no template em Definicoes para os proximos eventos.</p>
+          <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">Checklist vazia. Adicione itens no template em Definições para os próximos eventos.</p>
         ) : (
           <div className="space-y-2">
             {checklist.items.map((item) => (
