@@ -1,4 +1,4 @@
-import { differenceInDays, format, parseISO } from "date-fns";
+﻿import { differenceInDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronDown, Loader2, MessageCircle, Pencil, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { OperationalChecklist } from "@/components/operational-checklist";
 import { VenueEventModal } from "@/components/venue-event-modal";
 import { useToast } from "@/hooks/use-toast";
 import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
@@ -62,10 +63,10 @@ export default function VenueEventsPage() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListVenueEventsQueryKey() });
-          toast({ title: "Festa apagada", description: `${event.customerName} foi removido das Festas no Espaço.` });
+          toast({ title: "Festa apagada", description: `${event.customerName} foi removido das Festas no EspaÃ§o.` });
         },
         onError: () => {
-          toast({ title: "Não foi possível apagar a festa", variant: "destructive" });
+          toast({ title: "NÃ£o foi possÃ­vel apagar a festa", variant: "destructive" });
         },
       },
     );
@@ -75,25 +76,25 @@ export default function VenueEventsPage() {
     <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Festas no Espaço</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Festas no EspaÃ§o</h1>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
-            Gestão de aniversários, packs, decoração, catering e eventos realizados no espaço.
+            GestÃ£o de aniversÃ¡rios, packs, decoraÃ§Ã£o, catering e eventos realizados no espaÃ§o.
           </p>
         </div>
         <VenueEventModal />
       </div>
 
       <section className="grid gap-2 grid-cols-2 lg:grid-cols-4">
-        <SummaryCard label="Próximas festas" value={String(summary.upcoming)} loading={isLoading} />
-        <SummaryCard label="Por receber" value={`${summary.pending.toFixed(2)} €`} loading={isLoading} />
+        <SummaryCard label="PrÃ³ximas festas" value={String(summary.upcoming)} loading={isLoading} />
+        <SummaryCard label="Por receber" value={`${summary.pending.toFixed(2)} â‚¬`} loading={isLoading} />
         <SummaryCard label="Pagas" value={String(summary.paid)} loading={isLoading} />
-        <SummaryCard label="Próximos 7 dias" value={String(summary.nextSevenDays)} loading={isLoading} />
+        <SummaryCard label="PrÃ³ximos 7 dias" value={String(summary.nextSevenDays)} loading={isLoading} />
       </section>
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
         <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
           <CardTitle className="text-lg">Lista de festas</CardTitle>
-          <CardDescription>Módulo próprio da V2 ligado à nova entidade venue_events.</CardDescription>
+          <CardDescription>MÃ³dulo prÃ³prio da V2 ligado Ã  nova entidade venue_events.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -110,14 +111,15 @@ export default function VenueEventsPage() {
                   onToggle={() => setExpandedId((current) => (current === event.id ? null : event.id))}
                   onDelete={() => handleDelete(event)}
                   deleting={deleteVenueEvent.isPending}
+                  messageTemplates={messageTemplates}
                 />
               ))}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
               <CalendarDays className="mb-3 h-12 w-12 text-muted-foreground/30" />
-              <p className="font-medium text-foreground">Ainda não há festas no espaço registadas.</p>
-              <p className="mt-1 text-sm">Cria a primeira festa usando o botão “Nova Festa”.</p>
+              <p className="font-medium text-foreground">Ainda nÃ£o hÃ¡ festas no espaÃ§o registadas.</p>
+              <p className="mt-1 text-sm">Cria a primeira festa usando o botÃ£o â€œNova Festaâ€.</p>
             </div>
           )}
         </CardContent>
@@ -181,7 +183,7 @@ function VenueEventRow({
           <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
             {event.birthdayChildName && <span>Aniversariante: {event.birthdayChildName}</span>}
             {event.birthdayChildAge !== null && event.birthdayChildAge !== undefined && <span>{event.birthdayChildAge} anos</span>}
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{event.childrenCount} crianças</span>
+            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{event.childrenCount} crianÃ§as</span>
             {event.partyTheme && <span>Tema: {event.partyTheme}</span>}
           </div>
         </div>
@@ -191,7 +193,7 @@ function VenueEventRow({
             <div className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">Em falta</span>
               <span className={event.remainingBalance > 0 ? "font-bold text-rose-700" : "font-bold text-emerald-700"}>
-                {event.remainingBalance.toFixed(2)} €
+                {event.remainingBalance.toFixed(2)} â‚¬
               </span>
             </div>
           </div>
@@ -213,26 +215,25 @@ function VenueEventRow({
       {expanded && (
         <div className="mt-4 rounded-xl border border-border bg-muted/20 p-4">
           <div className="grid gap-4 lg:grid-cols-3">
-            <DetailsBlock title="Informação da festa">
+            <DetailsBlock title="InformaÃ§Ã£o da festa">
               <Info label="Cliente" value={event.customerName} />
               <Info label="Telefone" value={event.phone} />
               <Info label="Email" value={event.email} />
               <Info label="Pack" value={event.packName} />
               <Info label="Origem" value={event.source} />
             </DetailsBlock>
-            <DetailsBlock title="Aniversário e preparação">
+            <DetailsBlock title="AniversÃ¡rio e preparaÃ§Ã£o">
               <Info label="Aniversariante" value={event.birthdayChildName} />
               <Info label="Idade" value={event.birthdayChildAge !== null && event.birthdayChildAge !== undefined ? `${event.birthdayChildAge} anos` : ""} />
               <Info label="Tema" value={event.partyTheme} />
-              <Info label="Decoração" value={event.decorationNotes} />
+              <Info label="DecoraÃ§Ã£o" value={event.decorationNotes} />
               <Info label="Catering" value={event.cateringNotes} />
               <Info label="Alergias" value={event.allergies} />
             </DetailsBlock>
-            <DetailsBlock title="Pagamento e ações">
-              <Info label="Total" value={`${event.totalPrice.toFixed(2)} €`} />
-              <Info label="Pago" value={`${event.amountPaid.toFixed(2)} €`} />
-              <Info label="Método" value={event.paymentMethod} />
-              <Info label="Checklist" value="Checklist operacional da festa sera adicionada numa proxima melhoria." />
+            <DetailsBlock title="Pagamento e aÃ§Ãµes">
+              <Info label="Total" value={`${event.totalPrice.toFixed(2)} â‚¬`} />
+              <Info label="Pago" value={`${event.amountPaid.toFixed(2)} â‚¬`} />
+              <Info label="MÃ©todo" value={event.paymentMethod} />
               <div className="mt-3 flex flex-wrap gap-2">
                 <VenueEventModal
                   event={event}
@@ -243,10 +244,6 @@ function VenueEventRow({
                     </Button>
                   }
                 />
-                <Button variant="outline" size="sm" disabled className="rounded-xl">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Checklist
-                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="rounded-xl text-destructive hover:text-destructive">
@@ -258,7 +255,7 @@ function VenueEventRow({
                     <AlertDialogHeader>
                       <AlertDialogTitle>Apagar esta festa?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação remove a festa da nova tabela venue_events. A tabela antiga de reservas não é afetada.
+                        Esta aÃ§Ã£o remove a festa da nova tabela venue_events. A tabela antiga de reservas nÃ£o Ã© afetada.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -272,9 +269,12 @@ function VenueEventRow({
               </div>
             </DetailsBlock>
           </div>
+          <div className="mt-4">
+            <OperationalChecklist module="venue_events" entityId={event.id} title={`Checklist ${event.customerName}`} />
+          </div>
           {event.notes && (
             <div className="mt-4 rounded-lg border border-border bg-background p-3 text-sm">
-              <p className="font-semibold">Observações</p>
+              <p className="font-semibold">ObservaÃ§Ãµes</p>
               <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{event.notes}</p>
             </div>
           )}
@@ -292,9 +292,9 @@ function PaymentBadge({ status }: { status: VenueEvent["paymentStatus"] }) {
 
 function StatusBadge({ status }: { status: VenueEvent["status"] }) {
   const labels = {
-    draft: "Em preparação",
+    draft: "Em preparaÃ§Ã£o",
     confirmed: "Confirmada",
-    completed: "Concluída",
+    completed: "ConcluÃ­da",
     cancelled: "Cancelada",
   };
   return <Badge variant="outline" className="rounded-md">{labels[status]}</Badge>;
@@ -328,3 +328,5 @@ function buildWhatsAppUrl(event: VenueEvent, templates?: MessageTemplate[]) {
     packName: event.packName,
   });
 }
+
+

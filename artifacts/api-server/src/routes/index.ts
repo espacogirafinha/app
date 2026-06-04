@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+﻿import { Router, type IRouter } from "express";
 import reservationsRouter from "./reservations";
 import dashboardRouter from "./dashboard";
 import dashboardV2Router from "./dashboard-v2";
@@ -10,6 +10,7 @@ import venueEventsRouter from "./venue-events";
 import externalEventsRouter from "./external-events";
 import workshopsRouter from "./workshops";
 import settingsCatalogsRouter from "./settings-catalogs";
+import checklistsRouter from "./checklists";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,8 @@ router.use(venueEventsRouter);
 router.use(externalEventsRouter);
 router.use(workshopsRouter);
 router.use(settingsCatalogsRouter);
+router.use(checklistsRouter);
 
 export default router;
+
+

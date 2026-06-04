@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+﻿import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, PackagePlus, Plus, Settings, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { SettingsChecklists } from "@/components/settings-checklists";
 import { SettingsMessageTemplates } from "@/components/settings-message-templates";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -85,21 +86,21 @@ const emptyForm: CatalogFormState = {
 };
 
 const suggestedVenuePacks: CreateVenuePackBody[] = [
-  { name: "Aluguer do Espaço", basePrice: 160, sortOrder: 10, defaultStartTime: "10:00", defaultEndTime: "13:00", isActive: true },
+  { name: "Aluguer do EspaÃ§o", basePrice: 160, sortOrder: 10, defaultStartTime: "10:00", defaultEndTime: "13:00", isActive: true },
   { name: "Pack Simples", basePrice: 220, sortOrder: 20, defaultStartTime: "16:00", defaultEndTime: "19:00", isActive: true },
-  { name: "Pack Simples com Decoração", basePrice: 350, sortOrder: 30, defaultStartTime: "16:00", defaultEndTime: "19:00", isActive: true },
+  { name: "Pack Simples com DecoraÃ§Ã£o", basePrice: 350, sortOrder: 30, defaultStartTime: "16:00", defaultEndTime: "19:00", isActive: true },
   { name: "Pack VIP", basePrice: 0, sortOrder: 40, isActive: true },
   { name: "Pack Deluxe", basePrice: 500, sortOrder: 50, isActive: true },
   { name: "Pack Personalizado", basePrice: 0, sortOrder: 60, isActive: true },
 ];
 
 const suggestedExternalServices: CreateExternalServiceBody[] = [
-  { code: "decoracao", name: "Decoração", basePrice: 0, sortOrder: 10, isActive: true },
+  { code: "decoracao", name: "DecoraÃ§Ã£o", basePrice: 0, sortOrder: 10, isActive: true },
   { code: "catering", name: "Catering / Brunch", basePrice: 0, sortOrder: 20, isActive: true },
-  { code: "insuflavel", name: "Aluguer de Insuflável", basePrice: 0, sortOrder: 30, isActive: true },
-  { code: "animacao", name: "Animação", basePrice: 0, sortOrder: 40, isActive: true },
-  { code: "baloes", name: "Balões", basePrice: 0, sortOrder: 50, isActive: true },
-  { code: "organizacao_evento", name: "Organização de evento", basePrice: 0, sortOrder: 60, isActive: true },
+  { code: "insuflavel", name: "Aluguer de InsuflÃ¡vel", basePrice: 0, sortOrder: 30, isActive: true },
+  { code: "animacao", name: "AnimaÃ§Ã£o", basePrice: 0, sortOrder: 40, isActive: true },
+  { code: "baloes", name: "BalÃµes", basePrice: 0, sortOrder: 50, isActive: true },
+  { code: "organizacao_evento", name: "OrganizaÃ§Ã£o de evento", basePrice: 0, sortOrder: 60, isActive: true },
   { code: "outro", name: "Outro", basePrice: 0, sortOrder: 70, isActive: true },
 ];
 
@@ -118,7 +119,7 @@ export default function SettingsPage() {
     const missing = suggestedVenuePacks.filter((pack) => !existingNames.has(pack.name.toLowerCase()));
 
     if (missing.length === 0) {
-      toast({ title: "Packs sugeridos já existem" });
+      toast({ title: "Packs sugeridos jÃ¡ existem" });
       return;
     }
 
@@ -127,9 +128,9 @@ export default function SettingsPage() {
         await createVenuePack.mutateAsync({ data: pack });
       }
       await queryClient.invalidateQueries({ queryKey: getListVenuePacksQueryKey() });
-      toast({ title: "Packs sugeridos adicionados", description: `${missing.length} pack(s) ficaram disponíveis.` });
+      toast({ title: "Packs sugeridos adicionados", description: `${missing.length} pack(s) ficaram disponÃ­veis.` });
     } catch {
-      toast({ title: "Não foi possível adicionar os packs sugeridos", variant: "destructive" });
+      toast({ title: "NÃ£o foi possÃ­vel adicionar os packs sugeridos", variant: "destructive" });
     }
   };
 
@@ -138,7 +139,7 @@ export default function SettingsPage() {
     const missing = suggestedExternalServices.filter((service) => !existingCodes.has(service.code));
 
     if (missing.length === 0) {
-      toast({ title: "Serviços sugeridos já existem" });
+      toast({ title: "ServiÃ§os sugeridos jÃ¡ existem" });
       return;
     }
 
@@ -147,9 +148,9 @@ export default function SettingsPage() {
         await createExternalService.mutateAsync({ data: service });
       }
       await queryClient.invalidateQueries({ queryKey: getListExternalServicesQueryKey() });
-      toast({ title: "Serviços sugeridos adicionados", description: `${missing.length} serviço(s) ficaram disponíveis.` });
+      toast({ title: "ServiÃ§os sugeridos adicionados", description: `${missing.length} serviÃ§o(s) ficaram disponÃ­veis.` });
     } catch {
-      toast({ title: "Não foi possível adicionar os serviços sugeridos", variant: "destructive" });
+      toast({ title: "NÃ£o foi possÃ­vel adicionar os serviÃ§os sugeridos", variant: "destructive" });
     }
   };
 
@@ -160,29 +161,30 @@ export default function SettingsPage() {
           <span className="rounded-xl bg-muted p-2 text-muted-foreground">
             <Settings className="h-5 w-5" />
           </span>
-          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Definições</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">DefiniÃ§Ãµes</h1>
         </div>
         <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
-          Gerir catálogos operacionais usados pela app.
+          Gerir catÃ¡logos operacionais usados pela app.
         </p>
         <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-          Os catálogos definem opções para novas reservas. Eventos antigos mantêm os valores guardados no momento da criação.
+          Os catÃ¡logos definem opÃ§Ãµes para novas reservas. Eventos antigos mantÃªm os valores guardados no momento da criaÃ§Ã£o.
         </div>
       </div>
 
       <Tabs defaultValue="venue-packs" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-1 gap-1 sm:grid-cols-4">
+        <TabsList className="grid h-auto w-full grid-cols-1 gap-1 sm:grid-cols-5">
           <TabsTrigger value="venue-packs" className="min-h-10">Packs de Festas</TabsTrigger>
-          <TabsTrigger value="external-services" className="min-h-10">Serviços Externos</TabsTrigger>
+          <TabsTrigger value="external-services" className="min-h-10">ServiÃ§os Externos</TabsTrigger>
           <TabsTrigger value="event-extras" className="min-h-10">Extras</TabsTrigger>
           <TabsTrigger value="message-templates" className="min-h-10">Templates WhatsApp</TabsTrigger>
+          <TabsTrigger value="checklists" className="min-h-10">Checklists</TabsTrigger>
         </TabsList>
 
         <TabsContent value="venue-packs">
           <CatalogSection
             kind="venue-packs"
             title="Packs de Festas"
-            description="Packs usados nas festas e eventos realizados no Espaço Girafinha."
+            description="Packs usados nas festas e eventos realizados no EspaÃ§o Girafinha."
             createLabel="Criar pack"
             suggestedLabel="Adicionar packs sugeridos"
             items={venuePacksQuery.data ?? []}
@@ -198,10 +200,10 @@ export default function SettingsPage() {
         <TabsContent value="external-services">
           <CatalogSection
             kind="external-services"
-            title="Serviços Externos"
-            description="Catálogo base para decoração, catering, animação, insufláveis e serviços fora do espaço."
-            createLabel="Criar serviço"
-            suggestedLabel="Adicionar serviços sugeridos"
+            title="ServiÃ§os Externos"
+            description="CatÃ¡logo base para decoraÃ§Ã£o, catering, animaÃ§Ã£o, insuflÃ¡veis e serviÃ§os fora do espaÃ§o."
+            createLabel="Criar serviÃ§o"
+            suggestedLabel="Adicionar serviÃ§os sugeridos"
             items={externalServicesQuery.data ?? []}
             isLoading={externalServicesQuery.isLoading}
             isSaving={createExternalService.isPending}
@@ -216,7 +218,7 @@ export default function SettingsPage() {
           <CatalogSection
             kind="event-extras"
             title="Extras"
-            description="Opções adicionais reutilizáveis por festas, serviços externos e workshops."
+            description="OpÃ§Ãµes adicionais reutilizÃ¡veis por festas, serviÃ§os externos e workshops."
             createLabel="Criar extra"
             items={eventExtrasQuery.data ?? []}
             isLoading={eventExtrasQuery.isLoading}
@@ -228,6 +230,10 @@ export default function SettingsPage() {
 
         <TabsContent value="message-templates">
           <SettingsMessageTemplates />
+        </TabsContent>
+
+        <TabsContent value="checklists">
+          <SettingsChecklists />
         </TabsContent>
       </Tabs>
     </div>
@@ -306,8 +312,8 @@ function CatalogSection({
           <CardContent className="flex flex-col items-center gap-3 px-4 py-10 text-center">
             <PackagePlus className="h-8 w-8 text-muted-foreground" />
             <div>
-              <p className="font-medium">Ainda não existem itens neste catálogo.</p>
-              <p className="mt-1 text-sm text-muted-foreground">Crie o primeiro item para preparar a área de Definições.</p>
+              <p className="font-medium">Ainda nÃ£o existem itens neste catÃ¡logo.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Crie o primeiro item para preparar a Ã¡rea de DefiniÃ§Ãµes.</p>
             </div>
             <Button className="min-h-10" onClick={() => setModal({ open: true })}>{createLabel}</Button>
           </CardContent>
@@ -387,11 +393,11 @@ function CatalogCard({
         {"description" in item && item.description ? <p className="text-sm text-muted-foreground">{item.description}</p> : null}
 
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <Info label="Preço base" value={formatCurrency(item.basePrice)} strong />
+          <Info label="PreÃ§o base" value={formatCurrency(item.basePrice)} strong />
           <Info label="Ordem" value={String(item.sortOrder)} />
           {kind === "venue-packs" && "defaultStartTime" in item ? (
             <>
-              <Info label="Início" value={item.defaultStartTime ?? "-"} />
+              <Info label="InÃ­cio" value={item.defaultStartTime ?? "-"} />
               <Info label="Fim" value={item.defaultEndTime ?? "-"} />
             </>
           ) : null}
@@ -403,7 +409,7 @@ function CatalogCard({
         ) : null}
 
         <div className="flex items-center justify-between rounded-md border border-border/70 px-3 py-2">
-          <span className="text-sm font-medium">{item.isActive ? "Disponível para uso" : "Oculto nas opções"}</span>
+          <span className="text-sm font-medium">{item.isActive ? "DisponÃ­vel para uso" : "Oculto nas opÃ§Ãµes"}</span>
           <Switch checked={item.isActive} disabled={isSaving} onCheckedChange={() => void onToggle()} />
         </div>
       </CardContent>
@@ -443,30 +449,30 @@ function CatalogModal({
     const sortOrder = Number.parseInt(form.sortOrder || "0", 10);
 
     if (!form.name.trim()) {
-      toast({ title: "Nome obrigatório", variant: "destructive" });
+      toast({ title: "Nome obrigatÃ³rio", variant: "destructive" });
       return;
     }
 
     if (kind === "external-services" && !form.code.trim()) {
-      toast({ title: "Código interno obrigatório", variant: "destructive" });
+      toast({ title: "CÃ³digo interno obrigatÃ³rio", variant: "destructive" });
       return;
     }
 
     if (basePrice < 0 || Number.isNaN(basePrice)) {
-      toast({ title: "Preço base inválido", description: "O preço base deve ser igual ou superior a 0.", variant: "destructive" });
+      toast({ title: "PreÃ§o base invÃ¡lido", description: "O preÃ§o base deve ser igual ou superior a 0.", variant: "destructive" });
       return;
     }
 
     if (Number.isNaN(sortOrder)) {
-      toast({ title: "Ordem inválida", description: "A ordem deve ser numérica.", variant: "destructive" });
+      toast({ title: "Ordem invÃ¡lida", description: "A ordem deve ser numÃ©rica.", variant: "destructive" });
       return;
     }
 
     try {
       await onSubmit(toPayload(kind, form, item?.id));
-      toast({ title: isEditing ? "Catálogo atualizado" : "Catálogo criado" });
+      toast({ title: isEditing ? "CatÃ¡logo atualizado" : "CatÃ¡logo criado" });
     } catch {
-      toast({ title: "Não foi possível guardar", description: "Verifique os dados e tente novamente.", variant: "destructive" });
+      toast({ title: "NÃ£o foi possÃ­vel guardar", description: "Verifique os dados e tente novamente.", variant: "destructive" });
     }
   };
 
@@ -475,28 +481,28 @@ function CatalogModal({
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar item" : modalTitle(kind)}</DialogTitle>
-          <DialogDescription>Gerir valores do catálogo sem alterar eventos já criados.</DialogDescription>
+          <DialogDescription>Gerir valores do catÃ¡logo sem alterar eventos jÃ¡ criados.</DialogDescription>
         </DialogHeader>
 
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="grid gap-4 sm:grid-cols-2">
             {kind === "external-services" ? (
-              <Field label="Código interno">
+              <Field label="CÃ³digo interno">
                 <Input value={form.code} onChange={(event) => patch({ code: event.target.value })} placeholder="decoracao" />
               </Field>
             ) : null}
 
             <Field label="Nome">
-              <Input value={form.name} onChange={(event) => patch({ name: event.target.value })} placeholder="Nome visível" />
+              <Input value={form.name} onChange={(event) => patch({ name: event.target.value })} placeholder="Nome visÃ­vel" />
             </Field>
 
             {kind === "event-extras" ? (
               <Field label="Categoria">
-                <Input value={form.category} onChange={(event) => patch({ category: event.target.value })} placeholder="Lanche, decoração..." />
+                <Input value={form.category} onChange={(event) => patch({ category: event.target.value })} placeholder="Lanche, decoraÃ§Ã£o..." />
               </Field>
             ) : null}
 
-            <Field label="Preço base">
+            <Field label="PreÃ§o base">
               <Input type="number" min="0" step="0.01" value={form.basePrice} onChange={(event) => patch({ basePrice: event.target.value })} />
             </Field>
 
@@ -506,10 +512,10 @@ function CatalogModal({
 
             {kind === "venue-packs" ? (
               <>
-                <Field label="Hora início padrão">
+                <Field label="Hora inÃ­cio padrÃ£o">
                   <Input type="time" value={form.defaultStartTime} onChange={(event) => patch({ defaultStartTime: event.target.value })} />
                 </Field>
-                <Field label="Hora fim padrão">
+                <Field label="Hora fim padrÃ£o">
                   <Input type="time" value={form.defaultEndTime} onChange={(event) => patch({ defaultEndTime: event.target.value })} />
                 </Field>
               </>
@@ -523,9 +529,9 @@ function CatalogModal({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="venue_events">Festas no Espaço</SelectItem>
-                    <SelectItem value="external_events">Serviços Externos</SelectItem>
-                    <SelectItem value="workshops">Workshops/Formações</SelectItem>
+                    <SelectItem value="venue_events">Festas no EspaÃ§o</SelectItem>
+                    <SelectItem value="external_events">ServiÃ§os Externos</SelectItem>
+                    <SelectItem value="workshops">Workshops/FormaÃ§Ãµes</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
@@ -533,7 +539,7 @@ function CatalogModal({
           </div>
 
           {kind !== "event-extras" ? (
-            <Field label="Descrição">
+            <Field label="DescriÃ§Ã£o">
               <Textarea value={form.description} onChange={(event) => patch({ description: event.target.value })} rows={3} />
             </Field>
           ) : null}
@@ -553,7 +559,7 @@ function CatalogModal({
           <div className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-3">
             <div>
               <p className="text-sm font-medium">Ativo</p>
-              <p className="text-xs text-muted-foreground">Itens inativos ficam guardados, mas ocultos nas opções futuras.</p>
+              <p className="text-xs text-muted-foreground">Itens inativos ficam guardados, mas ocultos nas opÃ§Ãµes futuras.</p>
             </div>
             <Switch checked={form.isActive} onCheckedChange={(checked) => patch({ isActive: checked })} />
           </div>
@@ -667,7 +673,7 @@ function toPayload(
 
 function modalTitle(kind: CatalogKind) {
   if (kind === "venue-packs") return "Criar pack";
-  if (kind === "external-services") return "Criar serviço externo";
+  if (kind === "external-services") return "Criar serviÃ§o externo";
   return "Criar extra";
 }
 
@@ -680,9 +686,9 @@ function notesForItem(item: CatalogItem) {
 function appliesToLabel(value: EventExtra["appliesTo"]) {
   const labels: Record<EventExtra["appliesTo"], string> = {
     all: "Todos",
-    venue_events: "Festas no Espaço",
-    external_events: "Serviços Externos",
-    workshops: "Workshops/Formações",
+    venue_events: "Festas no EspaÃ§o",
+    external_events: "ServiÃ§os Externos",
+    workshops: "Workshops/FormaÃ§Ãµes",
   };
   return labels[value];
 }
@@ -699,3 +705,5 @@ function toNumber(value: string) {
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(value);
 }
+
+
