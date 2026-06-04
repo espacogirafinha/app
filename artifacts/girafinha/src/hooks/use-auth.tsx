@@ -54,8 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error || !data.session) {
       const message = error?.message?.toLowerCase().includes("invalid login credentials")
-        ? "Credenciais invalidas"
-        : error?.message ?? "Nao foi possivel ligar ao Supabase";
+        ? "Credenciais inválidas"
+        : error?.message ?? "Não foi possível ligar ao Supabase";
       return { ok: false, error: message };
     }
 

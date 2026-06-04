@@ -52,9 +52,9 @@ export default function CalendarPage() {
     <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Calendario V2</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Calendário V2</h1>
           <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            Festas, servicos externos e workshops com ocupacao real do espaco.
+            Festas, serviços externos e workshops com ocupação real do espaço.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -62,7 +62,7 @@ export default function CalendarPage() {
             <a href="/venue-events">Festas</a>
           </Button>
           <Button asChild variant="outline" className="min-h-[40px] rounded-full">
-            <a href="/external-events">Servicos</a>
+            <a href="/external-events">Serviços</a>
           </Button>
           <Button asChild variant="outline" className="min-h-[40px] rounded-full">
             <a href="/workshops">Workshops</a>
@@ -75,7 +75,7 @@ export default function CalendarPage() {
         <CalendarMetric label="Com eventos" value={String(data?.summary.busyDays ?? 0)} tone="busy" />
         <CalendarMetric label="Quase cheios" value={String(data?.summary.almostFullDays ?? 0)} tone="almost_full" />
         <CalendarMetric label="Lotados" value={String(data?.summary.fullDays ?? 0)} tone="full" />
-        <CalendarMetric label="Nao ocupam espaco" value={String(data?.summary.externalItems ?? 0)} />
+        <CalendarMetric label="Não ocupam espaço" value={String(data?.summary.externalItems ?? 0)} />
       </section>
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
@@ -97,7 +97,7 @@ export default function CalendarPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                  aria-label="Mes anterior"
+                  aria-label="Mês anterior"
                   className="h-10 w-10 rounded-none border-r border-input"
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -106,7 +106,7 @@ export default function CalendarPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-                  aria-label="Proximo mes"
+                  aria-label="Próximo mês"
                   className="h-10 w-10 rounded-none"
                 >
                   <ChevronRight className="h-5 w-5" />
@@ -190,9 +190,9 @@ export default function CalendarPage() {
         <LegendItem className="bg-sky-100 border-sky-200" label="Com eventos" />
         <LegendItem className="bg-amber-100 border-amber-200" label="Quase cheio" />
         <LegendItem className="bg-rose-100 border-rose-200" label="Lotado" />
-        <LegendItem className="bg-pink-500 border-pink-600" label="Festa no Espaco" />
-        <LegendItem className="bg-blue-500 border-blue-600" label="Servico externo, nao ocupa espaco" />
-        <LegendItem className="bg-violet-500 border-violet-600" label="Workshop/Formacao" />
+        <LegendItem className="bg-pink-500 border-pink-600" label="Festa no Espaço" />
+        <LegendItem className="bg-blue-500 border-blue-600" label="Serviço externo, não ocupa espaço" />
+        <LegendItem className="bg-violet-500 border-violet-600" label="Workshop/Formação" />
       </div>
 
       <DayDetailsModal
@@ -238,7 +238,7 @@ function DayDetailsModal({
 
         <div className="mt-4 space-y-4">
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Ocupa o espaco</h3>
+            <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Ocupa o espaço</h3>
             {spaceItems.length > 0 ? (
               <div className="space-y-2">
                 {spaceItems.map((item) => (
@@ -247,14 +247,14 @@ function DayDetailsModal({
               </div>
             ) : (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                Sem eventos a ocupar o espaco neste dia.
+                Sem eventos a ocupar o espaço neste dia.
               </div>
             )}
           </section>
 
           {operationalItems.length > 0 && (
             <section>
-              <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Operacional, nao ocupa espaco</h3>
+              <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Operacional, não ocupa espaço</h3>
               <div className="space-y-2">
                 {operationalItems.map((item) => (
                   <CalendarItemCard key={`${item.type}-${item.id}`} item={item} />
@@ -276,7 +276,7 @@ function CalendarItemCard({ item }: { item: CalendarV2Item }) {
           <div className="flex flex-wrap items-center gap-2">
             <Badge className={itemTypeBadgeClass(item)}>{itemTypeLabel(item.type)}</Badge>
             <Badge variant="outline" className={item.occupiesSpace ? "rounded-md border-emerald-200 bg-emerald-50 text-emerald-800" : "rounded-md border-blue-200 bg-blue-50 text-blue-800"}>
-              {item.occupiesSpace ? "Ocupa espaco" : "Nao ocupa espaco"}
+              {item.occupiesSpace ? "Ocupa espaço" : "Não ocupa espaço"}
             </Badge>
           </div>
           <p className="mt-2 truncate font-semibold">{item.title}</p>
@@ -381,9 +381,9 @@ function dayStatusLabel(status: CalendarV2DayStatus) {
 }
 
 function itemTypeLabel(type: CalendarV2Item["type"]) {
-  if (type === "external_event") return "Servico Externo";
-  if (type === "workshop") return "Workshop/Formacao";
-  return "Festa no Espaco";
+  if (type === "external_event") return "Serviço Externo";
+  if (type === "workshop") return "Workshop/Formação";
+  return "Festa no Espaço";
 }
 
 function dayClass(status: CalendarV2DayStatus, currentMonth: boolean) {

@@ -43,7 +43,7 @@ type PeriodMode = "month" | "year" | "custom";
 const MONTHS = [
   "Janeiro",
   "Fevereiro",
-  "Marco",
+  "Março",
   "Abril",
   "Maio",
   "Junho",
@@ -57,7 +57,7 @@ const MONTHS = [
 
 const COLORS = ["#ec4899", "#14b8a6", "#f59e0b", "#6366f1", "#84cc16", "#f97316"];
 
-const euro = (value: number) => `${value.toFixed(2)} EUR`;
+const euro = (value: number) => `${value.toFixed(2)} €`;
 
 export default function ReportsPage() {
   const now = new Date();
@@ -105,9 +105,9 @@ export default function ReportsPage() {
   const areaRows = useMemo(() => {
     if (!report) return [];
     return [
-      { name: "Festas no Espaco", ...report.areas.venueEvents },
-      { name: "Servicos Externos", ...report.areas.externalEvents },
-      { name: "Workshops/Formacoes", ...report.areas.workshops },
+      { name: "Festas no Espaço", ...report.areas.venueEvents },
+      { name: "Serviços Externos", ...report.areas.externalEvents },
+      { name: "Workshops/Formações", ...report.areas.workshops },
     ];
   }, [report]);
 
@@ -115,12 +115,12 @@ export default function ReportsPage() {
     if (!report) return;
 
     const rows = [
-      ["Periodo", period.startDate, period.endDate],
+      ["Período", period.startDate, period.endDate],
       ["Resumo", "Receita total", report.summary.totalRevenue],
       ["Resumo", "Recebido", report.summary.totalReceived],
       ["Resumo", "Por receber", report.summary.totalPending],
       ["Resumo", "Eventos", report.summary.eventCount],
-      ["Resumo", "Ticket medio", report.summary.averageTicket],
+      ["Resumo", "Ticket médio", report.summary.averageTicket],
       ...areaRows.map((area) => [area.name, "Receita", area.revenue]),
       ...areaRows.map((area) => [area.name, "Recebido", area.received]),
       ...areaRows.map((area) => [area.name, "Por receber", area.pending]),
@@ -133,9 +133,9 @@ export default function ReportsPage() {
     <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Relatorios</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Relatórios</h1>
           <p className="mt-1 text-sm md:text-base text-muted-foreground">
-            Analise V2 por festas no espaco, servicos externos e workshops/formacoes.
+            Análise V2 por festas no espaço, serviços externos e workshops/formações.
           </p>
         </div>
         <Button variant="outline" onClick={exportCsv} disabled={!report} className="min-h-[40px] rounded-xl">
@@ -151,7 +151,7 @@ export default function ReportsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="month">Mes</SelectItem>
+              <SelectItem value="month">Mês</SelectItem>
               <SelectItem value="year">Ano</SelectItem>
               <SelectItem value="custom">Intervalo</SelectItem>
             </SelectContent>
@@ -195,7 +195,7 @@ export default function ReportsPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
         </div>
       ) : isError || !report ? (
-        <EmptyState text="Nao foi possivel carregar os relatorios V2." />
+        <EmptyState text="Não foi possível carregar os relatórios V2." />
       ) : (
         <>
           <div className="grid gap-3 grid-cols-2 xl:grid-cols-5">
@@ -203,7 +203,7 @@ export default function ReportsPage() {
             <MetricCard title="Recebido" value={euro(report.summary.totalReceived)} icon={TrendingUp} tone="teal" />
             <MetricCard title="Por receber" value={euro(report.summary.totalPending)} icon={Euro} tone="amber" />
             <MetricCard title="Eventos" value={String(report.summary.eventCount)} icon={CalendarDays} tone="pink" />
-            <MetricCard title="Ticket medio" value={euro(report.summary.averageTicket)} icon={FileText} />
+            <MetricCard title="Ticket médio" value={euro(report.summary.averageTicket)} icon={FileText} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
@@ -211,7 +211,7 @@ export default function ReportsPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <BarChart3 className="h-5 w-5 text-primary" />
-                  Receita por area
+                  Receita por área
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -220,7 +220,7 @@ export default function ReportsPage() {
                     <BarChart data={areaRows} margin={{ top: 8, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
-                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => `${value}EUR`} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => `${value} €`} />
                       <Tooltip formatter={(value: number, name) => [euro(value), name === "received" ? "Recebido" : "Receita"]} />
                       <Bar dataKey="revenue" fill="#ec4899" radius={[6, 6, 0, 0]} name="Receita" />
                       <Bar dataKey="received" fill="#14b8a6" radius={[6, 6, 0, 0]} name="Recebido" />
@@ -234,7 +234,7 @@ export default function ReportsPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <PieChartIcon className="h-5 w-5 text-primary" />
-                  Distribuicao por eventos
+                  Distribuição por eventos
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -260,16 +260,16 @@ export default function ReportsPage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <EmptyState text="Sem eventos neste periodo." />
+                  <EmptyState text="Sem eventos neste período." />
                 )}
               </CardContent>
             </Card>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <AreaCard title="Festas no Espaco" summary={report.areas.venueEvents} />
-            <AreaCard title="Servicos Externos" summary={report.areas.externalEvents} />
-            <AreaCard title="Workshops/Formacoes" summary={report.areas.workshops} />
+            <AreaCard title="Festas no Espaço" summary={report.areas.venueEvents} />
+            <AreaCard title="Serviços Externos" summary={report.areas.externalEvents} />
+            <AreaCard title="Workshops/Formações" summary={report.areas.workshops} />
           </div>
 
           <section className="grid gap-4 xl:grid-cols-2">
@@ -277,19 +277,19 @@ export default function ReportsPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Star className="h-5 w-5 text-primary" />
-                  Festas no Espaco
+                  Festas no Espaço
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <SmallMetric label="Festas" value={String(report.venueEvents.partyCount)} />
-                  <SmallMetric label="Media criancas" value={String(report.venueEvents.averageChildren)} />
+                  <SmallMetric label="Média crianças" value={String(report.venueEvents.averageChildren)} />
                   <SmallMetric label="Recebido" value={euro(report.venueEvents.received)} />
                   <SmallMetric label="Por receber" value={euro(report.venueEvents.pending)} />
                 </div>
                 <RankingCard title="Packs mais vendidos" icon={Star} rows={report.venueEvents.topPacks} />
                 <RankingCard title="Receita por pack" icon={BarChart3} rows={report.venueEvents.revenueByPack} />
-                <RankingCard title="Origem dos clientes" icon={Users} rows={report.venueEvents.sources} empty="Sem origem registada neste periodo." />
+                <RankingCard title="Origem dos clientes" icon={Users} rows={report.venueEvents.sources} empty="Sem origem registada neste período." />
               </CardContent>
             </Card>
 
@@ -297,19 +297,19 @@ export default function ReportsPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <PackagePlus className="h-5 w-5 text-primary" />
-                  Servicos Externos
+                  Serviços Externos
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <SmallMetric label="Eventos" value={String(report.externalEvents.eventCount)} />
-                  <SmallMetric label="Ticket medio" value={euro(report.externalEvents.averageTicket)} />
+                  <SmallMetric label="Ticket médio" value={euro(report.externalEvents.averageTicket)} />
                   <SmallMetric label="Recebido" value={euro(report.externalEvents.received)} />
                   <SmallMetric label="Por receber" value={euro(report.externalEvents.pending)} />
                 </div>
-                <RankingCard title="Servicos mais vendidos" icon={PackagePlus} rows={report.externalEvents.topServices} />
-                <RankingCard title="Receita por servico" icon={BarChart3} rows={report.externalEvents.revenueByServiceType} />
-                <RankingCard title="Combinacoes de servicos" icon={PieChartIcon} rows={report.externalEvents.serviceCombinations} />
+                <RankingCard title="Serviços mais vendidos" icon={PackagePlus} rows={report.externalEvents.topServices} />
+                <RankingCard title="Receita por serviço" icon={BarChart3} rows={report.externalEvents.revenueByServiceType} />
+                <RankingCard title="Combinações de serviços" icon={PieChartIcon} rows={report.externalEvents.serviceCombinations} />
               </CardContent>
             </Card>
           </section>
@@ -318,16 +318,16 @@ export default function ReportsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Users className="h-5 w-5 text-primary" />
-                Workshops/Formacoes
+                Workshops/Formações
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <SmallMetric label="Workshops" value={String(report.workshops.workshopCount)} />
-                <SmallMetric label="Inscricoes ativas" value={String(report.workshops.activeRegistrations)} />
+                <SmallMetric label="Inscrições ativas" value={String(report.workshops.activeRegistrations)} />
                 <SmallMetric label="Vagas ocupadas" value={String(report.workshops.occupiedSeats)} />
                 <SmallMetric label="Vagas livres" value={String(report.workshops.freeSeats)} />
-                <SmallMetric label="Taxa ocupacao" value={`${report.workshops.occupancyRate}%`} />
+                <SmallMetric label="Taxa ocupação" value={`${report.workshops.occupancyRate}%`} />
                 <SmallMetric label="Recebido" value={euro(report.workshops.received)} />
                 <SmallMetric label="Por receber" value={euro(report.workshops.pending)} />
               </div>
@@ -399,7 +399,7 @@ function AreaCard({ title, summary }: { title: string; summary: ReportsV2AreaSum
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-3">
         <SmallMetric label="Eventos" value={String(summary.eventCount)} />
-        <SmallMetric label="Ticket medio" value={euro(summary.averageTicket)} />
+        <SmallMetric label="Ticket médio" value={euro(summary.averageTicket)} />
         <SmallMetric label="Receita" value={euro(summary.revenue)} />
         <SmallMetric label="Por receber" value={euro(summary.pending)} />
       </CardContent>
@@ -411,7 +411,7 @@ function RankingCard({
   title,
   icon: Icon,
   rows,
-  empty = "Sem dados neste periodo.",
+  empty = "Sem dados neste período.",
 }: {
   title: string;
   icon: React.ElementType;
