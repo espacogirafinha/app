@@ -67,7 +67,7 @@ export function ExternalEventServicesSelector({
             <Button key={`${option.type}-${option.label}`} type="button" variant="outline" size="sm" className="rounded-full" onClick={() => addService(option)}>
               <Plus className="h-4 w-4" />
               <span>{option.label}</span>
-              {option.price > 0 && <span className="text-xs text-muted-foreground">{option.price.toFixed(2)} â‚¬</span>}
+              {option.price > 0 && <span className="text-xs text-muted-foreground">{option.price.toFixed(2)} €</span>}
             </Button>
           ))}
         </div>
