@@ -50,7 +50,7 @@ import {
 const reservationTypeSchema = z.enum(["venue_party", "external_service", "workshop"]);
 const reservationStatusSchema = z.enum(["draft", "confirmed", "completed", "cancelled"]);
 const imageAuthorizationSchema = z.enum(["rosto_visivel", "rosto_tapado", "nao_autorizo"]);
-const optionalEmailSchema = z.union([z.string().email("Email invalido"), z.literal("")]).optional().nullable();
+const optionalEmailSchema = z.union([z.string().email("Email inválido"), z.literal("")]).optional().nullable();
 const nullableTextSchema = z.string().optional().nullable();
 const nullableNumberSchema = z.preprocess(
   (value) => (value === "" || value === undefined || value === null ? null : Number(value)),
@@ -58,13 +58,13 @@ const nullableNumberSchema = z.preprocess(
 );
 
 const formSchema = z.object({
-  customerName: z.string().min(1, "O nome e obrigatorio"),
-  phone: z.string().min(9, "Telefone invalido"),
-  eventDate: z.string().min(1, "A data e obrigatoria"),
-  eventTime: z.string().min(1, "A hora e obrigatoria"),
+  customerName: z.string().min(1, "O nome é obrigatório"),
+  phone: z.string().min(9, "Telefone inválido"),
+  eventDate: z.string().min(1, "A data é obrigatória"),
+  eventTime: z.string().min(1, "A hora é obrigatória"),
   pack: z.enum(SERVICE_NAMES),
-  numChildren: z.coerce.number().min(0, "Indique 0 quando nao se aplica"),
-  childrenAges: z.string().min(1, "Campo obrigatorio"),
+  numChildren: z.coerce.number().min(0, "Indique 0 quando não se aplica"),
+  childrenAges: z.string().min(1, "Campo obrigatório"),
   extras: z.string().optional(),
   notes: z.string().optional(),
   totalPrice: z.coerce.number().min(0),
@@ -92,7 +92,7 @@ const formSchema = z.object({
   participantCount: nullableNumberSchema,
   workshopNotes: nullableTextSchema,
 }).refine((data) => data.amountPaid <= data.totalPrice, {
-  message: "O valor pago nao pode ser superior ao preco total",
+  message: "O valor pago não pode ser superior ao preço total",
   path: ["amountPaid"],
 });
 
@@ -118,13 +118,13 @@ const KIND_TO_RESERVATION_TYPE: Record<ReservationKind, FormValues["reservationT
 
 const KIND_CONFIG: Record<ReservationKind, { label: string; description: string; icon: typeof Cake }> = {
   venue: {
-    label: "Festas no espaco",
-    description: "Aniversarios, packs e aluguer do espaco.",
+    label: "Festas no espaço",
+    description: "Aniversários, packs e aluguer do espaço.",
     icon: Cake,
   },
   external: {
-    label: "Servicos no exterior",
-    description: "Decoracao, catering, animacao e alugueres.",
+    label: "Serviços no exterior",
+    description: "Decoração, catering, animação e alugueres.",
     icon: MapPin,
   },
   workshop: {
@@ -142,9 +142,9 @@ const TIME_OPTIONS = [
 const PAYMENT_METHODS = ["MB Way", "Transferencia", "Dinheiro", "Multibanco", "Outro"] as const;
 const ORIGIN_OPTIONS = ["Instagram", "WhatsApp", "Site", "Parceiro", "Cliente recorrente", "Passa-palavra"] as const;
 const IMAGE_AUTHORIZATION_OPTIONS = [
-  { label: "Rosto visivel", value: "rosto_visivel" },
+  { label: "Rosto visível", value: "rosto_visivel" },
   { label: "Rosto tapado", value: "rosto_tapado" },
-  { label: "Nao autorizo", value: "nao_autorizo" },
+  { label: "Não autorizo", value: "nao_autorizo" },
 ] as const;
 
 const roundCurrency = (value: number) => Math.round(value * 100) / 100;
@@ -544,7 +544,7 @@ export function ReservationModal({
     const onError = (error: unknown) => {
       const message = error instanceof Error ? error.message : "Tente novamente dentro de momentos.";
       toast({
-        title: reservation ? "Nao foi possivel atualizar a reserva" : "Nao foi possivel guardar a reserva",
+        title: reservation ? "Não foi possível atualizar a reserva" : "Não foi possível guardar a reserva",
         description: message,
         variant: "destructive",
       });
@@ -558,7 +558,7 @@ export function ReservationModal({
 
       toast({
         title: reservation ? "Reserva atualizada" : "Reserva criada",
-        description: "A operacao foi concluida com sucesso.",
+        description: "A operação foi concluída com sucesso.",
       });
       setIsOpen(false);
       if (!reservation) resetNewReservationForm();
@@ -571,11 +571,7 @@ export function ReservationModal({
     }
   };
 
-  const onInvalid: SubmitErrorHandler<FormValues> = (errors) => {
-    if (import.meta.env.DEV) {
-      console.log("[reservation-modal] validation errors", errors);
-    }
-
+  const onInvalid: SubmitErrorHandler<FormValues> = () => {
     toast({
       title: "Verifique os campos obrigatórios.",
       description: "Há informação obrigatória por preencher antes de guardar.",
@@ -673,7 +669,7 @@ export function ReservationModal({
                     {occupancyCount >= MAX_EVENTS_PER_DAY ? "Data sem disponibilidade" : "Data quase preenchida"}
                   </AlertTitle>
                   <AlertDescription>
-                    Ja existem {occupancyCount} de {MAX_EVENTS_PER_DAY} reservas que ocupam o espaco neste dia.
+                    Já existem {occupancyCount} de {MAX_EVENTS_PER_DAY} reservas que ocupam o espaço neste dia.
                   </AlertDescription>
                 </Alert>
               )}
@@ -682,8 +678,8 @@ export function ReservationModal({
             {kind === "venue" && (
               <Section title="Detalhes da festa">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <FormTextField control={form.control} name="numChildren" label="No. criancas" type="number" />
-                  <FormTextField control={form.control} name="childrenAges" label="Idades / observacao" placeholder="ex: 4 a 6 anos" />
+                  <FormTextField control={form.control} name="numChildren" label="N.º crianças" type="number" />
+                  <FormTextField control={form.control} name="childrenAges" label="Idades / observação" placeholder="ex: 4 a 6 anos" />
                   <FormTextField control={form.control} name="partyTheme" label="Tema" />
                   <FormTextField control={form.control} name="decorationNotes" label="Pedido especial" />
                   <FormTextField control={form.control} name="cateringOption" label="Catering" />
@@ -1061,7 +1057,7 @@ function BooleanButtons({
               className="rounded-full"
               onClick={() => field.onChange(field.value === false ? null : false)}
             >
-              Nao
+              Não
             </Button>
           </div>
           <FormMessage />
@@ -1119,7 +1115,7 @@ function ExtraBuilder({
       <div className="space-y-2">
         {extras.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-            Ainda nao ha extras nesta reserva.
+            Ainda não há extras nesta reserva.
           </div>
         ) : (
           extras.map((extra) => (
