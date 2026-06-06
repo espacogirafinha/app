@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
-import { db, eventSelectedExtrasTable, externalEventsTable, externalEventServicesTable } from "@workspace/db";
+import { db, eventChecklistsTable, eventSelectedExtrasTable, externalEventsTable, externalEventServicesTable } from "@workspace/db";
 import {
   CreateExternalEventBody,
   DeleteExternalEventParams,
@@ -278,6 +278,13 @@ router.delete("/external-events/:id", async (req, res): Promise<void> => {
       .where(and(
         eq(eventSelectedExtrasTable.module, "external_events"),
         eq(eventSelectedExtrasTable.entityId, params.data.id),
+      ));
+
+    await tx
+      .delete(eventChecklistsTable)
+      .where(and(
+        eq(eventChecklistsTable.module, "external_events"),
+        eq(eventChecklistsTable.entityId, params.data.id),
       ));
 
     const [deleted] = await tx
