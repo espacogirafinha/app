@@ -25,7 +25,7 @@ function getServiceType(pack: string): string {
 function getReservationType(pack: string): "venue_party" | "external_service" | "workshop" {
   const serviceType = getServiceType(pack);
   if (serviceType === "Workshops") return "workshop";
-  if (serviceType === "ServiÃ§os externos") return "external_service";
+  if (serviceType === "Serviços externos") return "external_service";
   return "venue_party";
 }
 
