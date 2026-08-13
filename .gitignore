@@ -63,3 +63,8 @@ Thumbs.db
 .local/
 
 .vercel
+
+# Playwright E2E artifacts and local authentication state
+/playwright-report/
+/test-results/
+/blob-report/
