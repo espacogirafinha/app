@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "test:e2e": "playwright test",
     "preinstall": "node -e \"const fs=require('node:fs'); for (const file of ['package-lock.json','yarn.lock']) fs.rmSync(file,{force:true}); const ua=process.env.npm_config_user_agent||''; if (ua && !/^pnpm\\//.test(ua)) { console.error('Use pnpm instead'); process.exit(1); }\"",
     "build": "corepack pnpm run typecheck && corepack pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
@@ -10,6 +11,7 @@
   },
   "private": true,
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@rollup/rollup-win32-x64-msvc": "^4.60.3",
     "@tailwindcss/oxide-win32-x64-msvc": "^4.3.0",
     "lightningcss-win32-x64-msvc": "^1.32.0",
