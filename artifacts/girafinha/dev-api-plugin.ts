@@ -186,8 +186,14 @@ type EventExtra = {
   updatedAt: string;
 };
 
-const ADMIN_EMAIL = "admin@espacogirafinha.pt";
-const ADMIN_PASSWORD = "girafinha2026";
+function getDevCredentials() {
+  const email = process.env.DEV_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.DEV_ADMIN_PASSWORD;
+
+  if (!email || !password) return null;
+  return { email, password };
+}
+
 const SESSION_COOKIE = "girafinha_dev_session";
 const MAX_EVENTS_PER_DAY = 2;
 
@@ -969,6 +975,7 @@ function readBody(req: IncomingMessage) {
 }
 
 function isAuthed(req: IncomingMessage) {
+  if (!getDevCredentials()) return false;
   return req.headers.cookie?.includes(`${SESSION_COOKIE}=1`) ?? false;
 }
 
@@ -1155,19 +1162,24 @@ export function devApiPlugin(): Plugin {
           const path = url.pathname;
 
         if (path === "/auth/me") {
-          if (!isAuthed(req)) return json(res, 401, { error: "Não autenticado" });
-          return json(res, 200, { email: ADMIN_EMAIL });
+          const devCredentials = getDevCredentials();
+          if (!devCredentials || !isAuthed(req)) return json(res, 401, { error: "NÃ£o autenticado" });
+          return json(res, 200, { email: devCredentials.email });
         }
 
         if (path === "/auth/login" && method === "POST") {
+          const devCredentials = getDevCredentials();
+          if (!devCredentials) {
+            return json(res, 503, { error: "Development login is not configured" });
+          }
           const body = await readBody(req);
           const email = String(body.email ?? "").trim().toLowerCase();
           const password = String(body.password ?? "");
-          if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+          if (email !== devCredentials.email || password !== devCredentials.password) {
             return json(res, 401, { error: "Credenciais inválidas" });
           }
           res.setHeader("Set-Cookie", `${SESSION_COOKIE}=1; Path=/; SameSite=Lax`);
-          return json(res, 200, { email: ADMIN_EMAIL });
+          return json(res, 200, { email: devCredentials.email });
         }
 
         if (path === "/auth/logout" && method === "POST") {

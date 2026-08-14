@@ -16,7 +16,7 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH ?? "/";
 
 export default defineConfig(async ({ mode }) => {
-  const env = loadEnv(mode, import.meta.dirname, ["VITE_", "SUPABASE_"]);
+  const env = loadEnv(mode, import.meta.dirname, ["VITE_", "SUPABASE_", "DEV_"]);
   for (const [key, value] of Object.entries(env)) {
     process.env[key] ??= value;
   }
