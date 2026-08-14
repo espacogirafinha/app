@@ -27,7 +27,7 @@ A full-stack web application for managing party reservations at Espaço Girafinh
 - **Pack system**: 4 predefined packs with suggested prices, manual override supported
 - **WhatsApp**: Pre-filled confirmation message link and payment reminder variant
 - **Responsive**: Sidebar navigation on desktop, bottom navigation on mobile (4 tabs: Dashboard, Reservas, Calendário, Relatórios). Mobile UX optimized for iPhone Pro Max (430px) with 44px+ tap targets, stacked modal buttons, and viewport-safe layouts.
-- **Authentication**: Single-user private login (email + bcrypt-hashed password from `ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars). Express session stored in Postgres (`user_sessions` table). All `/api/*` routes protected except `/api/auth/*`. Frontend has AuthProvider + Gate that shows login page when unauthenticated. Logout button in sidebar (desktop) and top header (mobile).
+- **Authentication**: Production uses Supabase Auth. The Vite mock/dev server can optionally use `DEV_ADMIN_EMAIL` and `DEV_ADMIN_PASSWORD`, loaded server-side only. Values must be stored in ignored local env files and never committed.
 
 ## Key Commands
 
