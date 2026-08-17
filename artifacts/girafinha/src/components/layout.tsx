@@ -6,12 +6,22 @@ import {
   LayoutDashboard,
   LogOut,
   MapPin,
+  MoreHorizontal,
   PartyPopper,
   Settings,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -22,6 +32,15 @@ const NAV_ITEMS = [
   { href: "/reports", label: "Relatórios", icon: BarChart3 },
   { href: "/settings", label: "Definições", icon: Settings },
 ];
+
+const MOBILE_NAV_ITEMS = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/venue-events", label: "Festas", icon: PartyPopper },
+  { href: "/external-events", label: "Serviços", icon: MapPin },
+  { href: "/calendar", label: "Calendário", icon: Calendar },
+];
+
+const MORE_NAV_ITEMS = NAV_ITEMS.filter((item) => ["/workshops", "/reports", "/settings"].includes(item.href));
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -88,34 +107,87 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Button>
           </header>
         )}
-        <main className={`flex-1 overflow-auto p-4 md:p-8 ${isMobile ? "pb-24" : ""}`}>
+        <main className={`flex-1 overflow-auto p-4 md:p-8 ${isMobile ? "pb-[calc(5.5rem+env(safe-area-inset-bottom))]" : ""}`}>
           <div className="mx-auto max-w-6xl">
             {children}
           </div>
         </main>
 
         {isMobile && (
-          <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around overflow-x-auto border-t border-border bg-card shadow-lg safe-area-bottom">
-            {NAV_ITEMS.map((item) => {
+          <nav
+            className="fixed bottom-0 left-0 right-0 z-50 grid grid-cols-5 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-lg"
+            aria-label="Navegação principal"
+          >
+            {MOBILE_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = isNavItemActive(location, item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex min-h-[56px] min-w-[64px] flex-col items-center gap-1 px-2 py-3 transition-colors ${
+                  className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${
                     isActive ? "text-primary" : "text-muted-foreground"
                   }`}
+                  aria-current={isActive ? "page" : undefined}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-center text-[10px] font-medium leading-tight">{item.label}</span>
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="max-w-full truncate text-center text-[11px] font-medium leading-none">{item.label}</span>
                 </Link>
               );
             })}
+            <MobileMoreMenu location={location} />
           </nav>
         )}
       </div>
     </div>
+  );
+}
+
+function MobileMoreMenu({ location }: { location: string }) {
+  const isActive = MORE_NAV_ITEMS.some((item) => isNavItemActive(location, item.href));
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <button
+          type="button"
+          className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${
+            isActive ? "text-primary" : "text-muted-foreground"
+          }`}
+          aria-label="Abrir mais opções"
+          aria-current={isActive ? "page" : undefined}
+        >
+          <MoreHorizontal className="h-5 w-5 shrink-0" />
+          <span className="text-center text-[11px] font-medium leading-none">Mais</span>
+        </button>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="rounded-t-2xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <SheetHeader className="text-left">
+          <SheetTitle>Mais opções</SheetTitle>
+          <SheetDescription>Acede às restantes áreas de gestão.</SheetDescription>
+        </SheetHeader>
+        <nav className="mt-2 grid gap-2" aria-label="Mais opções">
+          {MORE_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const itemIsActive = isNavItemActive(location, item.href);
+            return (
+              <SheetClose asChild key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+                    itemIsActive ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                  }`}
+                  aria-current={itemIsActive ? "page" : undefined}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {item.label}
+                </Link>
+              </SheetClose>
+            );
+          })}
+        </nav>
+      </SheetContent>
+    </Sheet>
   );
 }
 

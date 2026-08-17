@@ -1,4 +1,4 @@
-import { differenceInDays, format, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronDown, Loader2, MessageCircle, Pencil, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventExtrasDetails } from "@/components/event-extras-selector";
 import { OperationalChecklist } from "@/components/operational-checklist";
 import { VenueEventModal } from "@/components/venue-event-modal";
@@ -34,29 +35,38 @@ export default function VenueEventsPage() {
   const { data: events, isLoading } = useListVenueEvents();
   const { data: messageTemplates } = useListMessageTemplates();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [listView, setListView] = useState<"upcoming" | "past">("upcoming");
   const deleteVenueEvent = useDeleteVenueEvent();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const rows = useMemo(
-    () => [...(events ?? [])].sort((a, b) => `${a.eventDate} ${a.startTime}`.localeCompare(`${b.eventDate} ${b.startTime}`)),
-    [events],
-  );
+  const { upcomingRows, pastRows } = useMemo(() => {
+    const now = getPortugalDateTimeKey();
+    const sortedEvents = [...(events ?? [])].sort(compareVenueEvents);
+
+    return {
+      upcomingRows: sortedEvents.filter((event) => !hasVenueEventEnded(event, now)),
+      pastRows: sortedEvents.filter((event) => hasVenueEventEnded(event, now)).reverse(),
+    };
+  }, [events]);
+
+  const rows = listView === "upcoming" ? upcomingRows : pastRows;
 
   const summary = useMemo(() => {
-    const today = new Date();
-    return rows.reduce(
+    const today = getPortugalDateKey();
+    const sevenDaysFromToday = addCalendarDays(today, 7);
+    return (events ?? []).reduce(
       (acc, event) => {
-        const daysUntil = differenceInDays(parseISO(event.eventDate), today);
-        if (daysUntil >= 0) acc.upcoming += 1;
-        if (daysUntil >= 0 && daysUntil <= 7) acc.nextSevenDays += 1;
+        const isUpcoming = !hasVenueEventEnded(event) && event.status !== "cancelled";
+        if (isUpcoming) acc.upcoming += 1;
+        if (isUpcoming && event.eventDate >= today && event.eventDate <= sevenDaysFromToday) acc.nextSevenDays += 1;
         if (event.paymentStatus === "paid") acc.paid += 1;
         acc.pending += event.remainingBalance;
         return acc;
       },
       { upcoming: 0, pending: 0, paid: 0, nextSevenDays: 0 },
     );
-  }, [rows]);
+  }, [events]);
 
   const handleDelete = (event: VenueEvent) => {
     deleteVenueEvent.mutate(
@@ -93,9 +103,19 @@ export default function VenueEventsPage() {
       </section>
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
-        <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
-          <CardTitle className="text-lg">Lista de festas</CardTitle>
-          <CardDescription>Módulo próprio da V2 ligado à nova entidade venue_events.</CardDescription>
+        <CardHeader className="gap-4 border-b border-border/60 bg-card/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="text-lg">Lista de festas</CardTitle>
+            <CardDescription>
+              {listView === "upcoming" ? "Festas de hoje e próximas, por ordem cronológica." : "Festas terminadas, da mais recente para a mais antiga."}
+            </CardDescription>
+          </div>
+          <Tabs value={listView} onValueChange={(value) => setListView(value as "upcoming" | "past")}>
+            <TabsList className="grid w-full grid-cols-2 sm:w-auto">
+              <TabsTrigger value="upcoming">Próximas</TabsTrigger>
+              <TabsTrigger value="past">Anteriores</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -119,8 +139,12 @@ export default function VenueEventsPage() {
           ) : (
             <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
               <CalendarDays className="mb-3 h-12 w-12 text-muted-foreground/30" />
-              <p className="font-medium text-foreground">Ainda não há festas no espaço registadas.</p>
-              <p className="mt-1 text-sm">Cria a primeira festa usando o botão “Nova Festa”.</p>
+              <p className="font-medium text-foreground">
+                {listView === "upcoming" ? "Não há festas próximas." : "Ainda não há festas anteriores."}
+              </p>
+              <p className="mt-1 text-sm">
+                {listView === "upcoming" ? "Cria uma festa usando o botão “Nova Festa” ou consulta as anteriores." : "As festas terminadas aparecerão aqui."}
+              </p>
             </div>
           )}
         </CardContent>
@@ -174,7 +198,7 @@ function VenueEventRow({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-bold text-foreground">{event.customerName}</h3>
             <PaymentBadge status={event.paymentStatus} />
-            <StatusBadge status={event.status} />
+            <StatusBadge status={event.status} ended={hasVenueEventEnded(event)} />
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
             <span>{event.startTime}{event.endTime ? `-${event.endTime}` : ""}</span>
@@ -292,14 +316,66 @@ function PaymentBadge({ status }: { status: VenueEvent["paymentStatus"] }) {
   return <Badge className="rounded-md bg-rose-100 text-rose-800 hover:bg-rose-100">Pendente</Badge>;
 }
 
-function StatusBadge({ status }: { status: VenueEvent["status"] }) {
+function StatusBadge({ status, ended }: { status: VenueEvent["status"]; ended: boolean }) {
   const labels = {
     draft: "Em preparação",
     confirmed: "Confirmada",
     completed: "Concluída",
     cancelled: "Cancelada",
   };
-  return <Badge variant="outline" className="rounded-md">{labels[status]}</Badge>;
+  const presentationStatus = ended && status !== "cancelled" ? "completed" : status;
+  return <Badge variant="outline" className="rounded-md">{labels[presentationStatus]}</Badge>;
+}
+
+const PORTUGAL_TIME_ZONE = "Europe/Lisbon";
+
+function compareVenueEvents(a: VenueEvent, b: VenueEvent) {
+  return getVenueEventStartKey(a).localeCompare(getVenueEventStartKey(b));
+}
+
+function hasVenueEventEnded(event: VenueEvent, now = getPortugalDateTimeKey()) {
+  return getVenueEventEndKey(event) <= now;
+}
+
+function getVenueEventStartKey(event: VenueEvent) {
+  return `${event.eventDate}T${normalizeTime(event.startTime)}`;
+}
+
+function getVenueEventEndKey(event: VenueEvent) {
+  return `${event.eventDate}T${normalizeTime(event.endTime || event.startTime)}`;
+}
+
+function normalizeTime(time: string) {
+  return time.slice(0, 5).padStart(5, "0");
+}
+
+function getPortugalDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: PORTUGAL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function getPortugalDateTimeKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: PORTUGAL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
+}
+
+function addCalendarDays(dateKey: string, days: number) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return date.toISOString().slice(0, 10);
 }
 
 function DetailsBlock({ title, children }: { title: string; children: React.ReactNode }) {
@@ -330,5 +406,3 @@ function buildWhatsAppUrl(event: VenueEvent, templates?: MessageTemplate[]) {
     packName: event.packName,
   });
 }
-
-
