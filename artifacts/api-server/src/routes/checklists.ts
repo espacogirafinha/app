@@ -18,6 +18,7 @@ import {
   UpdateChecklistTemplateItemBody,
   UpdateChecklistTemplateItemParams,
 } from "@workspace/api-zod";
+import { requireSettingsAdmin } from "../lib/settings-access";
 
 const router: IRouter = Router();
 
@@ -139,7 +140,7 @@ router.get("/settings/checklist-templates", async (_req, res): Promise<void> => 
   res.json(await loadTemplates());
 });
 
-router.post("/settings/checklist-templates", async (req, res): Promise<void> => {
+router.post("/settings/checklist-templates", requireSettingsAdmin, async (req, res): Promise<void> => {
   const parsed = CreateChecklistTemplateBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -184,7 +185,7 @@ router.get("/settings/checklist-template-items", async (req, res): Promise<void>
 });
 
 
-router.post("/settings/checklist-template-items", async (req, res): Promise<void> => {
+router.post("/settings/checklist-template-items", requireSettingsAdmin, async (req, res): Promise<void> => {
   const parsed = CreateChecklistTemplateItemForTemplateBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -219,7 +220,7 @@ router.post("/settings/checklist-template-items", async (req, res): Promise<void
   const [row] = await db.insert(checklistTemplateItemsTable).values(payload as typeof checklistTemplateItemsTable.$inferInsert).returning();
   res.status(201).json(formatTemplateItem(row));
 });
-router.post("/settings/checklist-templates/:id/items", async (req, res): Promise<void> => {
+router.post("/settings/checklist-templates/:id/items", requireSettingsAdmin, async (req, res): Promise<void> => {
   const params = CreateChecklistTemplateItemForTemplateParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -256,7 +257,7 @@ router.post("/settings/checklist-templates/:id/items", async (req, res): Promise
   res.status(201).json(formatTemplateItem(row));
 });
 
-router.post("/settings/checklist-template-items/:id", async (req, res): Promise<void> => {
+router.post("/settings/checklist-template-items/:id", requireSettingsAdmin, async (req, res): Promise<void> => {
   const params = UpdateChecklistTemplateItemParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
