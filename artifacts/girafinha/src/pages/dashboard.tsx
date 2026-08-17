@@ -2,19 +2,29 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Calendar as CalendarIcon,
-  CheckCircle2,
+  ChevronRight,
   Clock,
   Euro,
   GraduationCap,
   Loader2,
   MapPin,
   PartyPopper,
+  Plus,
   Wallet,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useGetDashboardV2 } from "@workspace/api-client-react";
 import type { DashboardV2AgendaItem, DashboardV2AreaSummary, DashboardV2WorkshopAreaSummary } from "@workspace/api-client-react";
 
@@ -31,7 +41,7 @@ export default function Dashboard() {
       <div className="flex min-h-[360px] items-center justify-center">
         <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span className="text-sm font-medium text-muted-foreground">A carregar painel V2...</span>
+          <span className="text-sm font-medium text-muted-foreground">A carregar painel...</span>
         </div>
       </div>
     );
@@ -43,7 +53,7 @@ export default function Dashboard() {
         <Card className="max-w-md border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle>Dashboard indisponível</CardTitle>
-            <CardDescription>Não foi possível carregar o painel V2 neste momento.</CardDescription>
+            <CardDescription>Não foi possível carregar o painel neste momento.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => refetch()} className="w-full rounded-xl">
@@ -55,23 +65,26 @@ export default function Dashboard() {
     );
   }
 
+  const nextEvents = data.agenda.slice(0, 3);
+
   return (
-    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 md:space-y-5">
+      <header className="flex items-center justify-between gap-3 md:items-start">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Painel de gestão</h1>
-          <p className="mt-1 text-sm text-muted-foreground md:text-base">
+          <p className="mt-1 hidden text-sm text-muted-foreground md:block md:text-base">
             Festas, serviços externos e workshops num só lugar.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <NewItemMenu />
+        <div className="hidden grid-cols-3 gap-2 md:grid">
           <QuickLink href="/venue-events" label="Nova festa" />
           <QuickLink href="/external-events" label="Novo serviço" />
           <QuickLink href="/workshops" label="Novo workshop" />
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Indicadores gerais">
         <MetricCard title="Hoje" value={String(data.summary.todayCount)} helper="Itens marcados" icon={CalendarIcon} />
         <MetricCard title="Próximos 7 dias" value={String(data.summary.nextSevenDaysCount)} helper="Agenda ativa" icon={Clock} />
         <MetricCard
@@ -90,7 +103,34 @@ export default function Dashboard() {
         />
       </section>
 
-      <section className="grid gap-3 lg:grid-cols-3">
+      <section className="space-y-3 md:hidden" aria-labelledby="next-events-title">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="next-events-title" className="text-lg font-bold text-foreground">Próximos eventos</h2>
+          <span className="text-xs font-medium text-muted-foreground">Até 3 eventos</span>
+        </div>
+        {nextEvents.length > 0 ? (
+          <div className="space-y-2">
+            {nextEvents.map((item) => (
+              <CompactAgendaItem key={`${item.type}-${item.id}`} item={item} />
+            ))}
+          </div>
+        ) : (
+          <Card className="border-border/70 shadow-sm">
+            <CardContent className="flex items-center gap-3 p-4 text-sm text-muted-foreground">
+              <CalendarIcon className="h-5 w-5 shrink-0 text-primary/60" />
+              Não há eventos próximos.
+            </CardContent>
+          </Card>
+        )}
+        <Button asChild variant="outline" className="min-h-11 w-full rounded-xl">
+          <Link href="/calendar">
+            Ver agenda completa
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </section>
+
+      <section className="hidden gap-3 md:grid lg:grid-cols-3">
         <AreaCard
           title="Festas no Espaço"
           description="Aniversários, packs, decoração e catering no espaço."
@@ -120,10 +160,37 @@ export default function Dashboard() {
         />
       </section>
 
-      <Card className="overflow-hidden border-border/70 shadow-sm">
+      <section className="space-y-3 md:hidden" aria-labelledby="summary-title">
+        <h2 id="summary-title" className="text-lg font-bold text-foreground">Resumo</h2>
+        <div className="space-y-2">
+          <CompactAreaCard
+            title="Festas no Espaço"
+            href="/venue-events"
+            icon={PartyPopper}
+            area={data.areas.venueEvents}
+            tone="venue"
+          />
+          <CompactAreaCard
+            title="Serviços Externos"
+            href="/external-events"
+            icon={MapPin}
+            area={data.areas.externalEvents}
+            tone="external"
+          />
+          <CompactAreaCard
+            title="Workshops/Formações"
+            href="/workshops"
+            icon={GraduationCap}
+            area={data.areas.workshops}
+            tone="workshop"
+          />
+        </div>
+      </section>
+
+      <Card className="hidden overflow-hidden border-border/70 shadow-sm md:block">
         <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
           <CardTitle className="text-lg md:text-xl">Agenda operacional</CardTitle>
-          <CardDescription>Próximos itens V2 por ordem de data, sem depender da tabela antiga de reservas.</CardDescription>
+          <CardDescription>Festas, serviços e workshops futuros por ordem cronológica.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {data.agenda.length > 0 ? (
@@ -135,13 +202,54 @@ export default function Dashboard() {
           ) : (
             <div className="flex flex-col items-center p-10 text-center text-muted-foreground">
               <CalendarIcon className="mb-3 h-12 w-12 text-muted-foreground/30" />
-              <p>Não há itens futuros nos módulos V2.</p>
-              <p className="mt-1 text-sm">Crie festas, serviços externos ou workshops para preencher a agenda.</p>
+              <p>Não há eventos futuros.</p>
+              <p className="mt-1 text-sm">Crie uma festa, serviço externo ou workshop para preencher a agenda.</p>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function NewItemMenu() {
+  const actionClass = "flex min-h-12 w-full items-center gap-3 rounded-xl border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted";
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button className="min-h-10 shrink-0 rounded-full px-4 shadow-sm md:hidden">
+          <Plus className="h-4 w-4" />
+          Novo
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="rounded-t-2xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <SheetHeader className="text-left">
+          <SheetTitle>Novo registo</SheetTitle>
+          <SheetDescription>Escolha o tipo de atividade que pretende criar.</SheetDescription>
+        </SheetHeader>
+        <div className="mt-2 grid gap-2">
+          <SheetClose asChild>
+            <Link href="/venue-events" className={actionClass}>
+              <PartyPopper className="h-5 w-5 text-pink-700" />
+              Nova festa
+            </Link>
+          </SheetClose>
+          <SheetClose asChild>
+            <Link href="/external-events" className={actionClass}>
+              <MapPin className="h-5 w-5 text-sky-700" />
+              Novo serviço
+            </Link>
+          </SheetClose>
+          <SheetClose asChild>
+            <Link href="/workshops" className={actionClass}>
+              <GraduationCap className="h-5 w-5 text-violet-700" />
+              Novo workshop
+            </Link>
+          </SheetClose>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -174,15 +282,78 @@ function MetricCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">{title}</p>
-            <p className={`mt-1 break-words text-xl font-bold sm:text-2xl ${toneClass}`}>{value}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+            <p className={`mt-1 break-words text-lg font-bold sm:text-2xl ${toneClass}`}>{value}</p>
+            <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{helper}</p>
           </div>
-          <div className="rounded-full bg-primary/10 p-2 text-primary">
+          <div className="rounded-full bg-primary/10 p-1.5 text-primary sm:p-2">
             <Icon className="h-4 w-4" />
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function CompactAgendaItem({ item }: { item: DashboardV2AgendaItem }) {
+  const date = parseISO(item.date);
+  const primaryService = item.services[0];
+
+  return (
+    <Link
+      href={item.href}
+      className="flex min-h-[116px] items-center gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-sm transition-colors active:bg-muted/50"
+      aria-label={`Abrir ${item.typeLabel}: ${item.title}`}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold uppercase tracking-wide text-primary">
+          {format(date, "dd MMM", { locale: ptBR }).replace(".", "")} · {item.time}
+        </p>
+        <div className="mt-1.5 flex items-center gap-2">
+          <Badge className={agendaBadgeClass(item.type)}>{item.typeLabel}</Badge>
+        </div>
+        <p className="mt-1.5 truncate font-bold text-foreground">{item.title}</p>
+        {primaryService && <p className="mt-0.5 truncate text-sm text-muted-foreground">{primaryService}</p>}
+        {item.pending > 0 && <p className="mt-1 text-sm font-bold text-rose-700">Falta {formatMoney(item.pending)}</p>}
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+    </Link>
+  );
+}
+
+function CompactAreaCard({
+  title,
+  href,
+  icon: Icon,
+  area,
+  tone,
+}: {
+  title: string;
+  href: string;
+  icon: typeof PartyPopper;
+  area: DashboardV2AreaSummary | DashboardV2WorkshopAreaSummary;
+  tone: "venue" | "external" | "workshop";
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[92px] items-center gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-sm transition-colors active:bg-muted/50"
+    >
+      <div className={`rounded-full p-2 ${areaToneClass(tone)}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-bold text-foreground">{title}</p>
+        {area.upcomingCount > 0 ? (
+          <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+            <p><span className="font-semibold text-foreground">{area.upcomingCount}</span> próximas · <span className="font-semibold text-foreground">{area.nextSevenDaysCount}</span> nos próximos 7 dias</p>
+            <p><span className="font-semibold text-rose-700">{formatMoney(area.pending)}</span> por receber</p>
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">Nenhum próximo</p>
+        )}
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }
 
@@ -217,21 +388,18 @@ function AreaCard({
             <Icon className="h-5 w-5" />
           </div>
         </div>
-
         <div className="grid grid-cols-2 gap-2">
           <SmallMetric label="Próximos" value={String(area.upcomingCount)} />
           <SmallMetric label="7 dias" value={String(area.nextSevenDaysCount)} />
           <SmallMetric label="Recebido" value={formatMoney(area.received)} tone="success" />
           <SmallMetric label="Por receber" value={formatMoney(area.pending)} tone="danger" />
         </div>
-
         {isWorkshop && (
           <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-2">
             <SmallMetric label="Inscrições" value={String(area.activeParticipantsCount)} compact />
             <SmallMetric label="Vagas livres" value={String(area.availableSeats)} compact />
           </div>
         )}
-
         <Button asChild variant="outline" className="w-full rounded-xl">
           <Link href={href}>{cta}</Link>
         </Button>
@@ -270,7 +438,6 @@ function AgendaItemRow({ item }: { item: DashboardV2AgendaItem }) {
         <span className="text-xs font-semibold uppercase">{format(date, "MMM", { locale: ptBR })}</span>
         <span className="text-xl font-bold leading-none">{format(date, "dd")}</span>
       </div>
-
       <div className="min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge className={agendaBadgeClass(item.type)}>{item.typeLabel}</Badge>
@@ -292,7 +459,6 @@ function AgendaItemRow({ item }: { item: DashboardV2AgendaItem }) {
           </div>
         )}
       </div>
-
       <div className="grid grid-cols-2 gap-2 text-sm md:min-w-[170px] md:text-right">
         <div>
           <p className="text-xs text-muted-foreground">Recebido</p>
