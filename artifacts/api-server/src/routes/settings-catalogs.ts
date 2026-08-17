@@ -19,6 +19,7 @@ import {
   UpdateVenuePackBody,
   UpdateVenuePackParams,
 } from "@workspace/api-zod";
+import { requireSettingsAdmin } from "../lib/settings-access";
 
 const router: IRouter = Router();
 
@@ -122,7 +123,7 @@ router.get("/settings/venue-packs", async (_req, res): Promise<void> => {
   res.json(rows.map(formatVenuePack));
 });
 
-router.post("/settings/venue-packs", async (req, res): Promise<void> => {
+router.post("/settings/venue-packs", requireSettingsAdmin, async (req, res): Promise<void> => {
   const parsed = CreateVenuePackBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -167,7 +168,7 @@ router.post("/settings/venue-packs", async (req, res): Promise<void> => {
   res.status(201).json(formatVenuePack(row));
 });
 
-router.patch("/settings/venue-packs/:id", async (req, res): Promise<void> => {
+router.patch("/settings/venue-packs/:id", requireSettingsAdmin, async (req, res): Promise<void> => {
   const params = UpdateVenuePackParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -209,7 +210,7 @@ router.get("/settings/external-services", async (_req, res): Promise<void> => {
   res.json(rows.map(formatExternalService));
 });
 
-router.post("/settings/external-services", async (req, res): Promise<void> => {
+router.post("/settings/external-services", requireSettingsAdmin, async (req, res): Promise<void> => {
   const parsed = CreateExternalServiceBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -263,7 +264,7 @@ router.post("/settings/external-services", async (req, res): Promise<void> => {
   }
 });
 
-router.patch("/settings/external-services/:id", async (req, res): Promise<void> => {
+router.patch("/settings/external-services/:id", requireSettingsAdmin, async (req, res): Promise<void> => {
   const params = UpdateExternalServiceParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -314,7 +315,7 @@ router.get("/settings/event-extras", async (_req, res): Promise<void> => {
   res.json(rows.map(formatEventExtra));
 });
 
-router.post("/settings/event-extras", async (req, res): Promise<void> => {
+router.post("/settings/event-extras", requireSettingsAdmin, async (req, res): Promise<void> => {
   const parsed = CreateEventExtraBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -360,7 +361,7 @@ router.post("/settings/event-extras", async (req, res): Promise<void> => {
   res.status(201).json(formatEventExtra(row));
 });
 
-router.patch("/settings/event-extras/:id", async (req, res): Promise<void> => {
+router.patch("/settings/event-extras/:id", requireSettingsAdmin, async (req, res): Promise<void> => {
   const params = UpdateEventExtraParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -407,7 +408,7 @@ router.get("/settings/message-templates", async (_req, res): Promise<void> => {
   res.json(rows.map(formatMessageTemplate));
 });
 
-router.post("/settings/message-templates", async (req, res): Promise<void> => {
+router.post("/settings/message-templates", requireSettingsAdmin, async (req, res): Promise<void> => {
   const parsed = CreateMessageTemplateBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
