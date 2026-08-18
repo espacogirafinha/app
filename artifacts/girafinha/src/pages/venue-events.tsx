@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronDown, Loader2, MessageCircle, Pencil, Trash2, Users } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronRight, Loader2, MessageCircle, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -85,14 +85,26 @@ export default function VenueEventsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3 md:items-start">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Festas no Espaço</h1>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
+          <p className="mt-2 hidden max-w-3xl text-sm text-muted-foreground md:block md:text-base">
             Gestão de aniversários, packs, decoração, catering e eventos realizados no espaço.
           </p>
         </div>
-        <VenueEventModal />
+        <div className="shrink-0 md:hidden">
+          <VenueEventModal
+            trigger={
+              <Button className="min-h-10 rounded-full px-4 shadow-sm">
+                <Plus className="h-4 w-4" />
+                Nova
+              </Button>
+            }
+          />
+        </div>
+        <div className="hidden md:block">
+          <VenueEventModal />
+        </div>
       </div>
 
       <section className="grid gap-2 grid-cols-2 lg:grid-cols-4">
@@ -103,16 +115,16 @@ export default function VenueEventsPage() {
       </section>
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
-        <CardHeader className="gap-4 border-b border-border/60 bg-card/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <CardHeader className="gap-3 border-b border-border/60 bg-card/70 p-2.5 md:flex-row md:items-center md:justify-between md:p-6 md:pb-4">
+          <div className="hidden md:block">
             <CardTitle className="text-lg">Lista de festas</CardTitle>
             <CardDescription>
               {listView === "upcoming" ? "Festas de hoje e próximas, por ordem cronológica." : "Festas terminadas, da mais recente para a mais antiga."}
             </CardDescription>
           </div>
-          <Tabs value={listView} onValueChange={(value) => setListView(value as "upcoming" | "past")}>
-            <TabsList className="grid w-full grid-cols-2 sm:w-auto">
-              <TabsTrigger value="upcoming">Próximas</TabsTrigger>
+          <Tabs className="w-full md:w-auto" value={listView} onValueChange={(value) => setListView(value as "upcoming" | "past")}>
+            <TabsList className="grid w-full grid-cols-2 md:w-auto">
+              <TabsTrigger value="upcoming">Próximas ({upcomingRows.length})</TabsTrigger>
               <TabsTrigger value="past">Anteriores</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -143,7 +155,7 @@ export default function VenueEventsPage() {
                 {listView === "upcoming" ? "Não há festas próximas." : "Ainda não há festas anteriores."}
               </p>
               <p className="mt-1 text-sm">
-                {listView === "upcoming" ? "Cria uma festa usando o botão “Nova Festa” ou consulta as anteriores." : "As festas terminadas aparecerão aqui."}
+                {listView === "upcoming" ? "Cria uma festa usando o botão de nova festa ou consulta as anteriores." : "As festas terminadas aparecerão aqui."}
               </p>
             </div>
           )}
@@ -185,10 +197,61 @@ function VenueEventRow({
 }) {
   const date = parseISO(event.eventDate);
   const whatsappUrl = buildWhatsAppUrl(event, messageTemplates);
+  const dateLabel = format(date, "dd MMM", { locale: ptBR }).replace(".", "").toUpperCase();
+  const timeLabel = normalizeTime(event.startTime) + (event.endTime ? "–" + normalizeTime(event.endTime) : "");
+  const childSummary = [
+    event.birthdayChildName,
+    event.birthdayChildAge !== null && event.birthdayChildAge !== undefined ? String(event.birthdayChildAge) + " anos" : null,
+    String(event.childrenCount) + " crianças",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div className="p-4 transition-colors hover:bg-muted/30">
-      <div className="grid gap-3 lg:grid-cols-[88px_1fr_auto] lg:items-center">
+    <div className="transition-colors hover:bg-muted/30">
+      <div className="relative md:hidden">
+        <button
+          type="button"
+          className="w-full rounded-none p-3 pb-14 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={"venue-event-details-" + event.id}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-bold tracking-wide text-primary">
+              {dateLabel} · {timeLabel}
+            </p>
+            <ChevronRight className={"h-4 w-4 shrink-0 text-muted-foreground transition-transform " + (expanded ? "rotate-90" : "")} />
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <h3 className="mr-0.5 min-w-0 break-words font-bold leading-snug text-foreground">{event.customerName}</h3>
+            <PaymentBadge status={event.paymentStatus} />
+            <StatusBadge status={event.status} ended={hasVenueEventEnded(event)} />
+          </div>
+
+          <p className="mt-1.5 break-words text-sm leading-snug text-muted-foreground">{childSummary}</p>
+
+          <div className="mt-2 text-sm leading-snug">
+            <p className="font-semibold text-foreground">{event.packName}</p>
+            {event.partyTheme ? <p className="mt-0.5 break-words text-muted-foreground">Tema: {event.partyTheme}</p> : null}
+          </div>
+
+          <p className={"mt-3 pr-28 text-sm font-bold " + (event.remainingBalance > 0 ? "text-rose-700" : "text-emerald-700")}>
+            Falta {event.remainingBalance.toFixed(2)} €
+          </p>
+        </button>
+
+        <Button asChild variant="outline" size="sm" className="absolute bottom-3 right-3 z-10 min-h-9 rounded-xl px-3">
+          <a href={whatsappUrl} target="_blank" rel="noreferrer" onClick={(clickEvent) => clickEvent.stopPropagation()}>
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
+          </a>
+        </Button>
+      </div>
+
+      <div className="hidden p-4 md:block">
+        <div className="grid gap-3 lg:grid-cols-[88px_1fr_auto] lg:items-center">
         <div className="flex items-center justify-between rounded-xl bg-pink-50 px-3 py-2 text-pink-800 lg:flex-col lg:justify-center">
           <span className="text-xs font-semibold uppercase">{format(date, "MMM", { locale: ptBR })}</span>
           <span className="text-xl font-bold leading-none">{format(date, "dd")}</span>
@@ -236,9 +299,10 @@ function VenueEventRow({
           </div>
         </div>
       </div>
+      </div>
 
       {expanded && (
-        <div className="mt-4 rounded-xl border border-border bg-muted/20 p-4">
+        <div id={"venue-event-details-" + event.id} className="mx-3 mb-3 rounded-xl border border-border bg-muted/20 p-3 md:mx-4 md:mb-4 md:p-4">
           <div className="grid gap-4 lg:grid-cols-3">
             <DetailsBlock title="Informação da festa">
               <Info label="Cliente" value={event.customerName} />
