@@ -1,7 +1,7 @@
 import { differenceInDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, ChevronDown, ChevronRight, Loader2, MapPin, MessageCircle, Pencil, Plus, Trash2, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -44,7 +44,8 @@ const SERVICE_LABELS: Record<ExternalEventServiceType, string> = {
 export default function ExternalEventsPage() {
   const { data: events, isLoading } = useListExternalEvents();
   const { data: messageTemplates } = useListMessageTemplates();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const linkedId = useMemo(getLinkedCalendarItemId, []);
+  const [expandedId, setExpandedId] = useState<string | null>(linkedId);
   const [listView, setListView] = useState<"upcoming" | "past">("upcoming");
   const deleteExternalEvent = useDeleteExternalEvent();
   const queryClient = useQueryClient();
@@ -62,6 +63,19 @@ export default function ExternalEventsPage() {
   }, [events]);
 
   const rows = listView === "upcoming" ? upcomingRows : pastRows;
+
+  useEffect(() => {
+    if (!linkedId || !events) return;
+    const linkedEvent = events.find((event) => event.id === linkedId);
+    if (!linkedEvent) return;
+    const targetView = hasExternalEventEnded(linkedEvent) ? "past" : "upcoming";
+    if (listView !== targetView) {
+      setListView(targetView);
+      return;
+    }
+    const frame = requestAnimationFrame(() => document.getElementById("external-event-" + linkedId)?.scrollIntoView({ block: "center" }));
+    return () => cancelAnimationFrame(frame);
+  }, [events, linkedId, listView]);
 
   const summary = useMemo(() => {
     const today = new Date();
@@ -210,7 +224,7 @@ function ExternalEventRow({
   const serviceLabels = event.services.map(getExternalServiceLabel);
 
   return (
-    <div className="transition-colors hover:bg-muted/30">
+    <div id={"external-event-" + event.id} className="scroll-mt-6 transition-colors hover:bg-muted/30">
       <div className="relative md:hidden">
         <button
           type="button"
@@ -472,6 +486,10 @@ function getPortugalDateTimeKey(date = new Date()) {
 
 function getExternalServiceLabel(service: ExternalEvent["services"][number]) {
   return service.serviceLabel.trim() || SERVICE_LABELS[service.serviceType];
+}
+
+function getLinkedCalendarItemId() {
+  return new URLSearchParams(window.location.search).get("open");
 }
 
 function DetailsBlock({ title, children }: { title: string; children: React.ReactNode }) {

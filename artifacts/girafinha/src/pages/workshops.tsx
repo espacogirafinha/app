@@ -1,7 +1,7 @@
 import { differenceInDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, ChevronDown, GraduationCap, Loader2, Pencil, Trash2, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -25,7 +25,8 @@ import type { Workshop } from "@workspace/api-client-react";
 
 export default function WorkshopsPage() {
   const { data: workshops, isLoading } = useListWorkshops();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const linkedId = useMemo(getLinkedCalendarItemId, []);
+  const [expandedId, setExpandedId] = useState<string | null>(linkedId);
   const deleteWorkshop = useDeleteWorkshop();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -34,6 +35,12 @@ export default function WorkshopsPage() {
     () => [...(workshops ?? [])].sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`)),
     [workshops],
   );
+
+  useEffect(() => {
+    if (!linkedId || !workshops?.some((workshop) => workshop.id === linkedId)) return;
+    const frame = requestAnimationFrame(() => document.getElementById("workshop-" + linkedId)?.scrollIntoView({ block: "center" }));
+    return () => cancelAnimationFrame(frame);
+  }, [linkedId, workshops]);
 
   const summary = useMemo(() => {
     const today = new Date();
@@ -151,7 +158,7 @@ function WorkshopRow({
   const date = parseISO(workshop.date);
 
   return (
-    <div className="p-4 transition-colors hover:bg-muted/30">
+    <div id={"workshop-" + workshop.id} className="scroll-mt-6 p-4 transition-colors hover:bg-muted/30">
       <div className="grid gap-3 lg:grid-cols-[88px_1fr_auto] lg:items-center">
         <div className="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2 text-violet-800 lg:flex-col lg:justify-center">
           <span className="text-xs font-semibold uppercase">{format(date, "MMM", { locale: ptBR })}</span>
@@ -299,6 +306,10 @@ function StatusBadge({ status }: { status: Workshop["status"] }) {
     cancelled: "bg-rose-100 text-rose-800 hover:bg-rose-100",
   };
   return <Badge className={`rounded-md ${classes[status]}`}>{labels[status]}</Badge>;
+}
+
+function getLinkedCalendarItemId() {
+  return new URLSearchParams(window.location.search).get("open");
 }
 
 function DetailsBlock({ title, children }: { title: string; children: React.ReactNode }) {
