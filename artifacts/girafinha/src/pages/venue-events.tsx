@@ -1,7 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, ChevronDown, ChevronRight, Loader2, MessageCircle, Pencil, Plus, Trash2, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -34,7 +34,8 @@ import type { MessageTemplate, VenueEvent } from "@workspace/api-client-react";
 export default function VenueEventsPage() {
   const { data: events, isLoading } = useListVenueEvents();
   const { data: messageTemplates } = useListMessageTemplates();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const linkedId = useMemo(getLinkedCalendarItemId, []);
+  const [expandedId, setExpandedId] = useState<string | null>(linkedId);
   const [listView, setListView] = useState<"upcoming" | "past">("upcoming");
   const deleteVenueEvent = useDeleteVenueEvent();
   const queryClient = useQueryClient();
@@ -51,6 +52,19 @@ export default function VenueEventsPage() {
   }, [events]);
 
   const rows = listView === "upcoming" ? upcomingRows : pastRows;
+
+  useEffect(() => {
+    if (!linkedId || !events) return;
+    const linkedEvent = events.find((event) => event.id === linkedId);
+    if (!linkedEvent) return;
+    const targetView = hasVenueEventEnded(linkedEvent) ? "past" : "upcoming";
+    if (listView !== targetView) {
+      setListView(targetView);
+      return;
+    }
+    const frame = requestAnimationFrame(() => document.getElementById("venue-event-" + linkedId)?.scrollIntoView({ block: "center" }));
+    return () => cancelAnimationFrame(frame);
+  }, [events, linkedId, listView]);
 
   const summary = useMemo(() => {
     const today = getPortugalDateKey();
@@ -208,7 +222,7 @@ function VenueEventRow({
     .join(" · ");
 
   return (
-    <div className="transition-colors hover:bg-muted/30">
+    <div id={"venue-event-" + event.id} className="scroll-mt-6 transition-colors hover:bg-muted/30">
       <div className="relative md:hidden">
         <button
           type="button"
@@ -440,6 +454,10 @@ function addCalendarDays(dateKey: string, days: number) {
   const [year, month, day] = dateKey.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day + days));
   return date.toISOString().slice(0, 10);
+}
+
+function getLinkedCalendarItemId() {
+  return new URLSearchParams(window.location.search).get("open");
 }
 
 function DetailsBlock({ title, children }: { title: string; children: React.ReactNode }) {
