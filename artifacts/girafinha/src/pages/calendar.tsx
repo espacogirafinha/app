@@ -27,7 +27,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useGetCalendarV2 } from "@workspace/api-client-react";
-import type { CalendarV2Day, CalendarV2DayStatus, CalendarV2Item } from "@workspace/api-client-react";
+import type { CalendarV2Day, CalendarV2Item } from "@workspace/api-client-react";
 
 const PORTUGAL_TIME_ZONE = "Europe/Lisbon";
 const WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -88,7 +88,7 @@ export default function CalendarPage() {
         </p>
       </header>
 
-      <CalendarSummary summary={data?.summary} />
+      <CalendarSummary days={data?.days ?? []} externalItems={data?.summary.externalItems ?? 0} />
 
       <Tabs
         value={mobileView}
@@ -157,25 +157,19 @@ export default function CalendarPage() {
   );
 }
 
-function CalendarSummary({ summary }: { summary?: {
-  freeDays: number;
-  busyDays: number;
-  almostFullDays: number;
-  fullDays: number;
-  externalItems: number;
-} }) {
+function CalendarSummary({ days, externalItems }: { days: CalendarV2Day[]; externalItems: number }) {
+  const summary = useMemo(() => summarizeOccupancy(days), [days]);
   const metrics = [
-    { label: "Dias livres", value: summary?.freeDays ?? 0, tone: "text-emerald-700" },
-    { label: "Com eventos", value: summary?.busyDays ?? 0, tone: "text-sky-700" },
-    { label: "Quase cheios", value: summary?.almostFullDays ?? 0, tone: "text-amber-700" },
-    { label: "Lotados", value: summary?.fullDays ?? 0, tone: "text-rose-700" },
-    { label: "Serviços externos", value: summary?.externalItems ?? 0, tone: "text-blue-700" },
+    { label: "Dias livres", value: summary.freeDays, tone: "text-emerald-700" },
+    { label: "Quase cheios", value: summary.almostFullDays, tone: "text-amber-700" },
+    { label: "Lotados", value: summary.fullDays, tone: "text-rose-700" },
+    { label: "Serviços externos", value: externalItems, tone: "text-blue-700" },
   ];
 
   return (
     <section aria-label="Resumo do mês">
       <Card className="border-border/70 shadow-sm">
-        <CardContent className="grid grid-cols-3 gap-x-2 gap-y-3 p-3 md:grid-cols-5 md:gap-4 md:p-4">
+        <CardContent className="grid grid-cols-2 gap-x-3 gap-y-3 p-3 md:grid-cols-4 md:gap-4 md:p-4">
           {metrics.map((metric) => (
             <div key={metric.label} className="min-w-0">
               <p className="truncate text-[11px] font-medium text-muted-foreground md:text-xs">{metric.label}</p>
@@ -578,8 +572,7 @@ function DayEventCard({ item }: { item: CalendarV2Item }) {
 function CalendarLegend() {
   const items = [
     { label: "Livre", className: "bg-emerald-100 border-emerald-300" },
-    { label: "Com eventos", className: "bg-sky-100 border-sky-300" },
-    { label: "Ocupação parcial", className: "bg-amber-100 border-amber-300" },
+    { label: "Quase cheio", className: "bg-amber-100 border-amber-300" },
     { label: "Lotado", className: "bg-rose-100 border-rose-300" },
     { label: "Festa no Espaço", className: "bg-pink-500 border-pink-600 rounded-full" },
     { label: "Serviço Externo", className: "bg-blue-500 border-blue-600 rounded-full" },
@@ -640,20 +633,34 @@ function emptyDay(date: string, spaceSlotsTotal: number): CalendarV2Day {
   return { date, status: "free", spaceSlotsUsed: 0, spaceSlotsTotal, items: [] };
 }
 
+function visualDayStatus(day: CalendarV2Day) {
+  if (day.spaceSlotsUsed >= day.spaceSlotsTotal) return "full" as const;
+  if (day.spaceSlotsUsed === 1) return "almost_full" as const;
+  return "free" as const;
+}
+
+function summarizeOccupancy(days: CalendarV2Day[]) {
+  return days.reduce(
+    (summary, day) => {
+      const status = visualDayStatus(day);
+      if (status === "full") summary.fullDays += 1;
+      else if (status === "almost_full") summary.almostFullDays += 1;
+      else summary.freeDays += 1;
+      return summary;
+    },
+    { freeDays: 0, almostFullDays: 0, fullDays: 0 },
+  );
+}
+
 function dayPresentationLabel(day: CalendarV2Day) {
-  if (day.status === "full") return "Lotado";
-  if (day.status === "almost_full" && day.spaceSlotsUsed === 0) return "Fora do espaço";
-  if (day.status === "almost_full") return "Ocupação parcial";
-  if (day.status === "busy") return "Com eventos";
+  const status = visualDayStatus(day);
+  if (status === "full") return "Lotado";
+  if (status === "almost_full") return "Quase cheio";
   return "Livre";
 }
 
 function dayCellStatusLabel(day: CalendarV2Day) {
-  if (day.status === "full") return "Lotado";
-  if (day.status === "almost_full" && day.spaceSlotsUsed === 0) return "Fora";
-  if (day.status === "almost_full") return "Parcial";
-  if (day.status === "busy") return "Eventos";
-  return "Livre";
+  return dayPresentationLabel(day);
 }
 
 function calendarDayAriaLabel(day: CalendarV2Day, currentMonth: boolean) {
@@ -664,23 +671,23 @@ function calendarDayAriaLabel(day: CalendarV2Day, currentMonth: boolean) {
 
 function desktopDayClass(day: CalendarV2Day, currentMonth: boolean) {
   if (!currentMonth) return "bg-muted/35 text-muted-foreground/50";
-  if (day.status === "full") return "bg-rose-50/80";
-  if (day.status === "almost_full" && day.spaceSlotsUsed > 0) return "bg-amber-50/80";
-  if (day.status === "almost_full" || day.status === "busy") return "bg-sky-50/70";
+  const status = visualDayStatus(day);
+  if (status === "full") return "bg-rose-50/80";
+  if (status === "almost_full") return "bg-amber-50/80";
   return "bg-background";
 }
 
 function mobileDayClass(day: CalendarV2Day) {
-  if (day.status === "full") return "bg-rose-50";
-  if (day.status === "almost_full" && day.spaceSlotsUsed > 0) return "bg-amber-50";
-  if (day.status === "almost_full" || day.status === "busy") return "bg-sky-50";
+  const status = visualDayStatus(day);
+  if (status === "full") return "bg-rose-50";
+  if (status === "almost_full") return "bg-amber-50";
   return "bg-background";
 }
 
 function dayBadgeClass(day: CalendarV2Day) {
-  if (day.status === "full") return "border-rose-200 bg-rose-100 text-rose-800";
-  if (day.status === "almost_full" && day.spaceSlotsUsed > 0) return "border-amber-200 bg-amber-100 text-amber-800";
-  if (day.status === "almost_full" || day.status === "busy") return "border-sky-200 bg-sky-100 text-sky-800";
+  const status = visualDayStatus(day);
+  if (status === "full") return "border-rose-200 bg-rose-100 text-rose-800";
+  if (status === "almost_full") return "border-amber-200 bg-amber-100 text-amber-800";
   return "border-emerald-200 bg-emerald-100 text-emerald-800";
 }
 
