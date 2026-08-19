@@ -1,6 +1,6 @@
 import { differenceInDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, ChevronDown, Loader2, MapPin, MessageCircle, Pencil, Trash2, Users } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronRight, Loader2, MapPin, MessageCircle, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventExtrasDetails } from "@/components/event-extras-selector";
 import { ExternalEventModal } from "@/components/external-event-modal";
 import { OperationalChecklist } from "@/components/operational-checklist";
@@ -44,18 +45,27 @@ export default function ExternalEventsPage() {
   const { data: events, isLoading } = useListExternalEvents();
   const { data: messageTemplates } = useListMessageTemplates();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [listView, setListView] = useState<"upcoming" | "past">("upcoming");
   const deleteExternalEvent = useDeleteExternalEvent();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const rows = useMemo(
-    () => [...(events ?? [])].sort((a, b) => `${a.eventDate} ${a.startTime}`.localeCompare(`${b.eventDate} ${b.startTime}`)),
-    [events],
-  );
+  const { sortedRows, upcomingRows, pastRows } = useMemo(() => {
+    const now = getPortugalDateTimeKey();
+    const sorted = [...(events ?? [])].sort(compareExternalEvents);
+
+    return {
+      sortedRows: sorted,
+      upcomingRows: sorted.filter((event) => !hasExternalEventEnded(event, now)),
+      pastRows: sorted.filter((event) => hasExternalEventEnded(event, now)).reverse(),
+    };
+  }, [events]);
+
+  const rows = listView === "upcoming" ? upcomingRows : pastRows;
 
   const summary = useMemo(() => {
     const today = new Date();
-    return rows.reduce(
+    return sortedRows.reduce(
       (acc, event) => {
         const daysUntil = differenceInDays(parseISO(event.eventDate), today);
         if (daysUntil >= 0) acc.upcoming += 1;
@@ -66,7 +76,7 @@ export default function ExternalEventsPage() {
       },
       { upcoming: 0, pending: 0, paid: 0, nextSevenDays: 0 },
     );
-  }, [rows]);
+  }, [sortedRows]);
 
   const handleDelete = (event: ExternalEvent) => {
     deleteExternalEvent.mutate(
@@ -85,14 +95,26 @@ export default function ExternalEventsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3 md:items-start">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Serviços Externos</h1>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
+          <p className="mt-2 hidden max-w-3xl text-sm text-muted-foreground md:block md:text-base">
             Gestão de decoração, catering, animação, insufláveis e serviços fora do espaço.
           </p>
         </div>
-        <ExternalEventModal />
+        <div className="shrink-0 md:hidden">
+          <ExternalEventModal
+            trigger={
+              <Button className="min-h-10 rounded-full px-4 shadow-sm">
+                <Plus className="h-4 w-4" />
+                Novo
+              </Button>
+            }
+          />
+        </div>
+        <div className="hidden md:block">
+          <ExternalEventModal />
+        </div>
       </div>
 
       <section className="grid gap-2 grid-cols-2 lg:grid-cols-4">
@@ -103,9 +125,17 @@ export default function ExternalEventsPage() {
       </section>
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
-        <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
-          <CardTitle className="text-lg">Lista de serviços externos</CardTitle>
-          <CardDescription>Eventos fora do espaço com um ou vários serviços associados.</CardDescription>
+        <CardHeader className="gap-3 border-b border-border/60 bg-card/70 p-2.5 md:flex-row md:items-center md:justify-between md:p-6 md:pb-4">
+          <div className="hidden md:block">
+            <CardTitle className="text-lg">Lista de serviços externos</CardTitle>
+            <CardDescription>Eventos fora do espaço com um ou vários serviços associados.</CardDescription>
+          </div>
+          <Tabs className="w-full md:w-auto" value={listView} onValueChange={(value) => setListView(value as "upcoming" | "past")}>
+            <TabsList className="grid w-full grid-cols-2 md:w-auto">
+              <TabsTrigger value="upcoming">Próximos ({upcomingRows.length})</TabsTrigger>
+              <TabsTrigger value="past">Anteriores</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -129,8 +159,12 @@ export default function ExternalEventsPage() {
           ) : (
             <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
               <CalendarDays className="mb-3 h-12 w-12 text-muted-foreground/30" />
-              <p className="font-medium text-foreground">Ainda não há serviços externos registados.</p>
-              <p className="mt-1 text-sm">Crie o primeiro evento externo usando o botão “Novo Serviço”.</p>
+              <p className="font-medium text-foreground">
+                {listView === "upcoming" ? "Não há serviços próximos." : "Ainda não há serviços anteriores."}
+              </p>
+              <p className="mt-1 text-sm">
+                {listView === "upcoming" ? "Crie um serviço usando o botão de novo serviço ou consulte os anteriores." : "Os serviços terminados aparecerão aqui."}
+              </p>
             </div>
           )}
         </CardContent>
@@ -171,10 +205,75 @@ function ExternalEventRow({
 }) {
   const date = parseISO(event.eventDate);
   const whatsappUrl = buildWhatsAppUrl(event, messageTemplates);
+  const dateLabel = format(date, "dd MMM", { locale: ptBR }).replace(".", "").toUpperCase();
+  const timeLabel = normalizeTime(event.startTime) + (event.endTime ? "–" + normalizeTime(event.endTime) : "");
+  const serviceLabels = event.services.map(getExternalServiceLabel);
 
   return (
-    <div className="p-4 transition-colors hover:bg-muted/30">
-      <div className="grid gap-3 lg:grid-cols-[88px_1fr_auto] lg:items-center">
+    <div className="transition-colors hover:bg-muted/30">
+      <div className="relative md:hidden">
+        <button
+          type="button"
+          className="w-full rounded-none p-3 pb-14 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={"external-event-details-" + event.id}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-bold tracking-wide text-primary">
+              {dateLabel} · {timeLabel}
+            </p>
+            <ChevronRight className={"h-4 w-4 shrink-0 text-muted-foreground transition-transform " + (expanded ? "rotate-90" : "")} />
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <h3 className="mr-0.5 min-w-0 break-words font-bold leading-snug text-foreground">{event.customerName}</h3>
+            <PaymentBadge status={event.paymentStatus} />
+            <StatusBadge status={event.status} ended={hasExternalEventEnded(event)} />
+          </div>
+
+          {event.eventLocation ? (
+            <p className="mt-1.5 flex items-start gap-1.5 break-words text-sm leading-snug text-muted-foreground">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{event.eventLocation}</span>
+            </p>
+          ) : null}
+
+          {event.guestCount > 0 || event.eventType || event.eventTheme ? (
+            <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-sm leading-snug text-muted-foreground">
+              {event.guestCount > 0 ? <span>{event.guestCount} pessoas</span> : null}
+              {event.eventType ? <span className="break-words">{event.eventType}</span> : null}
+              {event.eventTheme ? <span className="break-words">Tema: {event.eventTheme}</span> : null}
+            </div>
+          ) : null}
+
+          {serviceLabels.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {serviceLabels.map((label, index) => (
+                <Badge key={event.id + "-" + index + "-" + label} className="rounded-md bg-sky-100 text-sky-800 hover:bg-sky-100">
+                  {label}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+
+          {event.remainingBalance > 0 ? (
+            <p className="mt-3 pr-28 text-sm font-bold text-rose-700">
+              Falta {event.remainingBalance.toFixed(2)} €
+            </p>
+          ) : null}
+        </button>
+
+        <Button asChild variant="outline" size="sm" className="absolute bottom-3 right-3 z-10 min-h-9 rounded-xl px-3">
+          <a href={whatsappUrl} target="_blank" rel="noreferrer" onClick={(clickEvent) => clickEvent.stopPropagation()}>
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
+          </a>
+        </Button>
+      </div>
+
+      <div className="hidden p-4 md:block">
+        <div className="grid gap-3 lg:grid-cols-[88px_1fr_auto] lg:items-center">
         <div className="flex items-center justify-between rounded-xl bg-sky-50 px-3 py-2 text-sky-800 lg:flex-col lg:justify-center">
           <span className="text-xs font-semibold uppercase">{format(date, "MMM", { locale: ptBR })}</span>
           <span className="text-xl font-bold leading-none">{format(date, "dd")}</span>
@@ -184,7 +283,7 @@ function ExternalEventRow({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-bold text-foreground">{event.customerName}</h3>
             <PaymentBadge status={event.paymentStatus} />
-            <StatusBadge status={event.status} />
+            <StatusBadge status={event.status} ended={hasExternalEventEnded(event)} />
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
             <span>{event.startTime}{event.endTime ? `-${event.endTime}` : ""}</span>
@@ -226,9 +325,10 @@ function ExternalEventRow({
           </div>
         </div>
       </div>
+      </div>
 
       {expanded && (
-        <div className="mt-4 rounded-xl border border-border bg-muted/20 p-4">
+        <div id={"external-event-details-" + event.id} className="mx-3 mb-3 rounded-xl border border-border bg-muted/20 p-3 md:mx-4 md:mb-4 md:p-4">
           <div className="grid gap-4 lg:grid-cols-3">
             <DetailsBlock title="Dados do cliente">
               <Info label="Cliente" value={event.customerName} />
@@ -323,14 +423,55 @@ function PaymentBadge({ status }: { status: ExternalEvent["paymentStatus"] }) {
   return <Badge className="rounded-md bg-rose-100 text-rose-800 hover:bg-rose-100">Pendente</Badge>;
 }
 
-function StatusBadge({ status }: { status: ExternalEvent["status"] }) {
+function StatusBadge({ status, ended }: { status: ExternalEvent["status"]; ended: boolean }) {
   const labels = {
     draft: "Em preparação",
     confirmed: "Confirmado",
     completed: "Concluído",
     cancelled: "Cancelado",
   };
-  return <Badge variant="outline" className="rounded-md">{labels[status]}</Badge>;
+  const presentationStatus = ended && status !== "cancelled" ? "completed" : status;
+  return <Badge variant="outline" className="rounded-md">{labels[presentationStatus]}</Badge>;
+}
+
+const PORTUGAL_TIME_ZONE = "Europe/Lisbon";
+
+function compareExternalEvents(first: ExternalEvent, second: ExternalEvent) {
+  return getExternalEventStartKey(first).localeCompare(getExternalEventStartKey(second));
+}
+
+function hasExternalEventEnded(event: ExternalEvent, now = getPortugalDateTimeKey()) {
+  return getExternalEventEndKey(event) <= now;
+}
+
+function getExternalEventStartKey(event: ExternalEvent) {
+  return event.eventDate + "T" + normalizeTime(event.startTime);
+}
+
+function getExternalEventEndKey(event: ExternalEvent) {
+  return event.eventDate + "T" + normalizeTime(event.endTime || event.startTime);
+}
+
+function normalizeTime(time: string) {
+  return time.slice(0, 5).padStart(5, "0");
+}
+
+function getPortugalDateTimeKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: PORTUGAL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
+  return part("year") + "-" + part("month") + "-" + part("day") + "T" + part("hour") + ":" + part("minute");
+}
+
+function getExternalServiceLabel(service: ExternalEvent["services"][number]) {
+  return service.serviceLabel.trim() || SERVICE_LABELS[service.serviceType];
 }
 
 function DetailsBlock({ title, children }: { title: string; children: React.ReactNode }) {
