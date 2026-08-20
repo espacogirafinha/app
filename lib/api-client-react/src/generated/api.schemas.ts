@@ -1202,6 +1202,7 @@ export interface ReportsV2Summary {
   totalRevenue: number;
   totalReceived: number;
   totalPending: number;
+  totalOverpaid: number;
   eventCount: number;
   averageTicket: number;
 }
@@ -1211,6 +1212,7 @@ export interface ReportsV2AreaSummary {
   revenue: number;
   received: number;
   pending: number;
+  overpaid: number;
   averageTicket: number;
 }
 

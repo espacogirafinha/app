@@ -7,9 +7,9 @@ import {
   workshopParticipantsTable,
   workshopsTable,
 } from "@workspace/db";
+import { aggregateFinancials, combineFinancialTotals, type FinancialLine } from "../lib/reports-finance";
 
 const router: IRouter = Router();
-
 const ACTIVE_PARTICIPANT_STATUSES = new Set(["registered", "confirmed", "attended"]);
 
 type VenueEventRow = typeof venueEventsTable.$inferSelect;
@@ -35,10 +35,7 @@ function roundNumber(value: number) {
 
 function todayParts() {
   const now = new Date();
-  return {
-    year: now.getFullYear(),
-    month: now.getMonth() + 1,
-  };
+  return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
 function defaultDateRange() {
@@ -65,18 +62,12 @@ function percentage(count: number, total: number) {
   return total > 0 ? roundNumber((count / total) * 100) : 0;
 }
 
-function areaSummary(count: number, revenue: number, received: number, pending: number) {
+function areaSummary(count: number, finances: ReturnType<typeof aggregateFinancials>) {
   return {
     eventCount: count,
-    revenue: roundNumber(revenue),
-    received: roundNumber(received),
-    pending: roundNumber(pending),
-    averageTicket: count > 0 ? roundNumber(revenue / count) : 0,
+    ...finances,
+    averageTicket: count > 0 ? roundNumber(finances.revenue / count) : 0,
   };
-}
-
-function pendingAmount(total: number, paid: number) {
-  return Math.max(0, total - paid);
 }
 
 function statFromMap(map: Map<string, { count: number; revenue: number }>, totalCount: number): RevenueStat[] {
@@ -116,17 +107,12 @@ function participantsByWorkshopId(participants: WorkshopParticipantRow[]) {
 function venueReport(venueEvents: VenueEventRow[]) {
   const packStats = new Map<string, { count: number; revenue: number }>();
   const sourceStats = new Map<string, { count: number; revenue: number }>();
-  let revenue = 0;
-  let received = 0;
-  let pending = 0;
+  const financialLines: FinancialLine[] = [];
   let childrenTotal = 0;
 
   for (const event of venueEvents) {
     const total = money(event.totalPrice);
-    const paid = money(event.amountPaid);
-    revenue += total;
-    received += paid;
-    pending += pendingAmount(total, paid);
+    financialLines.push({ revenue: total, received: money(event.amountPaid) });
     childrenTotal += event.childrenCount ?? 0;
     addStat(packStats, event.packName || "Sem pack", total);
     if (event.source) addStat(sourceStats, event.source, total);
@@ -134,9 +120,7 @@ function venueReport(venueEvents: VenueEventRow[]) {
 
   return {
     partyCount: venueEvents.length,
-    revenue: roundNumber(revenue),
-    received: roundNumber(received),
-    pending: roundNumber(pending),
+    ...aggregateFinancials(financialLines),
     topPacks: statFromMap(packStats, venueEvents.length),
     revenueByPack: statFromMap(packStats, venueEvents.length),
     averageChildren: venueEvents.length > 0 ? roundNumber(childrenTotal / venueEvents.length) : 0,
@@ -148,45 +132,37 @@ function externalReport(externalEvents: ExternalEventRow[], externalServices: Ex
   const servicesByEvent = servicesByExternalEventId(externalServices);
   const serviceStats = new Map<string, { count: number; revenue: number }>();
   const combinationStats = new Map<string, { count: number; revenue: number }>();
-  let revenue = 0;
-  let received = 0;
-  let pending = 0;
+  const financialLines: FinancialLine[] = [];
 
   for (const event of externalEvents) {
     const total = money(event.totalPrice);
-    const paid = money(event.amountPaid);
-    revenue += total;
-    received += paid;
-    pending += pendingAmount(total, paid);
+    financialLines.push({ revenue: total, received: money(event.amountPaid) });
 
     const services = (servicesByEvent.get(event.id) ?? []).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-    for (const service of services) {
-      addStat(serviceStats, service.serviceLabel || service.serviceType, money(service.price));
-    }
-
-    const combination = services.length > 0 ? services.map((service) => service.serviceLabel || service.serviceType).join(" + ") : "Sem servicos";
+    for (const service of services) addStat(serviceStats, service.serviceLabel || service.serviceType, money(service.price));
+    const combination = services.length > 0
+      ? services.map((service) => service.serviceLabel || service.serviceType).join(" + ")
+      : "Sem serviços";
     addStat(combinationStats, combination, total);
   }
 
+  const finances = aggregateFinancials(financialLines);
   return {
     eventCount: externalEvents.length,
-    revenue: roundNumber(revenue),
-    received: roundNumber(received),
-    pending: roundNumber(pending),
+    ...finances,
     topServices: statFromMap(serviceStats, externalServices.length),
     revenueByServiceType: statFromMap(serviceStats, externalServices.length),
     serviceCombinations: statFromMap(combinationStats, externalEvents.length),
-    averageTicket: externalEvents.length > 0 ? roundNumber(revenue / externalEvents.length) : 0,
+    averageTicket: externalEvents.length > 0 ? roundNumber(finances.revenue / externalEvents.length) : 0,
   };
 }
 
 function workshopsReport(workshops: WorkshopRow[], participants: WorkshopParticipantRow[]) {
   const participantsByWorkshop = participantsByWorkshopId(participants);
   const paymentStatusCounts = { paid: 0, partial: 0, unpaid: 0 };
+  const financialLines: FinancialLine[] = [];
   let activeRegistrations = 0;
   let totalCapacity = 0;
-  let received = 0;
-  let pending = 0;
 
   for (const workshop of workshops) {
     const activeParticipants = (participantsByWorkshop.get(workshop.id) ?? []).filter(isActiveParticipant);
@@ -194,8 +170,7 @@ function workshopsReport(workshops: WorkshopRow[], participants: WorkshopPartici
     totalCapacity += workshop.capacity;
 
     for (const participant of activeParticipants) {
-      received += money(participant.amountPaid);
-      pending += money(participant.amountDue);
+      financialLines.push({ revenue: money(workshop.price), received: money(participant.amountPaid) });
       if (participant.paymentStatus === "paid") paymentStatusCounts.paid += 1;
       if (participant.paymentStatus === "partial") paymentStatusCounts.partial += 1;
       if (participant.paymentStatus === "unpaid") paymentStatusCounts.unpaid += 1;
@@ -208,8 +183,7 @@ function workshopsReport(workshops: WorkshopRow[], participants: WorkshopPartici
     occupiedSeats: activeRegistrations,
     freeSeats: Math.max(0, totalCapacity - activeRegistrations),
     occupancyRate: totalCapacity > 0 ? roundNumber((activeRegistrations / totalCapacity) * 100) : 0,
-    received: roundNumber(received),
-    pending: roundNumber(pending),
+    ...aggregateFinancials(financialLines),
     participantsByPaymentStatus: paymentStatusCounts,
   };
 }
@@ -251,32 +225,24 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
   const venue = venueReport(venueEvents);
   const external = externalReport(externalEvents, externalServices);
   const workshops = workshopsReport(workshopRowsInRange, workshopParticipants);
-
-  const venueArea = areaSummary(venue.partyCount, venue.revenue, venue.received, venue.pending);
-  const externalArea = areaSummary(external.eventCount, external.revenue, external.received, external.pending);
-  const workshopRevenue = workshops.received + workshops.pending;
-  const workshopArea = areaSummary(workshops.workshopCount, workshopRevenue, workshops.received, workshops.pending);
-
-  const totalRevenue = venueArea.revenue + externalArea.revenue + workshopArea.revenue;
-  const totalReceived = venueArea.received + externalArea.received + workshopArea.received;
-  const totalPending = venueArea.pending + externalArea.pending + workshopArea.pending;
+  const venueArea = areaSummary(venue.partyCount, venue);
+  const externalArea = areaSummary(external.eventCount, external);
+  const workshopArea = areaSummary(workshops.workshopCount, workshops);
+  const totals = combineFinancialTotals([venueArea, externalArea, workshopArea]);
   const eventCount = venueArea.eventCount + externalArea.eventCount + workshopArea.eventCount;
 
   res.json({
     summary: {
       startDate,
       endDate,
-      totalRevenue: roundNumber(totalRevenue),
-      totalReceived: roundNumber(totalReceived),
-      totalPending: roundNumber(totalPending),
+      totalRevenue: totals.revenue,
+      totalReceived: totals.received,
+      totalPending: totals.pending,
+      totalOverpaid: totals.overpaid,
       eventCount,
-      averageTicket: eventCount > 0 ? roundNumber(totalRevenue / eventCount) : 0,
+      averageTicket: eventCount > 0 ? roundNumber(totals.revenue / eventCount) : 0,
     },
-    areas: {
-      venueEvents: venueArea,
-      externalEvents: externalArea,
-      workshops: workshopArea,
-    },
+    areas: { venueEvents: venueArea, externalEvents: externalArea, workshops: workshopArea },
     venueEvents: venue,
     externalEvents: external,
     workshops,
