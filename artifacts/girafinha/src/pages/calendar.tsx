@@ -263,6 +263,7 @@ function DesktopMonthView({
           const date = format(day, "yyyy-MM-dd");
           const currentMonth = isSameMonth(day, currentDate);
           const dayData = daysByDate.get(date) ?? emptyDay(date, spaceSlotsTotal);
+          const occupancyStatus = visualDayStatus(dayData);
           const visibleItems = filterCalendarItems(dayData.items, filter).slice(0, 2);
           const hiddenCount = filterCalendarItems(dayData.items, filter).length - visibleItems.length;
 
@@ -281,7 +282,7 @@ function DesktopMonthView({
             >
               <div className="flex items-start justify-between gap-1.5">
                 <DayNumber date={day} today={date === todayKey} muted={!currentMonth} />
-                {currentMonth ? (
+                {currentMonth && occupancyStatus !== "free" ? (
                   <span className={cn("rounded-md border px-1.5 py-0.5 text-[10px] font-semibold", dayBadgeClass(dayData))}>
                     {dayCellStatusLabel(dayData)}
                   </span>
@@ -291,7 +292,8 @@ function DesktopMonthView({
               {currentMonth ? (
                 <div className="mt-2 min-w-0 flex-1">
                   <p className="text-[11px] font-semibold text-foreground/80">
-                    {dayData.spaceSlotsUsed}/{dayData.spaceSlotsTotal} ocupados
+                    {dayData.spaceSlotsUsed}/{dayData.spaceSlotsTotal}
+                    {occupancyStatus === "free" ? null : " ocupados"}
                   </p>
                   <div className="mt-2 space-y-1">
                     {visibleItems.map((item) => (
