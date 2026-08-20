@@ -1,6 +1,6 @@
 import { differenceInDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, ChevronDown, GraduationCap, Loader2, Pencil, Trash2, Users } from "lucide-react";
+import { ChevronRight, GraduationCap, Loader2, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -17,34 +17,53 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkshopModal } from "@/components/workshop-modal";
 import { WorkshopParticipantsPanel } from "@/components/workshop-participants-panel";
 import { useToast } from "@/hooks/use-toast";
 import { getListWorkshopsQueryKey, useDeleteWorkshop, useListWorkshops } from "@workspace/api-client-react";
 import type { Workshop } from "@workspace/api-client-react";
 
+type WorkshopListView = "upcoming" | "past";
+
 export default function WorkshopsPage() {
   const { data: workshops, isLoading } = useListWorkshops();
   const linkedId = useMemo(getLinkedCalendarItemId, []);
   const [expandedId, setExpandedId] = useState<string | null>(linkedId);
+  const [listView, setListView] = useState<WorkshopListView>("upcoming");
   const deleteWorkshop = useDeleteWorkshop();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const rows = useMemo(
-    () => [...(workshops ?? [])].sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`)),
-    [workshops],
-  );
+  const { sortedRows, upcomingRows, pastRows } = useMemo(() => {
+    const now = getPortugalDateTimeKey();
+    const sorted = [...(workshops ?? [])].sort(compareWorkshops);
+
+    return {
+      sortedRows: sorted,
+      upcomingRows: sorted.filter((workshop) => !hasWorkshopEnded(workshop, now)),
+      pastRows: sorted.filter((workshop) => hasWorkshopEnded(workshop, now)).reverse(),
+    };
+  }, [workshops]);
+
+  const rows = listView === "upcoming" ? upcomingRows : pastRows;
 
   useEffect(() => {
-    if (!linkedId || !workshops?.some((workshop) => workshop.id === linkedId)) return;
+    if (!linkedId || !workshops) return;
+    const linkedWorkshop = workshops.find((workshop) => workshop.id === linkedId);
+    if (!linkedWorkshop) return;
+    const targetView: WorkshopListView = hasWorkshopEnded(linkedWorkshop) ? "past" : "upcoming";
+    if (listView !== targetView) {
+      setListView(targetView);
+      return;
+    }
     const frame = requestAnimationFrame(() => document.getElementById("workshop-" + linkedId)?.scrollIntoView({ block: "center" }));
     return () => cancelAnimationFrame(frame);
-  }, [linkedId, workshops]);
+  }, [linkedId, listView, workshops]);
 
   const summary = useMemo(() => {
     const today = new Date();
-    return rows.reduce(
+    return sortedRows.reduce(
       (acc, workshop) => {
         const daysUntil = differenceInDays(parseISO(workshop.date), today);
         if (daysUntil >= 0) acc.scheduled += 1;
@@ -55,7 +74,7 @@ export default function WorkshopsPage() {
       },
       { scheduled: 0, registrations: 0, pending: 0, availableSeats: 0 },
     );
-  }, [rows]);
+  }, [sortedRows]);
 
   const handleDelete = (workshop: Workshop) => {
     deleteWorkshop.mutate(
@@ -73,15 +92,27 @@ export default function WorkshopsPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 md:space-y-6">
+      <div className="flex items-center justify-between gap-3 md:items-start">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Workshops/Formações</h1>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
+          <p className="mt-2 hidden max-w-3xl text-sm text-muted-foreground md:block md:text-base">
             Gestão de workshops, formações, inscrições e participantes.
           </p>
         </div>
-        <WorkshopModal />
+        <div className="shrink-0 md:hidden">
+          <WorkshopModal
+            trigger={
+              <Button className="min-h-10 rounded-full px-4 shadow-sm">
+                <Plus className="h-4 w-4" />
+                Novo
+              </Button>
+            }
+          />
+        </div>
+        <div className="hidden md:block">
+          <WorkshopModal />
+        </div>
       </div>
 
       <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
@@ -92,13 +123,21 @@ export default function WorkshopsPage() {
       </section>
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
-        <CardHeader className="border-b border-border/60 bg-card/70 pb-4">
-          <CardTitle className="text-lg">Lista de workshops</CardTitle>
-          <CardDescription>Módulo próprio da V2 ligado às novas entidades workshops e workshop_participants.</CardDescription>
+        <CardHeader className="gap-3 border-b border-border/60 bg-card/70 p-2.5 md:flex-row md:items-center md:justify-between md:p-4">
+          <div className="hidden md:block">
+            <CardTitle className="text-lg">Lista de workshops</CardTitle>
+            <CardDescription>Workshops, inscrições e disponibilidade num só lugar.</CardDescription>
+          </div>
+          <Tabs className="w-full md:w-auto" value={listView} onValueChange={(value) => setListView(value as WorkshopListView)}>
+            <TabsList className="grid w-full grid-cols-2 md:w-auto">
+              <TabsTrigger value="upcoming">Próximos ({upcomingRows.length})</TabsTrigger>
+              <TabsTrigger value="past">Anteriores</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex justify-center p-12">
+            <div className="flex justify-center p-10">
               <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
             </div>
           ) : rows.length > 0 ? (
@@ -115,11 +154,7 @@ export default function WorkshopsPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
-              <GraduationCap className="mb-3 h-12 w-12 text-muted-foreground/30" />
-              <p className="font-medium text-foreground">Ainda não há workshops registados.</p>
-              <p className="mt-1 text-sm">Crie o primeiro workshop usando o botão “Novo Workshop”.</p>
-            </div>
+            <WorkshopEmptyState view={listView} hasAnyWorkshops={sortedRows.length > 0} />
           )}
         </CardContent>
       </Card>
@@ -130,8 +165,8 @@ export default function WorkshopsPage() {
 function SummaryCard({ label, value, loading }: { label: string; value: string; loading: boolean }) {
   return (
     <Card className="border-border/70 shadow-sm">
-      <CardContent className="p-3 md:p-4">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <CardContent className="p-2.5 sm:p-3 md:p-4">
+        <p className="text-xs font-medium leading-snug text-muted-foreground">{label}</p>
         {loading ? (
           <Loader2 className="mt-2 h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
@@ -139,6 +174,37 @@ function SummaryCard({ label, value, loading }: { label: string; value: string; 
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function WorkshopEmptyState({ view, hasAnyWorkshops }: { view: WorkshopListView; hasAnyWorkshops: boolean }) {
+  const title = !hasAnyWorkshops
+    ? "Nenhum workshop agendado"
+    : view === "upcoming"
+      ? "Nenhum workshop próximo"
+      : "Nenhum workshop anterior";
+  const description = !hasAnyWorkshops
+    ? "Crie o primeiro workshop para começar a gerir inscrições e participantes."
+    : view === "upcoming"
+      ? "Crie um workshop ou consulte os anteriores."
+      : "Os workshops terminados aparecerão aqui.";
+
+  return (
+    <div className="flex flex-col items-center justify-center px-5 py-8 text-center text-muted-foreground">
+      <div className="mb-3 rounded-full bg-violet-50 p-2.5 text-violet-500">
+        <GraduationCap className="h-6 w-6" />
+      </div>
+      <p className="font-semibold text-foreground">{title}</p>
+      <p className="mt-1 max-w-md text-sm">{description}</p>
+      <WorkshopModal
+        trigger={
+          <Button className="mt-4 min-h-10 rounded-full px-4 shadow-sm">
+            <Plus className="h-4 w-4" />
+            Novo workshop
+          </Button>
+        }
+      />
+    </div>
   );
 }
 
@@ -156,62 +222,59 @@ function WorkshopRow({
   deleting: boolean;
 }) {
   const date = parseISO(workshop.date);
+  const dateLabel = format(date, "dd MMM", { locale: ptBR }).replace(".", "").toUpperCase();
+  const timeLabel = normalizeTime(workshop.startTime) + (workshop.endTime ? "–" + normalizeTime(workshop.endTime) : "");
+  const financialLabel = workshop.totalPending > 0
+    ? { label: `Falta ${workshop.totalPending.toFixed(2)} €`, className: "text-rose-700" }
+    : workshop.totalReceived > 0
+      ? { label: "Pago", className: "text-emerald-700" }
+      : null;
 
   return (
-    <div id={"workshop-" + workshop.id} className="scroll-mt-6 p-4 transition-colors hover:bg-muted/30">
-      <div className="grid gap-3 lg:grid-cols-[88px_1fr_auto] lg:items-center">
-        <div className="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2 text-violet-800 lg:flex-col lg:justify-center">
-          <span className="text-xs font-semibold uppercase">{format(date, "MMM", { locale: ptBR })}</span>
-          <span className="text-xl font-bold leading-none">{format(date, "dd")}</span>
-        </div>
+    <div id={"workshop-" + workshop.id} className="scroll-mt-6 transition-colors hover:bg-muted/30">
+      <button
+        type="button"
+        className="w-full p-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:p-4"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls={"workshop-details-" + workshop.id}
+      >
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold tracking-wide text-primary">
+              {dateLabel} · {timeLabel}
+            </p>
 
-        <div className="min-w-0 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-bold text-foreground">{workshop.name}</h3>
-            <StatusBadge status={workshop.status} />
-            {workshop.kitIncluded && <Badge className="rounded-md bg-violet-100 text-violet-800 hover:bg-violet-100">Kit incluído</Badge>}
-          </div>
-          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-            <span>{workshop.startTime}{workshop.endTime ? `-${workshop.endTime}` : ""}</span>
-            <span>{workshop.location || "Espaço Girafinha"}</span>
-            <span className="font-medium text-foreground">{workshop.price.toFixed(2)} € / participante</span>
-          </div>
-          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{workshop.activeParticipantsCount}/{workshop.capacity} inscritos</span>
-            <span>{workshop.availableSeats} vagas livres</span>
-            <span>Recebido: {workshop.totalReceived.toFixed(2)} €</span>
-          </div>
-        </div>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <h3 className="mr-0.5 min-w-0 break-words font-bold leading-snug text-foreground">{workshop.name}</h3>
+              <StatusBadge status={workshop.status} ended={hasWorkshopEnded(workshop)} />
+              {workshop.kitIncluded ? <Badge className="rounded-md bg-violet-100 text-violet-800 hover:bg-violet-100">Kit incluído</Badge> : null}
+            </div>
 
-        <div className="space-y-3 lg:min-w-[250px]">
-          <div className="rounded-xl border border-border bg-background p-3 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Por receber</span>
-              <span className={workshop.totalPending > 0 ? "font-bold text-rose-700" : "font-bold text-emerald-700"}>
-                {workshop.totalPending.toFixed(2)} €
-              </span>
+            <p className="mt-1.5 flex items-start gap-1.5 break-words text-sm leading-snug text-muted-foreground">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{workshop.location || "Espaço Girafinha"}</span>
+            </p>
+
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm leading-snug text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  {workshop.activeParticipantsCount} {workshop.activeParticipantsCount === 1 ? "inscrito" : "inscritos"}
+                </span>
+                <span>{formatAvailableSeats(workshop.availableSeats)}</span>
+                <span>{workshop.price.toFixed(2)} € / participante</span>
+              </div>
+              {financialLabel ? <p className={`text-sm font-bold ${financialLabel.className}`}>{financialLabel.label}</p> : null}
             </div>
           </div>
-          <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
-            <Button variant="outline" size="sm" onClick={onToggle} className="rounded-xl">
-              <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
-              Detalhes
-            </Button>
-            <WorkshopParticipantsPanel
-              workshop={workshop}
-              trigger={
-                <Button variant="outline" size="sm" className="rounded-xl">
-                  <Users className="h-4 w-4" />
-                  Participantes
-                </Button>
-              }
-            />
-          </div>
-        </div>
-      </div>
 
-      {expanded && (
-        <div className="mt-4 rounded-xl border border-border bg-muted/20 p-4">
+          <ChevronRight className={`mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-90" : ""}`} />
+        </div>
+      </button>
+
+      {expanded ? (
+        <div id={"workshop-details-" + workshop.id} className="mx-3 mb-3 rounded-xl border border-border bg-muted/20 p-3 md:mx-4 md:mb-4 md:p-4">
           <div className="grid gap-4 lg:grid-cols-3">
             <DetailsBlock title="Dados do workshop">
               <Info label="Nome" value={workshop.name} />
@@ -261,7 +324,7 @@ function WorkshopRow({
                     <AlertDialogHeader>
                       <AlertDialogTitle>Apagar este workshop?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação remove o workshop e, na base de dados, os participantes associados por cascade.
+                        Esta ação remove o workshop e os participantes associados. Não pode ser anulada.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -285,12 +348,12 @@ function WorkshopRow({
             </DetailsBlock>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: Workshop["status"] }) {
+function StatusBadge({ status, ended }: { status: Workshop["status"]; ended: boolean }) {
   const labels = {
     draft: "Em preparação",
     open: "Inscrições abertas",
@@ -305,7 +368,49 @@ function StatusBadge({ status }: { status: Workshop["status"] }) {
     completed: "bg-violet-100 text-violet-800 hover:bg-violet-100",
     cancelled: "bg-rose-100 text-rose-800 hover:bg-rose-100",
   };
-  return <Badge className={`rounded-md ${classes[status]}`}>{labels[status]}</Badge>;
+  const presentationStatus = ended && status !== "cancelled" ? "completed" : status;
+  return <Badge className={`rounded-md ${classes[presentationStatus]}`}>{labels[presentationStatus]}</Badge>;
+}
+
+const PORTUGAL_TIME_ZONE = "Europe/Lisbon";
+
+function compareWorkshops(a: Workshop, b: Workshop) {
+  return getWorkshopStartKey(a).localeCompare(getWorkshopStartKey(b));
+}
+
+function hasWorkshopEnded(workshop: Workshop, now = getPortugalDateTimeKey()) {
+  return getWorkshopEndKey(workshop) <= now;
+}
+
+function getWorkshopStartKey(workshop: Workshop) {
+  return `${workshop.date}T${normalizeTime(workshop.startTime)}`;
+}
+
+function getWorkshopEndKey(workshop: Workshop) {
+  return `${workshop.date}T${normalizeTime(workshop.endTime || workshop.startTime)}`;
+}
+
+function normalizeTime(time: string) {
+  return time.slice(0, 5).padStart(5, "0");
+}
+
+function getPortugalDateTimeKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: PORTUGAL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
+}
+
+function formatAvailableSeats(availableSeats: number) {
+  if (availableSeats === 0) return "Sem vagas";
+  return `${availableSeats} ${availableSeats === 1 ? "vaga" : "vagas"}`;
 }
 
 function getLinkedCalendarItemId() {
