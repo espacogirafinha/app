@@ -106,6 +106,11 @@ type ExternalEvent = {
   accessNotes: string | null;
   totalPrice: number;
   amountPaid: number;
+  refundableDepositAmount: number;
+  refundableDepositStatus: "not_required" | "pending" | "held" | "returned" | "retained";
+  refundableDepositReceivedAt: string | null;
+  refundableDepositReturnedAt: string | null;
+  refundableDepositNotes: string | null;
   paymentMethod: string | null;
   notes: string | null;
   createdAt: string;
@@ -1539,6 +1544,11 @@ export function devApiPlugin(): Plugin {
             accessNotes: body.accessNotes ? String(body.accessNotes) : null,
             totalPrice,
             amountPaid,
+            refundableDepositAmount: Number(body.refundableDepositAmount ?? 0),
+            refundableDepositStatus: (body.refundableDepositStatus as ExternalEvent["refundableDepositStatus"]) ?? "not_required",
+            refundableDepositReceivedAt: body.refundableDepositReceivedAt ? String(body.refundableDepositReceivedAt) : null,
+            refundableDepositReturnedAt: body.refundableDepositReturnedAt ? String(body.refundableDepositReturnedAt) : null,
+            refundableDepositNotes: body.refundableDepositNotes ? String(body.refundableDepositNotes) : null,
             paymentMethod: body.paymentMethod ? String(body.paymentMethod) : null,
             notes: body.notes ? String(body.notes) : null,
             createdAt: new Date().toISOString(),
@@ -1573,6 +1583,7 @@ export function devApiPlugin(): Plugin {
           if (!current) return json(res, 404, { error: "External event not found" });
           const totalPrice = body.totalPrice !== undefined ? Number(body.totalPrice) : current.totalPrice;
           const amountPaid = body.amountPaid !== undefined ? Number(body.amountPaid) : current.amountPaid;
+          const refundableDepositAmount = body.refundableDepositAmount !== undefined ? Number(body.refundableDepositAmount) : current.refundableDepositAmount;
           externalEvents = externalEvents.map((event) =>
             event.id === id
               ? {
@@ -1580,6 +1591,7 @@ export function devApiPlugin(): Plugin {
                   ...body,
                   totalPrice,
                   amountPaid,
+                  refundableDepositAmount,
                   paymentStatus: computeExternalPaymentStatus(totalPrice, amountPaid),
                   updatedAt: new Date().toISOString(),
                 } as ExternalEvent

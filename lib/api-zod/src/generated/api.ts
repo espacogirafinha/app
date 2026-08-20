@@ -597,6 +597,8 @@ export const ListExternalEventsQueryParams = zod.object({
   dateTo: zod.coerce.string().optional(),
 });
 
+export const listExternalEventsResponseRefundableDepositAmountMin = 0;
+
 export const ListExternalEventsResponseItem = zod.object({
   id: zod.string().uuid(),
   customerName: zod.string(),
@@ -618,6 +620,19 @@ export const ListExternalEventsResponseItem = zod.object({
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  refundableDepositAmount: zod
+    .number()
+    .min(listExternalEventsResponseRefundableDepositAmountMin),
+  refundableDepositStatus: zod.enum([
+    "not_required",
+    "pending",
+    "held",
+    "returned",
+    "retained",
+  ]),
+  refundableDepositReceivedAt: zod.coerce.date().nullish(),
+  refundableDepositReturnedAt: zod.coerce.date().nullish(),
+  refundableDepositNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentMethod: zod.string().nullish(),
   notes: zod.string().nullish(),
@@ -653,6 +668,7 @@ export const ListExternalEventsResponse = zod.array(
 /**
  * @summary Create an external event with services
  */
+export const createExternalEventBodyRefundableDepositAmountMin = 0;
 
 export const CreateExternalEventBody = zod.object({
   customerName: zod.string(),
@@ -674,6 +690,16 @@ export const CreateExternalEventBody = zod.object({
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  refundableDepositAmount: zod
+    .number()
+    .min(createExternalEventBodyRefundableDepositAmountMin)
+    .optional(),
+  refundableDepositStatus: zod
+    .enum(["not_required", "pending", "held", "returned", "retained"])
+    .optional(),
+  refundableDepositReceivedAt: zod.coerce.date().nullish(),
+  refundableDepositReturnedAt: zod.coerce.date().nullish(),
+  refundableDepositNotes: zod.string().nullish(),
   paymentMethod: zod.string().nullish(),
   notes: zod.string().nullish(),
   services: zod
@@ -707,6 +733,8 @@ export const GetExternalEventParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
 
+export const getExternalEventResponseRefundableDepositAmountMin = 0;
+
 export const GetExternalEventResponse = zod.object({
   id: zod.string().uuid(),
   customerName: zod.string(),
@@ -728,6 +756,19 @@ export const GetExternalEventResponse = zod.object({
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  refundableDepositAmount: zod
+    .number()
+    .min(getExternalEventResponseRefundableDepositAmountMin),
+  refundableDepositStatus: zod.enum([
+    "not_required",
+    "pending",
+    "held",
+    "returned",
+    "retained",
+  ]),
+  refundableDepositReceivedAt: zod.coerce.date().nullish(),
+  refundableDepositReturnedAt: zod.coerce.date().nullish(),
+  refundableDepositNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentMethod: zod.string().nullish(),
   notes: zod.string().nullish(),
@@ -764,6 +805,8 @@ export const UpdateExternalEventParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
 
+export const updateExternalEventBodyRefundableDepositAmountMin = 0;
+
 export const UpdateExternalEventBody = zod.object({
   customerName: zod.string().optional(),
   phone: zod.string().optional(),
@@ -784,6 +827,16 @@ export const UpdateExternalEventBody = zod.object({
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number().optional(),
   amountPaid: zod.number().optional(),
+  refundableDepositAmount: zod
+    .number()
+    .min(updateExternalEventBodyRefundableDepositAmountMin)
+    .optional(),
+  refundableDepositStatus: zod
+    .enum(["not_required", "pending", "held", "returned", "retained"])
+    .optional(),
+  refundableDepositReceivedAt: zod.coerce.date().nullish(),
+  refundableDepositReturnedAt: zod.coerce.date().nullish(),
+  refundableDepositNotes: zod.string().nullish(),
   paymentMethod: zod.string().nullish(),
   notes: zod.string().nullish(),
   services: zod
@@ -810,6 +863,8 @@ export const UpdateExternalEventBody = zod.object({
     .optional(),
 });
 
+export const updateExternalEventResponseRefundableDepositAmountMin = 0;
+
 export const UpdateExternalEventResponse = zod.object({
   id: zod.string().uuid(),
   customerName: zod.string(),
@@ -831,6 +886,19 @@ export const UpdateExternalEventResponse = zod.object({
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number(),
   amountPaid: zod.number(),
+  refundableDepositAmount: zod
+    .number()
+    .min(updateExternalEventResponseRefundableDepositAmountMin),
+  refundableDepositStatus: zod.enum([
+    "not_required",
+    "pending",
+    "held",
+    "returned",
+    "retained",
+  ]),
+  refundableDepositReceivedAt: zod.coerce.date().nullish(),
+  refundableDepositReturnedAt: zod.coerce.date().nullish(),
+  refundableDepositNotes: zod.string().nullish(),
   remainingBalance: zod.number(),
   paymentMethod: zod.string().nullish(),
   notes: zod.string().nullish(),

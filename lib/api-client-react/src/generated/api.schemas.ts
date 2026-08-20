@@ -137,6 +137,17 @@ export const ExternalEventPaymentStatus = {
   paid: "paid",
 } as const;
 
+export type RefundableDepositStatus =
+  (typeof RefundableDepositStatus)[keyof typeof RefundableDepositStatus];
+
+export const RefundableDepositStatus = {
+  not_required: "not_required",
+  pending: "pending",
+  held: "held",
+  returned: "returned",
+  retained: "retained",
+} as const;
+
 export type ExternalEventServiceType =
   (typeof ExternalEventServiceType)[keyof typeof ExternalEventServiceType];
 
@@ -823,6 +834,15 @@ export interface ExternalEvent {
   accessNotes?: string | null;
   totalPrice: number;
   amountPaid: number;
+  /** @minimum 0 */
+  refundableDepositAmount: number;
+  refundableDepositStatus: RefundableDepositStatus;
+  /** @nullable */
+  refundableDepositReceivedAt?: string | null;
+  /** @nullable */
+  refundableDepositReturnedAt?: string | null;
+  /** @nullable */
+  refundableDepositNotes?: string | null;
   remainingBalance: number;
   /** @nullable */
   paymentMethod?: string | null;
@@ -863,6 +883,15 @@ export interface CreateExternalEventBody {
   accessNotes?: string | null;
   totalPrice: number;
   amountPaid: number;
+  /** @minimum 0 */
+  refundableDepositAmount?: number;
+  refundableDepositStatus?: RefundableDepositStatus;
+  /** @nullable */
+  refundableDepositReceivedAt?: string | null;
+  /** @nullable */
+  refundableDepositReturnedAt?: string | null;
+  /** @nullable */
+  refundableDepositNotes?: string | null;
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */
@@ -901,6 +930,15 @@ export interface UpdateExternalEventBody {
   accessNotes?: string | null;
   totalPrice?: number;
   amountPaid?: number;
+  /** @minimum 0 */
+  refundableDepositAmount?: number;
+  refundableDepositStatus?: RefundableDepositStatus;
+  /** @nullable */
+  refundableDepositReceivedAt?: string | null;
+  /** @nullable */
+  refundableDepositReturnedAt?: string | null;
+  /** @nullable */
+  refundableDepositNotes?: string | null;
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */
