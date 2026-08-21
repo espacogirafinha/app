@@ -76,6 +76,7 @@ export * from "./occupancyStats";
 export * from "./packStats";
 export * from "./paymentStatusStats";
 export * from "./paymentStatusStatsStatus";
+export * from "./refundableDepositStatus";
 export * from "./replaceSelectedExtrasBody";
 export * from "./reportsData";
 export * from "./reportsDataBestMonth";
