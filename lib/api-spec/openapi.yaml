@@ -3375,6 +3375,10 @@ components:
           type: number
         totalPending:
           type: number
+        heldDeposits:
+          type: number
+        retainedDeposits:
+          type: number
         eventCount:
           type: integer
         averageTicket:
@@ -3385,6 +3389,8 @@ components:
         - totalRevenue
         - totalReceived
         - totalPending
+        - heldDeposits
+        - retainedDeposits
         - eventCount
         - averageTicket
 
@@ -3413,6 +3419,10 @@ components:
           type: number
         pending:
           type: number
+        heldDeposits:
+          type: number
+        retainedDeposits:
+          type: number
         averageTicket:
           type: number
       required:
@@ -3420,6 +3430,8 @@ components:
         - revenue
         - received
         - pending
+        - heldDeposits
+        - retainedDeposits
         - averageTicket
 
     ReportsV2RevenueStat:
@@ -3485,6 +3497,10 @@ components:
           type: number
         pending:
           type: number
+        heldDeposits:
+          type: number
+        retainedDeposits:
+          type: number
         topServices:
           type: array
           items:
@@ -3504,6 +3520,8 @@ components:
         - revenue
         - received
         - pending
+        - heldDeposits
+        - retainedDeposits
         - topServices
         - revenueByServiceType
         - serviceCombinations

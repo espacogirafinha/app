@@ -1240,6 +1240,8 @@ export interface ReportsV2Summary {
   totalRevenue: number;
   totalReceived: number;
   totalPending: number;
+  heldDeposits: number;
+  retainedDeposits: number;
   eventCount: number;
   averageTicket: number;
 }
@@ -1249,6 +1251,8 @@ export interface ReportsV2AreaSummary {
   revenue: number;
   received: number;
   pending: number;
+  heldDeposits: number;
+  retainedDeposits: number;
   averageTicket: number;
 }
 
@@ -1281,6 +1285,8 @@ export interface ReportsV2ExternalEvents {
   revenue: number;
   received: number;
   pending: number;
+  heldDeposits: number;
+  retainedDeposits: number;
   topServices: ReportsV2RevenueStat[];
   revenueByServiceType: ReportsV2RevenueStat[];
   serviceCombinations: ReportsV2RevenueStat[];

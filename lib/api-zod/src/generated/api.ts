@@ -1845,6 +1845,8 @@ export const GetReportsV2Response = zod.object({
     totalRevenue: zod.number(),
     totalReceived: zod.number(),
     totalPending: zod.number(),
+    heldDeposits: zod.number(),
+    retainedDeposits: zod.number(),
     eventCount: zod.number(),
     averageTicket: zod.number(),
   }),
@@ -1854,6 +1856,8 @@ export const GetReportsV2Response = zod.object({
       revenue: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      heldDeposits: zod.number(),
+      retainedDeposits: zod.number(),
       averageTicket: zod.number(),
     }),
     externalEvents: zod.object({
@@ -1861,6 +1865,8 @@ export const GetReportsV2Response = zod.object({
       revenue: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      heldDeposits: zod.number(),
+      retainedDeposits: zod.number(),
       averageTicket: zod.number(),
     }),
     workshops: zod.object({
@@ -1868,6 +1874,8 @@ export const GetReportsV2Response = zod.object({
       revenue: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      heldDeposits: zod.number(),
+      retainedDeposits: zod.number(),
       averageTicket: zod.number(),
     }),
   }),
@@ -1907,6 +1915,8 @@ export const GetReportsV2Response = zod.object({
     revenue: zod.number(),
     received: zod.number(),
     pending: zod.number(),
+    heldDeposits: zod.number(),
+    retainedDeposits: zod.number(),
     topServices: zod.array(
       zod.object({
         label: zod.string(),

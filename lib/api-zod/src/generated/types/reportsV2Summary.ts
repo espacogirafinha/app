@@ -12,6 +12,8 @@ export interface ReportsV2Summary {
   totalRevenue: number;
   totalReceived: number;
   totalPending: number;
+  heldDeposits: number;
+  retainedDeposits: number;
   eventCount: number;
   averageTicket: number;
 }
