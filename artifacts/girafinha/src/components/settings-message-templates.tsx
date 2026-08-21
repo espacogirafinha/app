@@ -1,9 +1,10 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Edit, MessageSquare, Plus, Sparkles } from "lucide-react";
+import { ChevronDown, Edit, MessageSquare, Plus, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -120,6 +121,7 @@ export function SettingsMessageTemplates() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [modal, setModal] = useState<{ open: boolean; item?: MessageTemplate }>({ open: false });
+  const [variablesOpen, setVariablesOpen] = useState(false);
 
   const items = templatesQuery.data ?? [];
   const activeCount = items.filter((item) => item.isActive).length;
@@ -156,38 +158,46 @@ export function SettingsMessageTemplates() {
   return (
     <div className="space-y-4">
       <Card className="border-border/70 shadow-sm">
-        <CardHeader className="space-y-3 pb-4">
+        <CardHeader className="space-y-3 p-3 md:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
+            <div className="min-w-0">
               <CardTitle>Templates WhatsApp</CardTitle>
               <CardDescription className="mt-1">Cria mensagens padrão para usar nos botões WhatsApp da app.</CardDescription>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button variant="outline" className="min-h-10" onClick={addSuggested} disabled={createTemplate.isPending}>
-                <Sparkles className="h-4 w-4" />
-                Adicionar templates sugeridos
-              </Button>
-              <Button className="min-h-10" onClick={() => setModal({ open: true })}>
+            <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+              <Button className="min-h-9 px-3" onClick={() => setModal({ open: true })}>
                 <Plus className="h-4 w-4" />
-                Criar template
+                <span className="md:hidden">Criar</span>
+                <span className="hidden md:inline">Criar template</span>
+              </Button>
+              <Button variant="ghost" size="sm" className="min-h-9 px-2 text-muted-foreground" onClick={addSuggested} disabled={createTemplate.isPending}>
+                <Sparkles className="h-4 w-4" />
+                <span className="md:hidden">Adicionar sugeridos</span>
+                <span className="hidden md:inline">Adicionar templates sugeridos</span>
               </Button>
             </div>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <SummaryPill label="Total" value={items.length} />
-            <SummaryPill label="Ativos" value={activeCount} tone="active" />
-            <SummaryPill label="Inativos" value={items.length - activeCount} tone="inactive" />
-          </div>
-          <div className="flex flex-wrap gap-2 rounded-lg border border-border/70 bg-muted/40 p-3 text-xs text-muted-foreground">
-            {messageVariables.map((variable) => (
-              <Badge key={variable} variant="outline" className="font-mono">{variable}</Badge>
-            ))}
-          </div>
+          <TemplateSummary total={items.length} active={activeCount} inactive={items.length - activeCount} />
+          <Collapsible open={variablesOpen} onOpenChange={setVariablesOpen} className="rounded-lg border border-border/70 bg-muted/30">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="flex min-h-10 w-full justify-between px-3 text-sm">
+                Variáveis disponíveis
+                <ChevronDown className={"h-4 w-4 transition-transform " + (variablesOpen ? "rotate-180" : "")} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="flex flex-wrap gap-2 border-t border-border/60 p-3 text-xs text-muted-foreground">
+                {messageVariables.map((variable) => (
+                  <Badge key={variable} variant="outline" className="font-mono">{variable}</Badge>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </CardHeader>
       </Card>
 
       {templatesQuery.isLoading ? (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {Array.from({ length: 3 }).map((_, index) => (
             <Card key={index} className="h-48 animate-pulse border-border/70 bg-muted/40" />
           ))}
@@ -204,7 +214,7 @@ export function SettingsMessageTemplates() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {items.map((item) => (
             <MessageTemplateCard
               key={item.id}
@@ -233,13 +243,14 @@ export function SettingsMessageTemplates() {
   );
 }
 
-function SummaryPill({ label, value, tone }: { label: string; value: number; tone?: "active" | "inactive" }) {
+function TemplateSummary({ total, active, inactive }: { total: number; active: number; inactive: number }) {
   return (
-    <div className="rounded-lg border border-border/70 bg-background px-3 py-2">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={tone === "active" ? "text-lg font-semibold text-emerald-700" : tone === "inactive" ? "text-lg font-semibold text-muted-foreground" : "text-lg font-semibold"}>
-        {value}
-      </p>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm">
+      <span><strong>{total}</strong> total</span>
+      <span aria-hidden="true" className="text-border">·</span>
+      <span className="text-emerald-700"><strong>{active}</strong> ativos</span>
+      <span aria-hidden="true" className="text-border">·</span>
+      <span className="text-muted-foreground"><strong>{inactive}</strong> inativos</span>
     </div>
   );
 }
@@ -255,9 +266,11 @@ function MessageTemplateCard({
   onEdit: () => void;
   onToggle: () => Promise<void>;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <Card className="border-border/70 shadow-sm">
-      <CardContent className="space-y-4 p-4">
+      <CardContent className="space-y-3 p-3 md:p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -271,10 +284,14 @@ function MessageTemplateCard({
             Editar
           </Button>
         </div>
-        <p className="whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">{item.body}</p>
-        {item.variables ? <p className="font-mono text-xs text-muted-foreground">{item.variables}</p> : null}
-        <div className="flex items-center justify-between rounded-md border border-border/70 px-3 py-2">
-          <span className="text-sm font-medium">{item.isActive ? "Disponível para WhatsApp" : "Inativo"}</span>
+        <div className="rounded-md bg-muted/40 p-3">
+          <p className={"whitespace-pre-wrap text-sm text-muted-foreground " + (expanded ? "" : "line-clamp-3")}>{item.body}</p>
+          <Button variant="ghost" size="sm" className="-ml-2 mt-1 h-7 px-2 text-xs text-muted-foreground" onClick={() => setExpanded((current) => !current)}>
+            {expanded ? "Ver menos" : "Ver mensagem"}
+          </Button>
+        </div>
+        <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-1.5">
+          <span className="text-sm font-medium">{item.isActive ? "Disponível" : "Inativo"}</span>
           <Switch checked={item.isActive} disabled={isSaving} onCheckedChange={() => void onToggle()} />
         </div>
       </CardContent>

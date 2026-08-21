@@ -155,29 +155,29 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="space-y-3">
+    <div className="animate-in space-y-4 overflow-x-hidden fade-in slide-in-from-bottom-4 duration-500 md:space-y-6">
+      <div className="space-y-2 md:space-y-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-xl bg-muted p-2 text-muted-foreground">
+          <span className="hidden rounded-xl bg-muted p-2 text-muted-foreground sm:inline-flex">
             <Settings className="h-5 w-5" />
           </span>
           <h1 className="text-2xl font-bold tracking-tight text-primary md:text-3xl">Definições</h1>
         </div>
-        <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
+        <p className="max-w-3xl text-sm text-muted-foreground">
           Gerir catálogos operacionais usados pela app.
         </p>
-        <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+        <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
           Os catálogos definem opções para novas reservas. Eventos antigos mantêm os valores guardados no momento da criação.
         </div>
       </div>
 
       <Tabs defaultValue="venue-packs" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-1 gap-1 sm:grid-cols-5">
-          <TabsTrigger value="venue-packs" className="min-h-10">Packs de Festas</TabsTrigger>
-          <TabsTrigger value="external-services" className="min-h-10">Serviços Externos</TabsTrigger>
-          <TabsTrigger value="event-extras" className="min-h-10">Extras</TabsTrigger>
-          <TabsTrigger value="message-templates" className="min-h-10">Templates WhatsApp</TabsTrigger>
-          <TabsTrigger value="checklists" className="min-h-10">Checklists</TabsTrigger>
+        <TabsList className="flex h-auto w-full max-w-full justify-start gap-1 overflow-x-auto rounded-xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-5 md:overflow-visible">
+          <TabsTrigger value="venue-packs" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Packs de Festas</TabsTrigger>
+          <TabsTrigger value="external-services" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Serviços Externos</TabsTrigger>
+          <TabsTrigger value="event-extras" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Extras</TabsTrigger>
+          <TabsTrigger value="message-templates" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Templates WhatsApp</TabsTrigger>
+          <TabsTrigger value="checklists" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Checklists</TabsTrigger>
         </TabsList>
 
         <TabsContent value="venue-packs">
@@ -274,35 +274,34 @@ function CatalogSection({
   return (
     <div className="space-y-4">
       <Card className="border-border/70 shadow-sm">
-        <CardHeader className="space-y-3 pb-4">
+        <CardHeader className="space-y-3 p-3 md:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
+            <div className="min-w-0">
               <CardTitle>{title}</CardTitle>
               <CardDescription className="mt-1">{description}</CardDescription>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+              <Button className="min-h-9 px-3" onClick={() => setModal({ open: true })}>
+                <Plus className="h-4 w-4" />
+                <span className="md:hidden">Criar</span>
+                <span className="hidden md:inline">{createLabel}</span>
+              </Button>
               {onAddSuggested ? (
-                <Button variant="outline" className="min-h-10" onClick={onAddSuggested} disabled={isAddingSuggested}>
+                <Button variant="ghost" size="sm" className="min-h-9 px-2 text-muted-foreground" onClick={onAddSuggested} disabled={isAddingSuggested}>
                   <Sparkles className="h-4 w-4" />
-                  {suggestedLabel}
+                  <span className="md:hidden">Adicionar sugeridos</span>
+                  <span className="hidden md:inline">{suggestedLabel}</span>
                 </Button>
               ) : null}
-              <Button className="min-h-10" onClick={() => setModal({ open: true })}>
-                <Plus className="h-4 w-4" />
-                {createLabel}
-              </Button>
+
             </div>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <SummaryPill label="Total" value={items.length} />
-            <SummaryPill label="Ativos" value={activeCount} tone="active" />
-            <SummaryPill label="Inativos" value={inactiveCount} tone="inactive" />
-          </div>
+          <CatalogSummary total={items.length} active={activeCount} inactive={inactiveCount} />
         </CardHeader>
       </Card>
 
       {isLoading ? (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {Array.from({ length: 3 }).map((_, index) => (
             <Card key={index} className="h-44 animate-pulse border-border/70 bg-muted/40" />
           ))}
@@ -319,7 +318,7 @@ function CatalogSection({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {items
             .slice()
             .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
@@ -370,16 +369,14 @@ function CatalogCard({
 }) {
   return (
     <Card className="border-border/70 shadow-sm">
-      <CardContent className="space-y-4 p-4">
+      <CardContent className="space-y-3 p-3 md:p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="break-words text-base font-semibold leading-tight">{item.name}</h3>
               <Badge variant={item.isActive ? "default" : "secondary"}>{item.isActive ? "Ativo" : "Inativo"}</Badge>
             </div>
-            {kind === "external-services" && "code" in item ? (
-              <p className="mt-1 font-mono text-xs text-muted-foreground">{item.code}</p>
-            ) : null}
+
             {kind === "event-extras" && "appliesTo" in item ? (
               <p className="mt-1 text-xs text-muted-foreground">Aplica-se a: {appliesToLabel(item.appliesTo)}</p>
             ) : null}
@@ -390,26 +387,27 @@ function CatalogCard({
           </Button>
         </div>
 
-        {"description" in item && item.description ? <p className="text-sm text-muted-foreground">{item.description}</p> : null}
+        {"description" in item && item.description ? <p className="line-clamp-2 text-sm text-muted-foreground">{item.description}</p> : null}
 
         <div className="grid grid-cols-2 gap-2 text-sm">
           <Info label="Preço base" value={formatCurrency(item.basePrice)} strong />
-          <Info label="Ordem" value={String(item.sortOrder)} />
-          {kind === "venue-packs" && "defaultStartTime" in item ? (
-            <>
-              <Info label="Início" value={item.defaultStartTime ?? "-"} />
-              <Info label="Fim" value={item.defaultEndTime ?? "-"} />
-            </>
+          <Info label="Ordem" value={String(item.sortOrder)} className="hidden md:block" />
+          {kind === "venue-packs" && "defaultStartTime" in item && (item.defaultStartTime || item.defaultEndTime) ? (
+            <Info
+              label="Horário"
+              value={[item.defaultStartTime, item.defaultEndTime].filter(Boolean).join("–")}
+              className="col-span-2 md:col-span-1"
+            />
           ) : null}
-          {kind === "event-extras" && "category" in item ? <Info label="Categoria" value={item.category ?? "-"} /> : null}
+          {kind === "event-extras" && "category" in item && item.category ? <Info label="Categoria" value={item.category} /> : null}
         </div>
 
         {notesForItem(item) ? (
-          <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">{notesForItem(item)}</div>
+          <div className="hidden rounded-md bg-muted/50 p-3 text-sm text-muted-foreground md:block">{notesForItem(item)}</div>
         ) : null}
 
-        <div className="flex items-center justify-between rounded-md border border-border/70 px-3 py-2">
-          <span className="text-sm font-medium">{item.isActive ? "Disponível para uso" : "Oculto nas opções"}</span>
+        <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-1.5">
+          <span className="text-sm font-medium">{item.isActive ? "Disponível" : "Oculto"}</span>
           <Switch checked={item.isActive} disabled={isSaving} onCheckedChange={() => void onToggle()} />
         </div>
       </CardContent>
@@ -583,20 +581,21 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function SummaryPill({ label, value, tone }: { label: string; value: number; tone?: "active" | "inactive" }) {
+function CatalogSummary({ total, active, inactive }: { total: number; active: number; inactive: number }) {
   return (
-    <div className="rounded-lg border border-border/70 bg-background px-3 py-2">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={tone === "active" ? "text-lg font-semibold text-emerald-700" : tone === "inactive" ? "text-lg font-semibold text-muted-foreground" : "text-lg font-semibold"}>
-        {value}
-      </p>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm">
+      <span><strong>{total}</strong> total</span>
+      <span aria-hidden="true" className="text-border">·</span>
+      <span className="text-emerald-700"><strong>{active}</strong> ativos</span>
+      <span aria-hidden="true" className="text-border">·</span>
+      <span className="text-muted-foreground"><strong>{inactive}</strong> inativos</span>
     </div>
   );
 }
 
-function Info({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function Info({ label, value, strong, className = "" }: { label: string; value: string; strong?: boolean; className?: string }) {
   return (
-    <div className="rounded-md bg-muted/40 px-3 py-2">
+    <div className={"rounded-md bg-muted/40 px-3 py-2 " + className}>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={strong ? "font-semibold" : "font-medium"}>{value}</p>
     </div>
