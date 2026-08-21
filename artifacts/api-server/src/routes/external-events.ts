@@ -9,6 +9,7 @@ import {
   UpdateExternalEventBody,
   UpdateExternalEventParams,
 } from "@workspace/api-zod";
+import { refundableDepositCreateValues, refundableDepositUpdateValues } from "../lib/refundable-deposits";
 
 const router: IRouter = Router();
 
@@ -54,6 +55,11 @@ function formatExternalEvent(row: ExternalEventRow, services: ExternalEventServi
     accessNotes: row.accessNotes,
     totalPrice,
     amountPaid,
+    refundableDepositAmount: money(row.refundableDepositAmount),
+    refundableDepositStatus: row.refundableDepositStatus,
+    refundableDepositReceivedAt: row.refundableDepositReceivedAt?.toISOString() ?? null,
+    refundableDepositReturnedAt: row.refundableDepositReturnedAt?.toISOString() ?? null,
+    refundableDepositNotes: row.refundableDepositNotes,
     remainingBalance: Math.max(0, totalPrice - amountPaid),
     paymentMethod: row.paymentMethod,
     notes: row.notes,
@@ -138,7 +144,18 @@ router.post("/external-events", async (req, res): Promise<void> => {
     return;
   }
 
-  const { services, totalPrice, amountPaid, paymentStatus: _paymentStatus, ...body } = parsed.data;
+  const {
+    services,
+    totalPrice,
+    amountPaid,
+    paymentStatus: _paymentStatus,
+    refundableDepositAmount,
+    refundableDepositStatus,
+    refundableDepositReceivedAt,
+    refundableDepositReturnedAt,
+    refundableDepositNotes,
+    ...body
+  } = parsed.data;
   const paymentStatus = computePaymentStatus(totalPrice, amountPaid);
 
   const row = await db.transaction(async (tx) => {
@@ -151,6 +168,13 @@ router.post("/external-events", async (req, res): Promise<void> => {
         guestCount: body.guestCount ?? 0,
         totalPrice: String(totalPrice),
         amountPaid: String(amountPaid),
+        ...refundableDepositCreateValues({
+          refundableDepositAmount,
+          refundableDepositStatus,
+          refundableDepositReceivedAt,
+          refundableDepositReturnedAt,
+          refundableDepositNotes,
+        }),
       }) as typeof externalEventsTable.$inferInsert)
       .returning();
 
@@ -217,10 +241,28 @@ router.patch("/external-events/:id", async (req, res): Promise<void> => {
 
     if (!current) return null;
 
-    const { services, paymentStatus: _paymentStatus, ...body } = parsed.data;
+    const {
+      services,
+      paymentStatus: _paymentStatus,
+      refundableDepositAmount,
+      refundableDepositStatus,
+      refundableDepositReceivedAt,
+      refundableDepositReturnedAt,
+      refundableDepositNotes,
+      ...body
+    } = parsed.data;
     const total = body.totalPrice ?? money(current.totalPrice);
     const paid = body.amountPaid ?? money(current.amountPaid);
-    const updateData: Record<string, unknown> = compactObject({ ...body });
+    const updateData: Record<string, unknown> = compactObject({
+      ...body,
+      ...refundableDepositUpdateValues({
+        refundableDepositAmount,
+        refundableDepositStatus,
+        refundableDepositReceivedAt,
+        refundableDepositReturnedAt,
+        refundableDepositNotes,
+      }),
+    });
     if (body.totalPrice !== undefined) updateData.totalPrice = String(body.totalPrice);
     if (body.amountPaid !== undefined) updateData.amountPaid = String(body.amountPaid);
     if (body.totalPrice !== undefined || body.amountPaid !== undefined || parsed.data.paymentStatus !== undefined) {

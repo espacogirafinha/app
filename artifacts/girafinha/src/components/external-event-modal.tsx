@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   calculateExtrasTotal,
@@ -27,6 +28,11 @@ import {
   type ExternalServiceDraft,
   type ExternalServiceOption,
 } from "@/components/external-event-services-selector";
+import {
+  changeRefundableDepositStatus,
+  markRefundableDepositReceivedNow,
+  REFUNDABLE_DEPOSIT_LABELS,
+} from "@/lib/refundable-deposit";
 import { useToast } from "@/hooks/use-toast";
 import {
   getListSelectedExtrasQueryKey,
@@ -37,7 +43,7 @@ import {
   useReplaceSelectedExtras,
   useUpdateExternalEvent,
 } from "@workspace/api-client-react";
-import type { CreateExternalEventBody, ExternalEvent, ExternalEventServiceType, ExternalServiceCatalog } from "@workspace/api-client-react";
+import type { CreateExternalEventBody, ExternalEvent, ExternalEventServiceType, ExternalServiceCatalog, RefundableDepositStatus } from "@workspace/api-client-react";
 
 type ExternalEventFormState = {
   customerName: string;
@@ -58,6 +64,11 @@ type ExternalEventFormState = {
   accessNotes: string;
   totalPrice: string;
   amountPaid: string;
+  refundableDepositAmount: string;
+  refundableDepositStatus: RefundableDepositStatus;
+  refundableDepositReceivedAt: string | null;
+  refundableDepositReturnedAt: string | null;
+  refundableDepositNotes: string;
   paymentMethod: string;
   notes: string;
 };
@@ -81,6 +92,11 @@ const initialState: ExternalEventFormState = {
   accessNotes: "",
   totalPrice: "0",
   amountPaid: "0",
+  refundableDepositAmount: "0",
+  refundableDepositStatus: "not_required",
+  refundableDepositReceivedAt: null,
+  refundableDepositReturnedAt: null,
+  refundableDepositNotes: "",
   paymentMethod: "",
   notes: "",
 };
@@ -163,6 +179,38 @@ export function ExternalEventModal({
   const recalculateTotal = () => {
     patch({ totalPrice: formatMoneyInput(automaticTotal) });
     setIsTotalManual(false);
+  };
+
+  const updateRefundableDepositStatus = (status: RefundableDepositStatus) => {
+    setForm((current) => {
+      const changed = changeRefundableDepositStatus({
+        status: current.refundableDepositStatus,
+        receivedAt: current.refundableDepositReceivedAt,
+        returnedAt: current.refundableDepositReturnedAt,
+      }, status);
+      return {
+        ...current,
+        refundableDepositStatus: changed.status,
+        refundableDepositReceivedAt: changed.receivedAt,
+        refundableDepositReturnedAt: changed.returnedAt,
+      };
+    });
+  };
+
+  const registerRefundableDepositReceivedNow = () => {
+    setForm((current) => {
+      const changed = markRefundableDepositReceivedNow({
+        status: current.refundableDepositStatus,
+        receivedAt: current.refundableDepositReceivedAt,
+        returnedAt: current.refundableDepositReturnedAt,
+      });
+      return {
+        ...current,
+        refundableDepositStatus: changed.status,
+        refundableDepositReceivedAt: changed.receivedAt,
+        refundableDepositReturnedAt: changed.returnedAt,
+      };
+    });
   };
 
   const handleSubmit = async (submitEvent: React.FormEvent) => {
@@ -322,6 +370,57 @@ export function ExternalEventModal({
             )}
           </FormSection>
 
+          <FormSection title="Caução reembolsável">
+            <Field label="Estado">
+              <Select value={form.refundableDepositStatus} onValueChange={(value) => updateRefundableDepositStatus(value as RefundableDepositStatus)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(REFUNDABLE_DEPOSIT_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            {form.refundableDepositStatus !== "not_required" ? (
+              <>
+                <Field label="Valor da caução">
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.refundableDepositAmount}
+                    onChange={(event) => patch({ refundableDepositAmount: event.target.value })}
+                  />
+                </Field>
+                {form.refundableDepositStatus === "held" ? (
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm md:col-span-2">
+                    {form.refundableDepositReceivedAt ? (
+                      <p>Receção registada em {formatDepositDateTime(form.refundableDepositReceivedAt)}.</p>
+                    ) : (
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-muted-foreground">Data de receção ainda não registada. Pode ficar vazia em registos históricos.</p>
+                        <Button type="button" variant="outline" size="sm" className="shrink-0 rounded-xl" onClick={registerRefundableDepositReceivedNow}>
+                          Registar receção agora
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+                {form.refundableDepositStatus === "returned" && form.refundableDepositReturnedAt ? (
+                  <p className="text-sm text-muted-foreground md:col-span-2">Devolução registada em {formatDepositDateTime(form.refundableDepositReturnedAt)}.</p>
+                ) : null}
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Notas da caução</Label>
+                  <Textarea value={form.refundableDepositNotes} onChange={(event) => patch({ refundableDepositNotes: event.target.value })} placeholder="Objeto alugado, condições ou referência da devolução..." />
+                </div>
+              </>
+            ) : null}
+            <p className="text-xs text-muted-foreground md:col-span-2">A caução fica separada do preço, do sinal e dos pagamentos do serviço.</p>
+          </FormSection>
+
           <div className="space-y-2">
             <Label>Observações internas</Label>
             <Textarea value={form.notes} onChange={(event) => patch({ notes: event.target.value })} />
@@ -418,6 +517,11 @@ function toFormState(event?: ExternalEvent): ExternalEventFormState {
     accessNotes: event.accessNotes ?? "",
     totalPrice: String(event.totalPrice),
     amountPaid: String(event.amountPaid),
+    refundableDepositAmount: String(event.refundableDepositAmount ?? 0),
+    refundableDepositStatus: event.refundableDepositStatus ?? "not_required",
+    refundableDepositReceivedAt: event.refundableDepositReceivedAt ?? null,
+    refundableDepositReturnedAt: event.refundableDepositReturnedAt ?? null,
+    refundableDepositNotes: event.refundableDepositNotes ?? "",
     paymentMethod: event.paymentMethod ?? "",
     notes: event.notes ?? "",
   };
@@ -455,6 +559,11 @@ function toRequestBody(form: ExternalEventFormState, services: ExternalServiceDr
     accessNotes: emptyToNull(form.accessNotes),
     totalPrice: toNumber(form.totalPrice),
     amountPaid: toNumber(form.amountPaid),
+    refundableDepositAmount: form.refundableDepositStatus === "not_required" ? 0 : toNumber(form.refundableDepositAmount),
+    refundableDepositStatus: form.refundableDepositStatus,
+    refundableDepositReceivedAt: form.refundableDepositStatus === "not_required" ? null : form.refundableDepositReceivedAt,
+    refundableDepositReturnedAt: form.refundableDepositStatus === "not_required" ? null : form.refundableDepositReturnedAt,
+    refundableDepositNotes: form.refundableDepositStatus === "not_required" ? null : emptyToNull(form.refundableDepositNotes),
     paymentMethod: emptyToNull(form.paymentMethod),
     notes: emptyToNull(form.notes),
     services: services.map(({ localId: _localId, ...service }, index) => ({
@@ -483,4 +592,12 @@ function calculateServicesTotal(services: ExternalServiceDraft[]) {
 
 function formatMoneyInput(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function formatDepositDateTime(value: string) {
+  return new Intl.DateTimeFormat("pt-PT", {
+    timeZone: "Europe/Lisbon",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 }

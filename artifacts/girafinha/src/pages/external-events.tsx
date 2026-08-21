@@ -22,6 +22,11 @@ import { EventExtrasDetails } from "@/components/event-extras-selector";
 import { ExternalEventModal } from "@/components/external-event-modal";
 import { OperationalChecklist } from "@/components/operational-checklist";
 import { useToast } from "@/hooks/use-toast";
+import {
+  REFUNDABLE_DEPOSIT_LABELS,
+  shouldHighlightHeldRefundableDeposit,
+  shouldShowRefundableDeposit,
+} from "@/lib/refundable-deposit";
 import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import {
   getListExternalEventsQueryKey,
@@ -271,6 +276,12 @@ function ExternalEventRow({
             </div>
           ) : null}
 
+          {shouldHighlightHeldRefundableDeposit(event.refundableDepositAmount, event.refundableDepositStatus) ? (
+            <Badge variant="outline" className="mt-2 rounded-md border-violet-200 bg-violet-50 text-violet-800">
+              Caução {formatDepositAmount(event.refundableDepositAmount)} €
+            </Badge>
+          ) : null}
+
           {event.remainingBalance > 0 ? (
             <p className="mt-3 pr-28 text-sm font-bold text-rose-700">
               Falta {event.remainingBalance.toFixed(2)} €
@@ -313,6 +324,11 @@ function ExternalEventRow({
                 {service.serviceLabel || SERVICE_LABELS[service.serviceType]}
               </Badge>
             ))}
+            {shouldHighlightHeldRefundableDeposit(event.refundableDepositAmount, event.refundableDepositStatus) ? (
+              <Badge variant="outline" className="rounded-md border-violet-200 bg-violet-50 text-violet-800">
+                Caução {formatDepositAmount(event.refundableDepositAmount)} €
+              </Badge>
+            ) : null}
           </div>
         </div>
 
@@ -362,6 +378,16 @@ function ExternalEventRow({
               <Info label="Total" value={`${event.totalPrice.toFixed(2)} €`} />
               <Info label="Pago" value={`${event.amountPaid.toFixed(2)} €`} />
               <Info label="Método" value={event.paymentMethod} />
+              {shouldShowRefundableDeposit(event.refundableDepositAmount, event.refundableDepositStatus) ? (
+                <div className="mt-3 border-t border-border pt-3">
+                  <p className="mb-2 font-semibold text-foreground">Caução</p>
+                  <Info label="Valor" value={`${formatDepositAmount(event.refundableDepositAmount)} €`} />
+                  <Info label="Estado" value={REFUNDABLE_DEPOSIT_LABELS[event.refundableDepositStatus]} />
+                  {event.refundableDepositReceivedAt ? <Info label="Recebida" value={formatDepositDateTime(event.refundableDepositReceivedAt)} /> : null}
+                  {event.refundableDepositReturnedAt ? <Info label="Devolvida" value={formatDepositDateTime(event.refundableDepositReturnedAt)} /> : null}
+                  {event.refundableDepositNotes ? <Info label="Notas" value={event.refundableDepositNotes} /> : null}
+                </div>
+              ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
                 <ExternalEventModal
                   event={event}
@@ -429,6 +455,18 @@ function ExternalEventRow({
       )}
     </div>
   );
+}
+
+function formatDepositAmount(value: number) {
+  return new Intl.NumberFormat("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+}
+
+function formatDepositDateTime(value: string) {
+  return new Intl.DateTimeFormat("pt-PT", {
+    timeZone: PORTUGAL_TIME_ZONE,
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function PaymentBadge({ status }: { status: ExternalEvent["paymentStatus"] }) {

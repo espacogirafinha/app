@@ -1694,6 +1694,10 @@ components:
       type: string
       enum: [unpaid, partial, paid]
 
+    RefundableDepositStatus:
+      type: string
+      enum: [not_required, pending, held, returned, retained]
+
     ExternalEventServiceType:
       type: string
       enum: [decoracao, catering, organizacao_evento, animacao, insuflavel, baloes, outro]
@@ -2620,6 +2624,19 @@ components:
           type: number
         amountPaid:
           type: number
+        refundableDepositAmount:
+          type: number
+          minimum: 0
+        refundableDepositStatus:
+          $ref: "#/components/schemas/RefundableDepositStatus"
+        refundableDepositReceivedAt:
+          type: ["string", "null"]
+          format: date-time
+        refundableDepositReturnedAt:
+          type: ["string", "null"]
+          format: date-time
+        refundableDepositNotes:
+          type: ["string", "null"]
         remainingBalance:
           type: number
         paymentMethod:
@@ -2645,6 +2662,8 @@ components:
         - guestCount
         - totalPrice
         - amountPaid
+        - refundableDepositAmount
+        - refundableDepositStatus
         - remainingBalance
         - services
         - createdAt
@@ -2691,6 +2710,19 @@ components:
           type: number
         amountPaid:
           type: number
+        refundableDepositAmount:
+          type: number
+          minimum: 0
+        refundableDepositStatus:
+          $ref: "#/components/schemas/RefundableDepositStatus"
+        refundableDepositReceivedAt:
+          type: ["string", "null"]
+          format: date-time
+        refundableDepositReturnedAt:
+          type: ["string", "null"]
+          format: date-time
+        refundableDepositNotes:
+          type: ["string", "null"]
         paymentMethod:
           type: ["string", "null"]
         notes:
@@ -2750,6 +2782,19 @@ components:
           type: number
         amountPaid:
           type: number
+        refundableDepositAmount:
+          type: number
+          minimum: 0
+        refundableDepositStatus:
+          $ref: "#/components/schemas/RefundableDepositStatus"
+        refundableDepositReceivedAt:
+          type: ["string", "null"]
+          format: date-time
+        refundableDepositReturnedAt:
+          type: ["string", "null"]
+          format: date-time
+        refundableDepositNotes:
+          type: ["string", "null"]
         paymentMethod:
           type: ["string", "null"]
         notes:

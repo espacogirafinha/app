@@ -8,6 +8,7 @@
 import type { ExternalEventPaymentStatus } from "./externalEventPaymentStatus";
 import type { ExternalEventServiceInput } from "./externalEventServiceInput";
 import type { ExternalEventStatus } from "./externalEventStatus";
+import type { RefundableDepositStatus } from "./refundableDepositStatus";
 
 export interface CreateExternalEventBody {
   customerName: string;
@@ -39,6 +40,15 @@ export interface CreateExternalEventBody {
   accessNotes?: string | null;
   totalPrice: number;
   amountPaid: number;
+  /** @minimum 0 */
+  refundableDepositAmount?: number;
+  refundableDepositStatus?: RefundableDepositStatus;
+  /** @nullable */
+  refundableDepositReceivedAt?: Date | null;
+  /** @nullable */
+  refundableDepositReturnedAt?: Date | null;
+  /** @nullable */
+  refundableDepositNotes?: string | null;
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */
