@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/money-input";
+import { parseMoneyInput } from "@/lib/money";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -443,7 +445,7 @@ function CatalogModal({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    const basePrice = toNumber(form.basePrice);
+    const basePrice = parseMoneyInput(form.basePrice);
     const sortOrder = Number.parseInt(form.sortOrder || "0", 10);
 
     if (!form.name.trim()) {
@@ -501,7 +503,7 @@ function CatalogModal({
             ) : null}
 
             <Field label="Preço base">
-              <Input type="number" min="0" step="0.01" value={form.basePrice} onChange={(event) => patch({ basePrice: event.target.value })} />
+              <MoneyInput value={form.basePrice} onValueChange={(value) => patch({ basePrice: value })} />
             </Field>
 
             <Field label="Ordem">
@@ -628,7 +630,7 @@ function toPayload(
   overrides: Partial<CatalogFormState> = {},
 ): CatalogSavePayload {
   const nextForm = { ...form, ...overrides };
-  const basePrice = toNumber(nextForm.basePrice);
+  const basePrice = parseMoneyInput(nextForm.basePrice);
   const sortOrder = Number.parseInt(nextForm.sortOrder || "0", 10);
 
   if (kind === "venue-packs") {
@@ -704,5 +706,3 @@ function toNumber(value: string) {
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(value);
 }
-
-

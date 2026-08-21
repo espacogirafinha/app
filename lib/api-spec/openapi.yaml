@@ -687,6 +687,88 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /event-attachments:
+    get:
+      operationId: listEventAttachments
+      tags: [attachments]
+      summary: List image attachments for an event
+      parameters:
+        - in: query
+          name: entityType
+          required: true
+          schema:
+            $ref: "#/components/schemas/EventAttachmentEntityType"
+        - in: query
+          name: entityId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Event attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventAttachment"
+    post:
+      operationId: createEventAttachment
+      tags: [attachments]
+      summary: Store metadata for an uploaded event image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventAttachmentBody"
+      responses:
+        "201":
+          description: Attachment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventAttachment"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Attachment limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /event-attachments/{id}:
+    delete:
+      operationId: deleteEventAttachment
+      tags: [attachments]
+      summary: Delete event attachment metadata
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deleted attachment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventAttachment"
+        "404":
+          description: Attachment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /selected-extras:
     get:
       operationId: listSelectedExtras
@@ -990,7 +1072,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
 
   /settings/message-templates:
     get:
@@ -1612,16 +1693,42 @@ components:
       type: string
       enum: [draft, confirmed, completed, cancelled]
 
-
     MessageTemplateModule:
       type: string
-      enum: [venue_events, external_events, workshops, workshop_participants, general]
+      enum:
+        [
+          venue_events,
+          external_events,
+          workshops,
+          workshop_participants,
+          general,
+        ]
     MessageTemplateTriggerType:
       type: string
-      enum: [confirmation, payment_request, payment_reminder, event_reminder, post_event, cancellation, custom]
+      enum:
+        [
+          confirmation,
+          payment_request,
+          payment_reminder,
+          event_reminder,
+          post_event,
+          cancellation,
+          custom,
+        ]
     MessageTemplate:
       type: object
-      required: [id, name, module, triggerType, body, isActive, sortOrder, createdAt, updatedAt]
+      required:
+        [
+          id,
+          name,
+          module,
+          triggerType,
+          body,
+          isActive,
+          sortOrder,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -1700,7 +1807,16 @@ components:
 
     ExternalEventServiceType:
       type: string
-      enum: [decoracao, catering, organizacao_evento, animacao, insuflavel, baloes, outro]
+      enum:
+        [
+          decoracao,
+          catering,
+          organizacao_evento,
+          animacao,
+          insuflavel,
+          baloes,
+          outro,
+        ]
 
     ExternalEventServiceStatus:
       type: string
@@ -1733,7 +1849,22 @@ components:
           type: string
         pack:
           type: string
-          enum: ["Aluguer do EspaÃ§o", "Pack Simples", "Pack com DecoraÃ§Ã£o", "Pack Completo", "DecoraÃ§Ã£o Externa", "Catering / Brunch", "AnimaÃ§Ã£o", "Aluguer de InsuflÃ¡vel", "Workshop BalÃµes NÃ­vel 1", "Workshop BalÃµes + Kit Inicial", "SÃ³ EspaÃ§o", "EspaÃ§o + Lanche", "EspaÃ§o + DecoraÃ§Ã£o"]
+          enum:
+            [
+              "Aluguer do EspaÃ§o",
+              "Pack Simples",
+              "Pack com DecoraÃ§Ã£o",
+              "Pack Completo",
+              "DecoraÃ§Ã£o Externa",
+              "Catering / Brunch",
+              "AnimaÃ§Ã£o",
+              "Aluguer de InsuflÃ¡vel",
+              "Workshop BalÃµes NÃ­vel 1",
+              "Workshop BalÃµes + Kit Inicial",
+              "SÃ³ EspaÃ§o",
+              "EspaÃ§o + Lanche",
+              "EspaÃ§o + DecoraÃ§Ã£o",
+            ]
         serviceType:
           $ref: "#/components/schemas/ServiceType"
         numChildren:
@@ -1834,7 +1965,22 @@ components:
           type: string
         pack:
           type: string
-          enum: ["Aluguer do EspaÃ§o", "Pack Simples", "Pack com DecoraÃ§Ã£o", "Pack Completo", "DecoraÃ§Ã£o Externa", "Catering / Brunch", "AnimaÃ§Ã£o", "Aluguer de InsuflÃ¡vel", "Workshop BalÃµes NÃ­vel 1", "Workshop BalÃµes + Kit Inicial", "SÃ³ EspaÃ§o", "EspaÃ§o + Lanche", "EspaÃ§o + DecoraÃ§Ã£o"]
+          enum:
+            [
+              "Aluguer do EspaÃ§o",
+              "Pack Simples",
+              "Pack com DecoraÃ§Ã£o",
+              "Pack Completo",
+              "DecoraÃ§Ã£o Externa",
+              "Catering / Brunch",
+              "AnimaÃ§Ã£o",
+              "Aluguer de InsuflÃ¡vel",
+              "Workshop BalÃµes NÃ­vel 1",
+              "Workshop BalÃµes + Kit Inicial",
+              "SÃ³ EspaÃ§o",
+              "EspaÃ§o + Lanche",
+              "EspaÃ§o + DecoraÃ§Ã£o",
+            ]
         serviceType:
           $ref: "#/components/schemas/ServiceType"
         numChildren:
@@ -1920,7 +2066,22 @@ components:
           type: string
         pack:
           type: string
-          enum: ["Aluguer do EspaÃ§o", "Pack Simples", "Pack com DecoraÃ§Ã£o", "Pack Completo", "DecoraÃ§Ã£o Externa", "Catering / Brunch", "AnimaÃ§Ã£o", "Aluguer de InsuflÃ¡vel", "Workshop BalÃµes NÃ­vel 1", "Workshop BalÃµes + Kit Inicial", "SÃ³ EspaÃ§o", "EspaÃ§o + Lanche", "EspaÃ§o + DecoraÃ§Ã£o"]
+          enum:
+            [
+              "Aluguer do EspaÃ§o",
+              "Pack Simples",
+              "Pack com DecoraÃ§Ã£o",
+              "Pack Completo",
+              "DecoraÃ§Ã£o Externa",
+              "Catering / Brunch",
+              "AnimaÃ§Ã£o",
+              "Aluguer de InsuflÃ¡vel",
+              "Workshop BalÃµes NÃ­vel 1",
+              "Workshop BalÃµes + Kit Inicial",
+              "SÃ³ EspaÃ§o",
+              "EspaÃ§o + Lanche",
+              "EspaÃ§o + DecoraÃ§Ã£o",
+            ]
         serviceType:
           $ref: "#/components/schemas/ServiceType"
         numChildren:
@@ -2156,6 +2317,49 @@ components:
           type: integer
         operationalNotes:
           type: ["string", "null"]
+
+    EventAttachmentEntityType:
+      type: string
+      enum: [venue_event, external_event]
+
+    CreateEventAttachmentBody:
+      type: object
+      properties:
+        entityType:
+          $ref: "#/components/schemas/EventAttachmentEntityType"
+        entityId:
+          type: string
+          format: uuid
+        storagePath:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        originalFilename:
+          type: string
+          minLength: 1
+          maxLength: 255
+        mimeType:
+          type: string
+          pattern: "^image/"
+        caption:
+          type: [string, "null"]
+          maxLength: 200
+        sortOrder:
+          type: integer
+          minimum: 0
+      required: [entityType, entityId, storagePath, originalFilename, mimeType]
+
+    EventAttachment:
+      allOf:
+        - $ref: "#/components/schemas/CreateEventAttachmentBody"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+          required: [id, createdAt, sortOrder, caption]
 
     SelectedExtraModule:
       type: string
@@ -3839,7 +4043,8 @@ components:
 
     ChecklistTemplateItem:
       type: object
-      required: [id, templateId, label, isRequired, sortOrder, createdAt, updatedAt]
+      required:
+        [id, templateId, label, isRequired, sortOrder, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -3860,7 +4065,8 @@ components:
 
     ChecklistTemplate:
       type: object
-      required: [id, name, module, isActive, sortOrder, items, createdAt, updatedAt]
+      required:
+        [id, name, module, isActive, sortOrder, items, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -3923,7 +4129,17 @@ components:
 
     EventChecklistItem:
       type: object
-      required: [id, checklistId, label, isRequired, isDone, sortOrder, createdAt, updatedAt]
+      required:
+        [
+          id,
+          checklistId,
+          label,
+          isRequired,
+          isDone,
+          sortOrder,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -4007,5 +4223,3 @@ components:
           type: integer
         completedAt:
           type: ["string", "null"]
-
-

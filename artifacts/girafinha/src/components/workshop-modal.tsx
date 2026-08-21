@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/money-input";
+import { parseMoneyInput } from "@/lib/money";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { getListWorkshopsQueryKey, useCreateWorkshop, useUpdateWorkshop } from "@workspace/api-client-react";
@@ -89,7 +91,7 @@ export function WorkshopModal({
       return;
     }
 
-    if (toNumber(form.capacity) < 0 || toNumber(form.price) < 0) {
+    if (toNumber(form.capacity) < 0 || parseMoneyInput(form.price) < 0) {
       toast({
         title: "Valores inválidos",
         description: "Nº de vagas e preço devem ser iguais ou superiores a zero.",
@@ -176,7 +178,7 @@ export function WorkshopModal({
               <Input type="number" min="0" value={form.capacity} onChange={(event) => patch({ capacity: event.target.value })} />
             </Field>
             <Field label="Preço por participante" required>
-              <Input type="number" min="0" step="0.01" value={form.price} onChange={(event) => patch({ price: event.target.value })} />
+              <MoneyInput value={form.price} onValueChange={(value) => patch({ price: value })} />
             </Field>
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
               <div>
@@ -259,7 +261,7 @@ function toRequestBody(form: WorkshopFormState): CreateWorkshopBody {
     startTime: form.startTime,
     endTime: emptyToNull(form.endTime),
     capacity: toNumber(form.capacity),
-    price: toNumber(form.price),
+    price: parseMoneyInput(form.price),
     kitIncluded: form.kitIncluded,
     status: form.status,
     location: emptyToNull(form.location),
