@@ -3375,7 +3375,9 @@ components:
           type: number
         totalPending:
           type: number
-        totalOverpaid:
+        heldDeposits:
+          type: number
+        retainedDeposits:
           type: number
         eventCount:
           type: integer
@@ -3387,7 +3389,8 @@ components:
         - totalRevenue
         - totalReceived
         - totalPending
-        - totalOverpaid
+        - heldDeposits
+        - retainedDeposits
         - eventCount
         - averageTicket
 
@@ -3416,7 +3419,9 @@ components:
           type: number
         pending:
           type: number
-        overpaid:
+        heldDeposits:
+          type: number
+        retainedDeposits:
           type: number
         averageTicket:
           type: number
@@ -3425,7 +3430,8 @@ components:
         - revenue
         - received
         - pending
-        - overpaid
+        - heldDeposits
+        - retainedDeposits
         - averageTicket
 
     ReportsV2RevenueStat:
@@ -3491,6 +3497,10 @@ components:
           type: number
         pending:
           type: number
+        heldDeposits:
+          type: number
+        retainedDeposits:
+          type: number
         topServices:
           type: array
           items:
@@ -3510,6 +3520,8 @@ components:
         - revenue
         - received
         - pending
+        - heldDeposits
+        - retainedDeposits
         - topServices
         - revenueByServiceType
         - serviceCombinations

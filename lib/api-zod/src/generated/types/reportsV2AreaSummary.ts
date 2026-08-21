@@ -11,6 +11,7 @@ export interface ReportsV2AreaSummary {
   revenue: number;
   received: number;
   pending: number;
-  overpaid: number;
+  heldDeposits: number;
+  retainedDeposits: number;
   averageTicket: number;
 }

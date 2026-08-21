@@ -817,13 +817,14 @@ function addReportStat(map: Map<string, { count: number; revenue: number }>, lab
   map.set(label, { count: current.count + 1, revenue: current.revenue + revenue });
 }
 
-function reportAreaSummary(count: number, revenue: number, received: number, pending: number, overpaid: number) {
+function reportAreaSummary(count: number, revenue: number, received: number, pending: number, heldDeposits = 0, retainedDeposits = 0) {
   return {
     eventCount: count,
     revenue: Math.round(revenue * 100) / 100,
     received: Math.round(received * 100) / 100,
     pending: Math.round(pending * 100) / 100,
-    overpaid: Math.round(overpaid * 100) / 100,
+    heldDeposits: Math.round(heldDeposits * 100) / 100,
+    retainedDeposits: Math.round(retainedDeposits * 100) / 100,
     averageTicket: count > 0 ? Math.round((revenue / count) * 100) / 100 : 0,
   };
 }
@@ -854,7 +855,6 @@ function reportsV2Data(startDate: string, endDate: string) {
   }, 0);
   const venueReceived = activeVenueEvents.reduce((sum, event) => sum + event.amountPaid, 0);
   const venuePending = activeVenueEvents.reduce((sum, event) => sum + Math.max(0, event.totalPrice - event.amountPaid), 0);
-  const venueOverpaid = activeVenueEvents.reduce((sum, event) => sum + Math.max(0, event.amountPaid - event.totalPrice), 0);
   const venueAverageChildren =
     activeVenueEvents.length > 0
       ? Math.round((activeVenueEvents.reduce((sum, event) => sum + event.childrenCount, 0) / activeVenueEvents.length) * 100) / 100
@@ -876,7 +876,14 @@ function reportsV2Data(startDate: string, endDate: string) {
   }, 0);
   const externalReceived = activeExternalEvents.reduce((sum, event) => sum + event.amountPaid, 0);
   const externalPending = activeExternalEvents.reduce((sum, event) => sum + Math.max(0, event.totalPrice - event.amountPaid), 0);
-  const externalOverpaid = activeExternalEvents.reduce((sum, event) => sum + Math.max(0, event.amountPaid - event.totalPrice), 0);
+  const externalHeldDeposits = activeExternalEvents.reduce(
+    (sum, event) => sum + (event.refundableDepositStatus === "held" ? event.refundableDepositAmount : 0),
+    0,
+  );
+  const externalRetainedDeposits = activeExternalEvents.reduce(
+    (sum, event) => sum + (event.refundableDepositStatus === "retained" ? event.refundableDepositAmount : 0),
+    0,
+  );
 
   const workshopReceived = activeWorkshopParticipants.reduce((sum, participant) => sum + participant.amountPaid, 0);
   const workshopFinancials = activeWorkshopParticipants.map((participant) => ({
@@ -885,7 +892,6 @@ function reportsV2Data(startDate: string, endDate: string) {
   }));
   const workshopRevenue = workshopFinancials.reduce((sum, item) => sum + item.price, 0);
   const workshopPending = workshopFinancials.reduce((sum, item) => sum + Math.max(0, item.price - item.received), 0);
-  const workshopOverpaid = workshopFinancials.reduce((sum, item) => sum + Math.max(0, item.received - item.price), 0);
   const workshopCapacity = activeWorkshops.reduce((sum, workshop) => sum + workshop.capacity, 0);
   const workshopPaymentCounts = {
     paid: activeWorkshopParticipants.filter((participant) => participant.paymentStatus === "paid").length,
@@ -893,13 +899,14 @@ function reportsV2Data(startDate: string, endDate: string) {
     unpaid: activeWorkshopParticipants.filter((participant) => participant.paymentStatus === "unpaid").length,
   };
 
-  const venueArea = reportAreaSummary(activeVenueEvents.length, venueRevenue, venueReceived, venuePending, venueOverpaid);
-  const externalArea = reportAreaSummary(activeExternalEvents.length, externalRevenue, externalReceived, externalPending, externalOverpaid);
-  const workshopArea = reportAreaSummary(activeWorkshops.length, workshopRevenue, workshopReceived, workshopPending, workshopOverpaid);
+  const venueArea = reportAreaSummary(activeVenueEvents.length, venueRevenue, venueReceived, venuePending);
+  const externalArea = reportAreaSummary(activeExternalEvents.length, externalRevenue, externalReceived, externalPending, externalHeldDeposits, externalRetainedDeposits);
+  const workshopArea = reportAreaSummary(activeWorkshops.length, workshopRevenue, workshopReceived, workshopPending);
   const totalRevenue = venueArea.revenue + externalArea.revenue + workshopArea.revenue;
   const totalReceived = venueArea.received + externalArea.received + workshopArea.received;
   const totalPending = venueArea.pending + externalArea.pending + workshopArea.pending;
-  const totalOverpaid = venueArea.overpaid + externalArea.overpaid + workshopArea.overpaid;
+  const heldDeposits = venueArea.heldDeposits + externalArea.heldDeposits + workshopArea.heldDeposits;
+  const retainedDeposits = venueArea.retainedDeposits + externalArea.retainedDeposits + workshopArea.retainedDeposits;
   const eventCount = venueArea.eventCount + externalArea.eventCount + workshopArea.eventCount;
 
   return {
@@ -909,7 +916,8 @@ function reportsV2Data(startDate: string, endDate: string) {
       totalRevenue: Math.round(totalRevenue * 100) / 100,
       totalReceived: Math.round(totalReceived * 100) / 100,
       totalPending: Math.round(totalPending * 100) / 100,
-      totalOverpaid: Math.round(totalOverpaid * 100) / 100,
+      heldDeposits: Math.round(heldDeposits * 100) / 100,
+      retainedDeposits: Math.round(retainedDeposits * 100) / 100,
       eventCount,
       averageTicket: eventCount > 0 ? Math.round((totalRevenue / eventCount) * 100) / 100 : 0,
     },
@@ -923,7 +931,6 @@ function reportsV2Data(startDate: string, endDate: string) {
       revenue: venueArea.revenue,
       received: venueArea.received,
       pending: venueArea.pending,
-      overpaid: venueArea.overpaid,
       topPacks: reportStatFromMap(packStats, activeVenueEvents.length),
       revenueByPack: reportStatFromMap(packStats, activeVenueEvents.length),
       averageChildren: venueAverageChildren,
@@ -934,7 +941,8 @@ function reportsV2Data(startDate: string, endDate: string) {
       revenue: externalArea.revenue,
       received: externalArea.received,
       pending: externalArea.pending,
-      overpaid: externalArea.overpaid,
+      heldDeposits: externalArea.heldDeposits,
+      retainedDeposits: externalArea.retainedDeposits,
       topServices: reportStatFromMap(serviceStats, activeExternalServices.length),
       revenueByServiceType: reportStatFromMap(serviceStats, activeExternalServices.length),
       serviceCombinations: reportStatFromMap(combinationStats, activeExternalEvents.length),
@@ -949,7 +957,6 @@ function reportsV2Data(startDate: string, endDate: string) {
       revenue: workshopArea.revenue,
       received: workshopArea.received,
       pending: workshopArea.pending,
-      overpaid: workshopArea.overpaid,
       participantsByPaymentStatus: workshopPaymentCounts,
     },
   };

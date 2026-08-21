@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { endOfMonth, endOfYear, format, parseISO, startOfMonth, startOfYear } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
-  AlertTriangle,
   BarChart3,
   CalendarDays,
   ChevronDown,
@@ -89,14 +88,16 @@ export default function ReportsPage() {
       ["Resumo", "Receita total", report.summary.totalRevenue],
       ["Resumo", "Recebido", report.summary.totalReceived],
       ["Resumo", "Por receber", report.summary.totalPending],
-      ["Resumo", "Excedente recebido", report.summary.totalOverpaid],
+      ["Resumo", "Cauções em posse", report.summary.heldDeposits],
+      ...(report.summary.retainedDeposits > 0 ? [["Resumo", "Cauções retidas", report.summary.retainedDeposits]] : []),
       ["Resumo", "Eventos", report.summary.eventCount],
       ["Resumo", "Ticket médio", report.summary.averageTicket],
       ...areaRows.flatMap((area) => [
         [area.name, "Receita", area.revenue],
         [area.name, "Recebido", area.received],
         [area.name, "Por receber", area.pending],
-        [area.name, "Excedente recebido", area.overpaid],
+        ...(area.heldDeposits > 0 ? [[area.name, "Cauções em posse", area.heldDeposits]] : []),
+        ...(area.retainedDeposits > 0 ? [[area.name, "Cauções retidas", area.retainedDeposits]] : []),
       ]),
     ];
     downloadCsv(rows.map((row) => row.map(csv).join(",")).join("\n"), `relatorio_${period.startDate}_${period.endDate}.csv`);
@@ -145,12 +146,22 @@ export default function ReportsPage() {
             <MetricCard title="Ticket médio" value={euro(report.summary.averageTicket)} icon={FileText} className="col-span-2 hidden md:block md:col-span-1" />
           </section>
 
-          <div className="flex items-center justify-between rounded-xl border border-border/70 bg-muted/30 px-3 py-2 text-xs md:hidden">
-            <span className="text-muted-foreground">Ticket médio</span>
-            <strong>{euro(report.summary.averageTicket)}</strong>
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-border/70 bg-muted/30 p-2 text-xs md:flex md:justify-end md:gap-6 md:px-4">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-background px-2.5 py-2 md:hidden">
+              <span className="text-muted-foreground">Ticket médio</span>
+              <strong>{euro(report.summary.averageTicket)}</strong>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-background px-2.5 py-2 md:bg-transparent md:px-0">
+              <span className="text-muted-foreground">Cauções em posse</span>
+              <strong className="text-violet-700">{euro(report.summary.heldDeposits)}</strong>
+            </div>
+            {report.summary.retainedDeposits > 0 ? (
+              <div className="col-span-2 flex items-center justify-between gap-3 rounded-lg bg-background px-2.5 py-2 md:bg-transparent md:px-0">
+                <span className="text-muted-foreground">Cauções retidas</span>
+                <strong className="text-violet-700">{euro(report.summary.retainedDeposits)}</strong>
+              </div>
+            ) : null}
           </div>
-
-          {report.summary.totalOverpaid > 0 && <OverpaymentNotice amount={report.summary.totalOverpaid} />}
 
           <section className="space-y-2 md:hidden">
             <h2 className="text-base font-semibold">Resumo por área</h2>
@@ -264,15 +275,6 @@ function MetricCard({ title, value, icon: Icon, tone, className = "" }: {
   );
 }
 
-function OverpaymentNotice({ amount }: { amount: number }) {
-  return (
-    <div className="flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-      <p><strong>{euro(amount)} recebidos acima do valor contratado.</strong> O recebido mantém os pagamentos registados e o saldo por receber nunca fica negativo.</p>
-    </div>
-  );
-}
-
 function MobileAreaCard({ area }: { area: AreaRow }) {
   return (
     <Card className="shadow-sm"><CardContent className="p-3">
@@ -281,7 +283,8 @@ function MobileAreaCard({ area }: { area: AreaRow }) {
         <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           <span className="text-muted-foreground">Receita</span><strong className="text-right">{euro(area.revenue)}</strong>
           <span className="text-muted-foreground">Por receber</span><strong className="text-right text-amber-700">{area.pending > 0 ? euro(area.pending) : "Pago"}</strong>
-          {area.overpaid > 0 && <><span className="text-muted-foreground">Excedente</span><strong className="text-right text-amber-700">{euro(area.overpaid)}</strong></>}
+          {area.heldDeposits > 0 && <><span className="text-muted-foreground">Cauções em posse</span><strong className="text-right text-violet-700">{euro(area.heldDeposits)}</strong></>}
+          {area.retainedDeposits > 0 && <><span className="text-muted-foreground">Cauções retidas</span><strong className="text-right text-violet-700">{euro(area.retainedDeposits)}</strong></>}
         </div>
       )}
     </CardContent></Card>
@@ -332,6 +335,15 @@ function DistributionChart({ rows, compact = false }: { rows: AreaRow[]; compact
 }
 
 function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: boolean }) {
+  const externalMetrics: Array<[string, string | number]> = [
+    ["Eventos", report.externalEvents.eventCount],
+    ["Ticket médio", euro(report.externalEvents.averageTicket)],
+    ["Recebido", euro(report.externalEvents.received)],
+    ["Por receber", euro(report.externalEvents.pending)],
+  ];
+  if (report.externalEvents.heldDeposits > 0) externalMetrics.push(["Cauções em posse", euro(report.externalEvents.heldDeposits)]);
+  if (report.externalEvents.retainedDeposits > 0) externalMetrics.push(["Cauções retidas", euro(report.externalEvents.retainedDeposits)]);
+
   const sectionClass = mobile ? "space-y-4" : "grid gap-4 xl:grid-cols-2";
   return (
     <section className={sectionClass} aria-label="Detalhes por área">
@@ -346,10 +358,7 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
       </DetailCard>
 
       <DetailCard title="Serviços Externos" icon={PackagePlus} empty={report.externalEvents.eventCount === 0} mobile={mobile}>
-        <MetricStrip items={[
-          ["Eventos", report.externalEvents.eventCount], ["Ticket médio", euro(report.externalEvents.averageTicket)],
-          ["Recebido", euro(report.externalEvents.received)], ["Por receber", euro(report.externalEvents.pending)],
-        ]} />
+        <MetricStrip items={externalMetrics} />
         <RankingCard title="Serviços mais vendidos" icon={PackagePlus} rows={report.externalEvents.topServices} />
         <RankingCard title="Receita por serviço" icon={BarChart3} rows={report.externalEvents.revenueByServiceType} />
         <RankingCard title="Combinações de serviços" icon={PieChartIcon} rows={report.externalEvents.serviceCombinations} />

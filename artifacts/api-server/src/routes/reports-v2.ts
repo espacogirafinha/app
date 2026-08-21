@@ -7,7 +7,12 @@ import {
   workshopParticipantsTable,
   workshopsTable,
 } from "@workspace/db";
-import { aggregateFinancials, combineFinancialTotals, type FinancialLine } from "../lib/reports-finance";
+import {
+  aggregateFinancials,
+  aggregateRefundableDeposits,
+  combineFinancialTotals,
+  type FinancialLine,
+} from "../lib/reports-finance";
 
 const router: IRouter = Router();
 const ACTIVE_PARTICIPANT_STATUSES = new Set(["registered", "confirmed", "attended"]);
@@ -62,10 +67,12 @@ function percentage(count: number, total: number) {
   return total > 0 ? roundNumber((count / total) * 100) : 0;
 }
 
-function areaSummary(count: number, finances: ReturnType<typeof aggregateFinancials>) {
+function areaSummary(count: number, finances: ReturnType<typeof aggregateFinancials>, deposits = { held: 0, retained: 0 }) {
   return {
     eventCount: count,
     ...finances,
+    heldDeposits: deposits.held,
+    retainedDeposits: deposits.retained,
     averageTicket: count > 0 ? roundNumber(finances.revenue / count) : 0,
   };
 }
@@ -147,9 +154,16 @@ function externalReport(externalEvents: ExternalEventRow[], externalServices: Ex
   }
 
   const finances = aggregateFinancials(financialLines);
+  const deposits = aggregateRefundableDeposits(externalEvents.map((event) => ({
+    amount: money(event.refundableDepositAmount),
+    status: event.refundableDepositStatus as "not_required" | "pending" | "held" | "returned" | "retained",
+  })));
+
   return {
     eventCount: externalEvents.length,
     ...finances,
+    heldDeposits: deposits.held,
+    retainedDeposits: deposits.retained,
     topServices: statFromMap(serviceStats, externalServices.length),
     revenueByServiceType: statFromMap(serviceStats, externalServices.length),
     serviceCombinations: statFromMap(combinationStats, externalEvents.length),
@@ -226,10 +240,15 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
   const external = externalReport(externalEvents, externalServices);
   const workshops = workshopsReport(workshopRowsInRange, workshopParticipants);
   const venueArea = areaSummary(venue.partyCount, venue);
-  const externalArea = areaSummary(external.eventCount, external);
+  const externalArea = areaSummary(external.eventCount, external, {
+    held: external.heldDeposits,
+    retained: external.retainedDeposits,
+  });
   const workshopArea = areaSummary(workshops.workshopCount, workshops);
   const totals = combineFinancialTotals([venueArea, externalArea, workshopArea]);
   const eventCount = venueArea.eventCount + externalArea.eventCount + workshopArea.eventCount;
+  const heldDeposits = venueArea.heldDeposits + externalArea.heldDeposits + workshopArea.heldDeposits;
+  const retainedDeposits = venueArea.retainedDeposits + externalArea.retainedDeposits + workshopArea.retainedDeposits;
 
   res.json({
     summary: {
@@ -238,7 +257,8 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
       totalRevenue: totals.revenue,
       totalReceived: totals.received,
       totalPending: totals.pending,
-      totalOverpaid: totals.overpaid,
+      heldDeposits: roundNumber(heldDeposits),
+      retainedDeposits: roundNumber(retainedDeposits),
       eventCount,
       averageTicket: eventCount > 0 ? roundNumber(totals.revenue / eventCount) : 0,
     },
