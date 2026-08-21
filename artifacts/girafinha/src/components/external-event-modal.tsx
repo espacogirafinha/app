@@ -13,8 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/money-input";
+import { EventAttachmentsEditor, type EventAttachmentsHandle } from "@/components/event-attachments";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { formatMoneyInput, parseMoneyInput } from "@/lib/money";
 import {
   calculateExtrasTotal,
   EventExtrasSelector,
@@ -114,6 +117,7 @@ export function ExternalEventModal({
   const [extras, setExtras] = useState<EventExtraDraft[]>([]);
   const [isTotalManual, setIsTotalManual] = useState(false);
   const loadedExtrasEntityRef = useRef<string | null>(null);
+  const attachmentsRef = useRef<EventAttachmentsHandle>(null);
   const createExternalEvent = useCreateExternalEvent();
   const updateExternalEvent = useUpdateExternalEvent();
   const replaceSelectedExtras = useReplaceSelectedExtras();
@@ -136,7 +140,7 @@ export function ExternalEventModal({
     const nextForm = toFormState(event);
     const nextServices = toServiceDrafts(event);
     const initialSubtotal = calculateServicesTotal(nextServices);
-    const initialTotal = toNumber(nextForm.totalPrice);
+    const initialTotal = parseMoneyInput(nextForm.totalPrice);
 
     setForm(nextForm);
     setServices(nextServices);
@@ -148,8 +152,8 @@ export function ExternalEventModal({
   const servicesTotal = useMemo(() => calculateServicesTotal(services), [services]);
   const extrasTotal = useMemo(() => calculateExtrasTotal(extras), [extras]);
   const automaticTotal = servicesTotal + extrasTotal;
-  const totalPrice = toNumber(form.totalPrice);
-  const amountPaid = toNumber(form.amountPaid);
+  const totalPrice = parseMoneyInput(form.totalPrice);
+  const amountPaid = parseMoneyInput(form.amountPaid);
   const remainingBalance = Math.max(0, totalPrice - amountPaid);
   const isPending = createExternalEvent.isPending || updateExternalEvent.isPending || replaceSelectedExtras.isPending;
   const serviceOptions = useMemo(() => buildServiceOptions(externalServicesQuery.data), [externalServicesQuery.data]);
@@ -171,7 +175,7 @@ export function ExternalEventModal({
   const patch = (value: Partial<ExternalEventFormState>) => setForm((current) => ({ ...current, ...value }));
 
   const updateTotalPrice = (value: string) => {
-    const nextTotal = toNumber(value);
+    const nextTotal = parseMoneyInput(value);
     patch({ totalPrice: value });
     setIsTotalManual(Math.abs(nextTotal - automaticTotal) > 0.01);
   };
@@ -235,11 +239,15 @@ export function ExternalEventModal({
         },
       });
 
+      const attachmentResult = await attachmentsRef.current?.savePending(savedEvent.id);
+
       queryClient.invalidateQueries({ queryKey: getListExternalEventsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getListSelectedExtrasQueryKey({ module: "external_events", entityId: savedEvent.id }) });
       toast({
         title: isEditing ? "Serviço externo atualizado" : "Serviço externo criado",
-        description: `${form.customerName} ficou guardado em Serviços Externos.`,
+        description: attachmentResult?.failed
+          ? `${form.customerName} ficou guardado, mas ${attachmentResult.failed} imagem(ns) falharam.`
+          : `${form.customerName} ficou guardado em Serviços Externos.`,
       });
       setOpen(false);
     } catch {
@@ -327,6 +335,8 @@ export function ExternalEventModal({
 
           <EventExtrasSelector module="external_events" extras={extras} onChange={setExtras} />
 
+          <EventAttachmentsEditor ref={attachmentsRef} entityType="external_event" entityId={event?.id} />
+
           <FormSection title="Notas operacionais">
             <Field label="Montagem">
               <Textarea value={form.setupNotes} onChange={(event) => patch({ setupNotes: event.target.value })} />
@@ -349,10 +359,10 @@ export function ExternalEventModal({
               <p className="text-xl font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
             </div>
             <Field label="Valor total">
-              <Input type="number" min="0" step="0.01" value={form.totalPrice} onChange={(event) => updateTotalPrice(event.target.value)} />
+              <MoneyInput value={form.totalPrice} onValueChange={updateTotalPrice} />
             </Field>
             <Field label="Valor pago/sinal">
-              <Input type="number" min="0" step="0.01" value={form.amountPaid} onChange={(event) => patch({ amountPaid: event.target.value })} />
+              <MoneyInput value={form.amountPaid} onValueChange={(value) => patch({ amountPaid: value })} />
             </Field>
             <Field label="Método de pagamento">
               <Input value={form.paymentMethod} onChange={(event) => patch({ paymentMethod: event.target.value })} placeholder="MB Way, transferência..." />
@@ -387,12 +397,9 @@ export function ExternalEventModal({
             {form.refundableDepositStatus !== "not_required" ? (
               <>
                 <Field label="Valor da caução">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <MoneyInput
                     value={form.refundableDepositAmount}
-                    onChange={(event) => patch({ refundableDepositAmount: event.target.value })}
+                    onValueChange={(value) => patch({ refundableDepositAmount: value })}
                   />
                 </Field>
                 {form.refundableDepositStatus === "held" ? (
@@ -557,9 +564,9 @@ function toRequestBody(form: ExternalEventFormState, services: ExternalServiceDr
     setupNotes: emptyToNull(form.setupNotes),
     teardownNotes: emptyToNull(form.teardownNotes),
     accessNotes: emptyToNull(form.accessNotes),
-    totalPrice: toNumber(form.totalPrice),
-    amountPaid: toNumber(form.amountPaid),
-    refundableDepositAmount: form.refundableDepositStatus === "not_required" ? 0 : toNumber(form.refundableDepositAmount),
+    totalPrice: parseMoneyInput(form.totalPrice),
+    amountPaid: parseMoneyInput(form.amountPaid),
+    refundableDepositAmount: form.refundableDepositStatus === "not_required" ? 0 : parseMoneyInput(form.refundableDepositAmount),
     refundableDepositStatus: form.refundableDepositStatus,
     refundableDepositReceivedAt: form.refundableDepositStatus === "not_required" ? null : form.refundableDepositReceivedAt,
     refundableDepositReturnedAt: form.refundableDepositStatus === "not_required" ? null : form.refundableDepositReturnedAt,
@@ -590,9 +597,6 @@ function calculateServicesTotal(services: ExternalServiceDraft[]) {
   return services.reduce((sum, service) => sum + Number(service.price ?? 0), 0);
 }
 
-function formatMoneyInput(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
-}
 
 function formatDepositDateTime(value: string) {
   return new Intl.DateTimeFormat("pt-PT", {

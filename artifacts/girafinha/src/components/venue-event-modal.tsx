@@ -13,7 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/money-input";
+import { EventAttachmentsEditor, type EventAttachmentsHandle } from "@/components/event-attachments";
 import { Textarea } from "@/components/ui/textarea";
+import { formatMoneyInput, parseMoneyInput } from "@/lib/money";
 import {
   calculateExtrasTotal,
   EventExtrasSelector,
@@ -125,6 +128,7 @@ export function VenueEventModal({
   const [basePrice, setBasePrice] = useState(() => getFallbackPackPrice(event?.packName));
   const [isTotalManual, setIsTotalManual] = useState(false);
   const loadedExtrasEntityRef = useRef<string | null>(null);
+  const attachmentsRef = useRef<EventAttachmentsHandle>(null);
   const createVenueEvent = useCreateVenueEvent();
   const updateVenueEvent = useUpdateVenueEvent();
   const replaceSelectedExtras = useReplaceSelectedExtras();
@@ -142,8 +146,8 @@ export function VenueEventModal({
   const { toast } = useToast();
   const isEditing = Boolean(event);
 
-  const totalPrice = toNumber(form.totalPrice);
-  const amountPaid = toNumber(form.amountPaid);
+  const totalPrice = parseMoneyInput(form.totalPrice);
+  const amountPaid = parseMoneyInput(form.amountPaid);
   const remainingBalance = Math.max(0, totalPrice - amountPaid);
   const extrasTotal = useMemo(() => calculateExtrasTotal(extras), [extras]);
   const isPending = createVenueEvent.isPending || updateVenueEvent.isPending || replaceSelectedExtras.isPending;
@@ -157,7 +161,7 @@ export function VenueEventModal({
     setForm(nextForm);
     setExtras([]);
     setBasePrice(nextPackPrice);
-    setIsTotalManual(Boolean(event) && Math.abs(toNumber(nextForm.totalPrice) - nextPackPrice) > 0.01);
+    setIsTotalManual(Boolean(event) && Math.abs(parseMoneyInput(nextForm.totalPrice) - nextPackPrice) > 0.01);
     loadedExtrasEntityRef.current = null;
   }, [event, open]);
 
@@ -207,7 +211,7 @@ export function VenueEventModal({
 
   const updateTotalPrice = (value: string) => {
     patch({ totalPrice: value });
-    setIsTotalManual(Math.abs(toNumber(value) - (basePrice + extrasTotal)) > 0.01);
+    setIsTotalManual(Math.abs(parseMoneyInput(value) - (basePrice + extrasTotal)) > 0.01);
   };
 
   const recalculateTotal = () => {
@@ -237,11 +241,15 @@ export function VenueEventModal({
         },
       });
 
+      const attachmentResult = await attachmentsRef.current?.savePending(savedEvent.id);
+
       queryClient.invalidateQueries({ queryKey: getListVenueEventsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getListSelectedExtrasQueryKey({ module: "venue_events", entityId: savedEvent.id }) });
       toast({
         title: isEditing ? "Festa atualizada" : "Festa criada",
-        description: `${form.customerName} ficou guardado em Festas no Espaço.`,
+        description: attachmentResult?.failed
+          ? `${form.customerName} ficou guardado, mas ${attachmentResult.failed} imagem(ns) falharam.`
+          : `${form.customerName} ficou guardado em Festas no Espaço.`,
       });
       setOpen(false);
     } catch {
@@ -354,6 +362,8 @@ export function VenueEventModal({
 
           <EventExtrasSelector module="venue_events" extras={extras} onChange={setExtras} />
 
+          <EventAttachmentsEditor ref={attachmentsRef} entityType="venue_event" entityId={event?.id} />
+
           <FormSection title="Autorizações">
             <Field label="Autorização de imagem">
               <select
@@ -388,10 +398,10 @@ export function VenueEventModal({
               <p className="text-xl font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
             </div>
             <Field label="Valor total">
-              <Input type="number" min="0" step="0.01" value={form.totalPrice} onChange={(event) => updateTotalPrice(event.target.value)} />
+              <MoneyInput value={form.totalPrice} onValueChange={updateTotalPrice} />
             </Field>
             <Field label="Valor pago/sinal">
-              <Input type="number" min="0" step="0.01" value={form.amountPaid} onChange={(event) => patch({ amountPaid: event.target.value })} />
+              <MoneyInput value={form.amountPaid} onValueChange={(value) => patch({ amountPaid: value })} />
             </Field>
             <Field label="Método de pagamento">
               <Input value={form.paymentMethod} onChange={(event) => patch({ paymentMethod: event.target.value })} placeholder="MB Way, transferência..." />
@@ -526,8 +536,8 @@ function toRequestBody(form: VenueEventFormState): CreateVenueEventBody {
     allergies: emptyToNull(form.allergies),
     imageAuthorization: form.imageAuthorization || null,
     termsAccepted: form.termsAccepted,
-    totalPrice: toNumber(form.totalPrice),
-    amountPaid: toNumber(form.amountPaid),
+    totalPrice: parseMoneyInput(form.totalPrice),
+    amountPaid: parseMoneyInput(form.amountPaid),
     paymentMethod: emptyToNull(form.paymentMethod),
     notes: emptyToNull(form.notes),
   };
@@ -543,9 +553,6 @@ function toNumber(value: string | number) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function formatMoneyInput(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
-}
 
 function getFallbackPackPrice(packName?: string) {
   return PACK_PRICES[packName ?? initialState.packName] ?? 0;

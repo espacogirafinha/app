@@ -2,13 +2,21 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NumericMoneyInput } from "@/components/money-input";
 import { Textarea } from "@/components/ui/textarea";
 import { useListEventExtras, useListSelectedExtras } from "@workspace/api-client-react";
-import type { SelectedExtraInput, SelectedExtraModule } from "@workspace/api-client-react";
+import type { SelectedExtraModule } from "@workspace/api-client-react";
+import {
+  calculateExtrasTotal,
+  type EventExtraDraft,
+} from "@/lib/event-extras";
 
-export type EventExtraDraft = SelectedExtraInput & {
-  localId: string;
-};
+export {
+  calculateExtrasTotal,
+  toEventExtraDrafts,
+  toSelectedExtraInputs,
+  type EventExtraDraft,
+} from "@/lib/event-extras";
 
 export function EventExtrasSelector({
   module,
@@ -39,6 +47,25 @@ export function EventExtrasSelector({
         totalPrice: extra.basePrice,
         notes: null,
         sortOrder: extras.length + 1,
+        custom: false,
+      },
+    ]);
+  };
+
+  const addCustomExtra = () => {
+    onChange([
+      ...extras,
+      {
+        localId: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        extraId: null,
+        extraName: "",
+        category: null,
+        unitPrice: 0,
+        quantity: 1,
+        totalPrice: 0,
+        notes: null,
+        sortOrder: extras.length + 1,
+        custom: true,
       },
     ]);
   };
@@ -61,7 +88,7 @@ export function EventExtrasSelector({
     <section className="space-y-3 rounded-xl border border-border p-3 md:p-4">
       <div>
         <h3 className="font-semibold text-foreground">Extras</h3>
-        <p className="text-xs text-muted-foreground">Adicione extras ativos e ajuste quantidade, preço ou notas para este evento.</p>
+        <p className="text-xs text-muted-foreground">Adicione extras do catálogo ou um extra específico desta reserva.</p>
       </div>
 
       {options.length > 0 ? (
@@ -88,14 +115,34 @@ export function EventExtrasSelector({
         </div>
       )}
 
+      <Button type="button" variant="outline" size="sm" className="rounded-full border-dashed" onClick={addCustomExtra}>
+        <Plus className="h-4 w-4" />
+        Extra personalizado
+      </Button>
+
       {extras.length > 0 && (
         <div className="space-y-3">
           {extras.map((extra) => (
             <div key={extra.localId} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold">{extra.extraName}</p>
-                  {extra.category && <p className="text-xs text-muted-foreground">{extra.category}</p>}
+                <div className="min-w-0 flex-1">
+                  {extra.custom ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-primary">Extra personalizado</p>
+                      <Label htmlFor={`extra-name-${extra.localId}`}>Nome</Label>
+                      <Input
+                        id={`extra-name-${extra.localId}`}
+                        value={extra.extraName}
+                        onChange={(event) => updateExtra(extra.localId, { extraName: event.target.value })}
+                        placeholder="Ex.: Transporte adicional"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="break-words font-semibold">{extra.extraName}</p>
+                      {extra.category && <p className="text-xs text-muted-foreground">{extra.category}</p>}
+                    </>
+                  )}
                 </div>
                 <Button
                   type="button"
@@ -121,12 +168,10 @@ export function EventExtrasSelector({
                 </div>
                 <div className="space-y-2">
                   <Label>Preço unitário</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <NumericMoneyInput
                     value={extra.unitPrice}
-                    onChange={(event) => updateExtra(extra.localId, { unitPrice: Math.max(0, Number(event.target.value) || 0) })}
+                    onValueChange={(value) => updateExtra(extra.localId, { unitPrice: value })}
+                    aria-label={`Preço de ${extra.extraName || "extra personalizado"}`}
                   />
                 </div>
                 <div className="rounded-xl border border-border bg-muted/40 p-3">
@@ -175,7 +220,7 @@ export function EventExtrasDetails({ module, entityId }: { module: SelectedExtra
             </div>
             <p className="mt-1 text-muted-foreground">
               {extra.quantity} × {extra.unitPrice.toFixed(2)} €
-              {extra.category ? ` · ${extra.category}` : ""}
+              {extra.extraId === null ? " · Extra personalizado" : extra.category ? ` · ${extra.category}` : ""}
             </p>
             {extra.notes && <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{extra.notes}</p>}
           </div>
@@ -183,25 +228,4 @@ export function EventExtrasDetails({ module, entityId }: { module: SelectedExtra
       </div>
     </div>
   );
-}
-
-export function toEventExtraDrafts(extras?: SelectedExtraInput[]): EventExtraDraft[] {
-  return (extras ?? []).map((extra, index) => ({
-    ...extra,
-    localId: extra.extraId ? `${extra.extraId}-${index}` : `snapshot-${index}`,
-  }));
-}
-
-export function toSelectedExtraInputs(extras: EventExtraDraft[]): SelectedExtraInput[] {
-  return extras.map(({ localId: _localId, ...extra }, index) => ({
-    ...extra,
-    quantity: Math.max(1, Number(extra.quantity) || 1),
-    unitPrice: Math.max(0, Number(extra.unitPrice) || 0),
-    totalPrice: Math.max(0, (Number(extra.quantity) || 1) * (Number(extra.unitPrice) || 0)),
-    sortOrder: index + 1,
-  }));
-}
-
-export function calculateExtrasTotal(extras: SelectedExtraInput[]) {
-  return extras.reduce((sum, extra) => sum + Number(extra.totalPrice ?? 0), 0);
 }

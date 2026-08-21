@@ -1229,6 +1229,131 @@ export const DeleteWorkshopParticipantParams = zod.object({
 });
 
 /**
+ * @summary List image attachments for an event
+ */
+export const ListEventAttachmentsQueryParams = zod.object({
+  entityType: zod.enum(["venue_event", "external_event"]),
+  entityId: zod.coerce.string().uuid(),
+});
+
+export const listEventAttachmentsResponseOneStoragePathMax = 1024;
+
+export const listEventAttachmentsResponseOneOriginalFilenameMax = 255;
+
+export const listEventAttachmentsResponseOneMimeTypeRegExp = new RegExp(
+  "^image",
+);
+export const listEventAttachmentsResponseOneCaptionMax = 200;
+
+export const listEventAttachmentsResponseOneSortOrderMin = 0;
+
+export const ListEventAttachmentsResponseItem = zod
+  .object({
+    entityType: zod.enum(["venue_event", "external_event"]),
+    entityId: zod.string().uuid(),
+    storagePath: zod
+      .string()
+      .min(1)
+      .max(listEventAttachmentsResponseOneStoragePathMax),
+    originalFilename: zod
+      .string()
+      .min(1)
+      .max(listEventAttachmentsResponseOneOriginalFilenameMax),
+    mimeType: zod.string().regex(listEventAttachmentsResponseOneMimeTypeRegExp),
+    caption: zod
+      .string()
+      .max(listEventAttachmentsResponseOneCaptionMax)
+      .nullish(),
+    sortOrder: zod
+      .number()
+      .min(listEventAttachmentsResponseOneSortOrderMin)
+      .optional(),
+  })
+  .and(
+    zod.object({
+      id: zod.string().uuid(),
+      createdAt: zod.string(),
+    }),
+  );
+export const ListEventAttachmentsResponse = zod.array(
+  ListEventAttachmentsResponseItem,
+);
+
+/**
+ * @summary Store metadata for an uploaded event image
+ */
+export const createEventAttachmentBodyStoragePathMax = 1024;
+
+export const createEventAttachmentBodyOriginalFilenameMax = 255;
+
+export const createEventAttachmentBodyMimeTypeRegExp = new RegExp("^image");
+export const createEventAttachmentBodyCaptionMax = 200;
+
+export const createEventAttachmentBodySortOrderMin = 0;
+
+export const CreateEventAttachmentBody = zod.object({
+  entityType: zod.enum(["venue_event", "external_event"]),
+  entityId: zod.string().uuid(),
+  storagePath: zod.string().min(1).max(createEventAttachmentBodyStoragePathMax),
+  originalFilename: zod
+    .string()
+    .min(1)
+    .max(createEventAttachmentBodyOriginalFilenameMax),
+  mimeType: zod.string().regex(createEventAttachmentBodyMimeTypeRegExp),
+  caption: zod.string().max(createEventAttachmentBodyCaptionMax).nullish(),
+  sortOrder: zod.number().min(createEventAttachmentBodySortOrderMin).optional(),
+});
+
+/**
+ * @summary Delete event attachment metadata
+ */
+export const DeleteEventAttachmentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const deleteEventAttachmentResponseOneStoragePathMax = 1024;
+
+export const deleteEventAttachmentResponseOneOriginalFilenameMax = 255;
+
+export const deleteEventAttachmentResponseOneMimeTypeRegExp = new RegExp(
+  "^image",
+);
+export const deleteEventAttachmentResponseOneCaptionMax = 200;
+
+export const deleteEventAttachmentResponseOneSortOrderMin = 0;
+
+export const DeleteEventAttachmentResponse = zod
+  .object({
+    entityType: zod.enum(["venue_event", "external_event"]),
+    entityId: zod.string().uuid(),
+    storagePath: zod
+      .string()
+      .min(1)
+      .max(deleteEventAttachmentResponseOneStoragePathMax),
+    originalFilename: zod
+      .string()
+      .min(1)
+      .max(deleteEventAttachmentResponseOneOriginalFilenameMax),
+    mimeType: zod
+      .string()
+      .regex(deleteEventAttachmentResponseOneMimeTypeRegExp),
+    caption: zod
+      .string()
+      .max(deleteEventAttachmentResponseOneCaptionMax)
+      .nullish(),
+    sortOrder: zod
+      .number()
+      .min(deleteEventAttachmentResponseOneSortOrderMin)
+      .optional(),
+  })
+  .and(
+    zod.object({
+      id: zod.string().uuid(),
+      createdAt: zod.string(),
+    }),
+  );
+
+/**
  * @summary List selected extras for an event
  */
 export const ListSelectedExtrasQueryParams = zod.object({

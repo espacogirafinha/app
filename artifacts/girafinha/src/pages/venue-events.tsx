@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventExtrasDetails } from "@/components/event-extras-selector";
+import { EventAttachmentsDetails } from "@/components/event-attachments";
 import { OperationalChecklist } from "@/components/operational-checklist";
 import { VenueEventModal } from "@/components/venue-event-modal";
 import { useToast } from "@/hooks/use-toast";
@@ -373,6 +374,7 @@ function VenueEventRow({
             </DetailsBlock>
           </div>
           <EventExtrasDetails module="venue_events" entityId={event.id} />
+          <EventAttachmentsDetails entityType="venue_event" entityId={event.id} />
           <div className="mt-4">
             <OperationalChecklist module="venue_events" entityId={event.id} title={`Checklist ${event.customerName}`} />
           </div>

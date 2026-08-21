@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/money-input";
+import { parseMoneyInput } from "@/lib/money";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -74,7 +76,7 @@ export function WorkshopParticipantModal({
   const { toast } = useToast();
   const isEditing = Boolean(participant);
   const isPending = createParticipant.isPending || updateParticipant.isPending;
-  const amountPaid = toNumber(form.amountPaid);
+  const amountPaid = parseMoneyInput(form.amountPaid);
   const expectedDue = Math.max(0, workshop.price - amountPaid);
 
   useEffect(() => {
@@ -185,13 +187,7 @@ export function WorkshopParticipantModal({
               </select>
             </Field>
             <Field label="Valor pago">
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.amountPaid}
-                onChange={(event) => patch({ amountPaid: event.target.value })}
-              />
+              <MoneyInput value={form.amountPaid} onValueChange={(value) => patch({ amountPaid: value })} />
             </Field>
             <Field label="Método de pagamento">
               <Input value={form.paymentMethod} onChange={(event) => patch({ paymentMethod: event.target.value })} placeholder="MB Way, transferência..." />
@@ -266,7 +262,7 @@ function toRequestBody(form: ParticipantFormState): CreateWorkshopParticipantBod
     phone: form.phone.trim(),
     email: emptyToNull(form.email),
     nif: emptyToNull(form.nif),
-    amountPaid: toNumber(form.amountPaid),
+    amountPaid: parseMoneyInput(form.amountPaid),
     paymentMethod: emptyToNull(form.paymentMethod),
     status: form.status,
     notes: emptyToNull(form.notes),

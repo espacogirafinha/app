@@ -24,6 +24,7 @@ import type {
   CreateChecklistBody,
   CreateChecklistTemplateBody,
   CreateChecklistTemplateItemBody,
+  CreateEventAttachmentBody,
   CreateEventExtraBody,
   CreateExternalEventBody,
   CreateExternalServiceBody,
@@ -37,6 +38,7 @@ import type {
   DashboardStats,
   DashboardV2,
   ErrorResponse,
+  EventAttachment,
   EventChecklist,
   EventChecklistItem,
   EventExtra,
@@ -51,6 +53,7 @@ import type {
   ListChecklistItemsParams,
   ListChecklistTemplateItemsParams,
   ListChecklistsParams,
+  ListEventAttachmentsParams,
   ListExternalEventsParams,
   ListReservationsParams,
   ListSelectedExtrasParams,
@@ -2212,6 +2215,277 @@ export const useDeleteWorkshopParticipant = <
   TContext
 > => {
   return useMutation(getDeleteWorkshopParticipantMutationOptions(options));
+};
+
+/**
+ * @summary List image attachments for an event
+ */
+export const getListEventAttachmentsUrl = (
+  params: ListEventAttachmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/event-attachments?${stringifiedParams}`
+    : `/api/event-attachments`;
+};
+
+export const listEventAttachments = async (
+  params: ListEventAttachmentsParams,
+  options?: RequestInit,
+): Promise<EventAttachment[]> => {
+  return customFetch<EventAttachment[]>(getListEventAttachmentsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEventAttachmentsQueryKey = (
+  params?: ListEventAttachmentsParams,
+) => {
+  return [`/api/event-attachments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListEventAttachmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEventAttachments>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListEventAttachmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEventAttachments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListEventAttachmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listEventAttachments>>
+  > = ({ signal }) =>
+    listEventAttachments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEventAttachments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEventAttachmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEventAttachments>>
+>;
+export type ListEventAttachmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List image attachments for an event
+ */
+
+export function useListEventAttachments<
+  TData = Awaited<ReturnType<typeof listEventAttachments>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListEventAttachmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEventAttachments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEventAttachmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Store metadata for an uploaded event image
+ */
+export const getCreateEventAttachmentUrl = () => {
+  return `/api/event-attachments`;
+};
+
+export const createEventAttachment = async (
+  createEventAttachmentBody: CreateEventAttachmentBody,
+  options?: RequestInit,
+): Promise<EventAttachment> => {
+  return customFetch<EventAttachment>(getCreateEventAttachmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createEventAttachmentBody),
+  });
+};
+
+export const getCreateEventAttachmentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEventAttachment>>,
+    TError,
+    { data: BodyType<CreateEventAttachmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createEventAttachment>>,
+  TError,
+  { data: BodyType<CreateEventAttachmentBody> },
+  TContext
+> => {
+  const mutationKey = ["createEventAttachment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createEventAttachment>>,
+    { data: BodyType<CreateEventAttachmentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createEventAttachment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateEventAttachmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createEventAttachment>>
+>;
+export type CreateEventAttachmentMutationBody =
+  BodyType<CreateEventAttachmentBody>;
+export type CreateEventAttachmentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Store metadata for an uploaded event image
+ */
+export const useCreateEventAttachment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEventAttachment>>,
+    TError,
+    { data: BodyType<CreateEventAttachmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createEventAttachment>>,
+  TError,
+  { data: BodyType<CreateEventAttachmentBody> },
+  TContext
+> => {
+  return useMutation(getCreateEventAttachmentMutationOptions(options));
+};
+
+/**
+ * @summary Delete event attachment metadata
+ */
+export const getDeleteEventAttachmentUrl = (id: string) => {
+  return `/api/event-attachments/${id}`;
+};
+
+export const deleteEventAttachment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<EventAttachment> => {
+  return customFetch<EventAttachment>(getDeleteEventAttachmentUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteEventAttachmentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteEventAttachment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteEventAttachment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteEventAttachment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteEventAttachment>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteEventAttachment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteEventAttachmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteEventAttachment>>
+>;
+
+export type DeleteEventAttachmentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete event attachment metadata
+ */
+export const useDeleteEventAttachment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteEventAttachment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteEventAttachment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteEventAttachmentMutationOptions(options));
 };
 
 /**

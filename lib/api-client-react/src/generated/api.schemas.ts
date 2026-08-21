@@ -557,6 +557,43 @@ export interface UpdateExternalServiceBody {
   operationalNotes?: string | null;
 }
 
+export type EventAttachmentEntityType =
+  (typeof EventAttachmentEntityType)[keyof typeof EventAttachmentEntityType];
+
+export const EventAttachmentEntityType = {
+  venue_event: "venue_event",
+  external_event: "external_event",
+} as const;
+
+export interface CreateEventAttachmentBody {
+  entityType: EventAttachmentEntityType;
+  entityId: string;
+  /**
+   * @minLength 1
+   * @maxLength 1024
+   */
+  storagePath: string;
+  /**
+   * @minLength 1
+   * @maxLength 255
+   */
+  originalFilename: string;
+  /** @pattern ^image/ */
+  mimeType: string;
+  /**
+   * @maxLength 200
+   * @nullable
+   */
+  caption?: string | null;
+  /** @minimum 0 */
+  sortOrder?: number;
+}
+
+export type EventAttachment = CreateEventAttachmentBody & {
+  id: string;
+  createdAt: string;
+};
+
 export type SelectedExtraModule =
   (typeof SelectedExtraModule)[keyof typeof SelectedExtraModule];
 
@@ -1581,6 +1618,11 @@ export type ListWorkshopsParams = {
   status?: WorkshopStatus;
   dateFrom?: string;
   dateTo?: string;
+};
+
+export type ListEventAttachmentsParams = {
+  entityType: EventAttachmentEntityType;
+  entityId: string;
 };
 
 export type ListSelectedExtrasParams = {
