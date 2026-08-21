@@ -1,9 +1,10 @@
-﻿import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ClipboardCheck, Edit, Plus, Sparkles } from "lucide-react";
+import { ChevronDown, ClipboardCheck, Edit, Plus, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,6 +92,7 @@ export function SettingsChecklists() {
   );
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: getListChecklistTemplatesQueryKey() });
+  const activeCount = templates.filter((template) => template.isActive).length;
 
   const addSuggested = async () => {
     let createdCount = 0;
@@ -127,23 +129,26 @@ export function SettingsChecklists() {
   return (
     <div className="space-y-4">
       <Card className="border-border/70 shadow-sm">
-        <CardHeader className="space-y-3 pb-4">
+        <CardHeader className="space-y-3 p-3 md:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
+            <div className="min-w-0">
               <CardTitle>Checklists operacionais</CardTitle>
-              <CardDescription>Templates reutilizáveis para preparar festas e serviços externos.</CardDescription>
+              <CardDescription className="mt-1">Templates reutilizáveis para preparar festas e serviços externos.</CardDescription>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button variant="outline" className="min-h-10" onClick={addSuggested} disabled={createTemplate.isPending || upsertItem.isPending}>
-                <Sparkles className="h-4 w-4" />
-                Adicionar checklists sugeridas
-              </Button>
-              <Button className="min-h-10" onClick={() => setTemplateModal({ open: true })}>
+            <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+              <Button className="min-h-9 px-3" onClick={() => setTemplateModal({ open: true })}>
                 <Plus className="h-4 w-4" />
-                Criar checklist
+                <span className="md:hidden">Criar</span>
+                <span className="hidden md:inline">Criar checklist</span>
+              </Button>
+              <Button variant="ghost" size="sm" className="min-h-9 px-2 text-muted-foreground" onClick={addSuggested} disabled={createTemplate.isPending || upsertItem.isPending}>
+                <Sparkles className="h-4 w-4" />
+                <span className="md:hidden">Adicionar sugeridas</span>
+                <span className="hidden md:inline">Adicionar checklists sugeridas</span>
               </Button>
             </div>
           </div>
+          <ChecklistSummary total={templates.length} active={activeCount} inactive={templates.length - activeCount} />
         </CardHeader>
       </Card>
 
@@ -158,56 +163,20 @@ export function SettingsChecklists() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid items-start gap-3 lg:grid-cols-2">
           {templates.map((template) => (
-            <Card key={template.id} className="border-border/70 shadow-sm">
-              <CardContent className="space-y-4 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="break-words font-semibold">{template.name}</h3>
-                      <Badge variant={template.isActive ? "default" : "secondary"}>{template.isActive ? "Ativo" : "Inativo"}</Badge>
-                      <Badge variant="outline">{moduleLabel(template.module)}</Badge>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{template.items.length} item(ns) · ordem {template.sortOrder}</p>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => setTemplateModal({ open: true, template })}>
-                    <Edit className="h-4 w-4" />
-                    Editar
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  {template.items.length === 0 ? (
-                    <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">Sem itens. Adicione tarefas ao template.</p>
-                  ) : template.items.map((item) => (
-                    <div key={item.id} className="flex items-start justify-between gap-3 rounded-md border border-border/70 p-3 text-sm">
-                      <div>
-                        <p className="font-medium">{item.label}</p>
-                        {item.description ? <p className="text-muted-foreground">{item.description}</p> : null}
-                        <p className="text-xs text-muted-foreground">Ordem {item.sortOrder}{item.isRequired ? " · obrigatório" : ""}</p>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => setItemModal({ open: true, template, item })}>Editar</Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-2">
-                  <span className="text-sm text-muted-foreground">{template.isActive ? "Disponível para novas checklists" : "Oculto para novas checklists"}</span>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setItemModal({ open: true, template })}>
-                      <Plus className="h-4 w-4" />
-                      Item
-                    </Button>
-                    <Switch
-                      checked={template.isActive}
-                      disabled={createTemplate.isPending}
-                      onCheckedChange={() => void createTemplate.mutateAsync({ data: templatePayload(template, { isActive: !template.isActive }) }).then(refresh)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <ChecklistCard
+              key={template.id}
+              template={template}
+              isSaving={createTemplate.isPending}
+              onEdit={() => setTemplateModal({ open: true, template })}
+              onAddItem={() => setItemModal({ open: true, template })}
+              onEditItem={(item) => setItemModal({ open: true, template, item })}
+              onToggle={async () => {
+                await createTemplate.mutateAsync({ data: templatePayload(template, { isActive: !template.isActive }) });
+                await refresh();
+              }}
+            />
           ))}
         </div>
       )}
@@ -251,6 +220,92 @@ export function SettingsChecklists() {
   );
 }
 
+function ChecklistSummary({ total, active, inactive }: { total: number; active: number; inactive: number }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm">
+      <span><strong>{total}</strong> total</span>
+      <span aria-hidden="true" className="text-border">·</span>
+      <span className="text-emerald-700"><strong>{active}</strong> ativos</span>
+      <span aria-hidden="true" className="text-border">·</span>
+      <span className="text-muted-foreground"><strong>{inactive}</strong> inativos</span>
+    </div>
+  );
+}
+
+function ChecklistCard({
+  template,
+  isSaving,
+  onEdit,
+  onAddItem,
+  onEditItem,
+  onToggle,
+}: {
+  template: ChecklistTemplate;
+  isSaving: boolean;
+  onEdit: () => void;
+  onAddItem: () => void;
+  onEditItem: (item: ChecklistTemplateItem) => void;
+  onToggle: () => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <Card className="border-border/70 shadow-sm">
+        <CardContent className="space-y-3 p-3 md:p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="break-words font-semibold">{template.name}</h3>
+                <Badge variant={template.isActive ? "default" : "secondary"}>{template.isActive ? "Ativo" : "Inativo"}</Badge>
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="outline">{moduleLabel(template.module)}</Badge>
+                <span>{template.items.length} {template.items.length === 1 ? "item" : "itens"}</span>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="h-9 shrink-0" onClick={onEdit}>
+              <Edit className="h-4 w-4" />
+              Editar
+            </Button>
+          </div>
+
+          <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-border/70 px-3 py-1.5">
+            <span className="text-sm font-medium">{template.isActive ? "Disponível" : "Oculto"}</span>
+            <Switch checked={template.isActive} disabled={isSaving} onCheckedChange={() => void onToggle()} />
+          </div>
+
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="flex min-h-9 w-full justify-between px-2 text-sm">
+              {open ? "Ocultar itens" : "Ver itens"}
+              <ChevronDown className={"h-4 w-4 transition-transform " + (open ? "rotate-180" : "")} />
+            </Button>
+          </CollapsibleTrigger>
+
+          <CollapsibleContent className="space-y-2 border-t border-border/60 pt-3">
+            {template.items.length === 0 ? (
+              <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">Sem itens. Adicione tarefas ao template.</p>
+            ) : template.items.map((item) => (
+              <div key={item.id} className="flex items-start justify-between gap-3 rounded-md border border-border/70 p-3 text-sm">
+                <div className="min-w-0">
+                  <p className="break-words font-medium">{item.label}</p>
+                  {item.description ? <p className="break-words text-muted-foreground">{item.description}</p> : null}
+                  <p className="text-xs text-muted-foreground">Ordem {item.sortOrder}{item.isRequired ? " · obrigatório" : ""}</p>
+                </div>
+                <Button variant="ghost" size="sm" className="shrink-0" onClick={() => onEditItem(item)}>Editar</Button>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={onAddItem}>
+              <Plus className="h-4 w-4" />
+              Adicionar item
+            </Button>
+          </CollapsibleContent>
+        </CardContent>
+      </Card>
+    </Collapsible>
+  );
+}
+
 function TemplateModal({ open, template, isSaving, onOpenChange, onSubmit }: {
   open: boolean;
   template?: ChecklistTemplate;
@@ -260,7 +315,7 @@ function TemplateModal({ open, template, isSaving, onOpenChange, onSubmit }: {
 }) {
   const [form, setForm] = useState<TemplateForm>(emptyTemplate);
 
-  useMemo(() => {
+  useEffect(() => {
     if (open) {
       setForm(template ? {
         id: template.id,
@@ -319,7 +374,7 @@ function ItemModal({ open, template, item, isSaving, onOpenChange, onSubmit }: {
 }) {
   const [form, setForm] = useState<ItemForm>({ templateId: "", label: "", description: "", isRequired: false, sortOrder: "0" });
 
-  useMemo(() => {
+  useEffect(() => {
     if (open) {
       setForm(item ? {
         id: item.id,
