@@ -315,6 +315,7 @@ test("form request for service is review, even if catalog matches", () => {
         appliesTo: "venue_events",
       },
     ],
+    packs,
   );
   assert.equal(r.status, "needs_review");
   assert.deepEqual(r.extras, []);
@@ -327,7 +328,7 @@ test("form says no extra, no review", () =>
         ...base.fields,
         requestedService: "Não pretendo adicionar nenhum serviço extra",
       },
-    }).status,
+    }, [], packs).status,
     "created",
   ));
 test("included child snack on actual form does not require review", () =>
@@ -338,7 +339,7 @@ test("included child snack on actual form does not require review", () =>
         ...base.fields,
         cateringNotes: "Inclui lanche para as crianças",
       },
-    }).status,
+    }, [], packs).status,
     "created",
   ));
 test("included pack catering does not require review", () =>
@@ -346,7 +347,7 @@ test("included pack catering does not require review", () =>
     planImport({
       ...base,
       fields: { ...base.fields, cateringNotes: "Pack com catering" },
-    }).status,
+    }, [], packs).status,
     "created",
   ));
 test("historical Google Sheet schedule 16h às 19h", () =>
@@ -364,17 +365,17 @@ test("new X empty falls back to old J", () =>
   ));
 test("blank required deposit is held for review", () =>
   assert.equal(
-    planImport({ ...base, fields: { ...base.fields, deposit: "" } }).status,
+    planImport({ ...base, fields: { ...base.fields, deposit: "" } }, [], packs).status,
     "needs_review",
   ));
 test("unaccepted or blank terms never create an ordinary party", () => {
   assert.equal(
-    planImport({ ...base, fields: { ...base.fields, termsAccepted: "Não" } })
+    planImport({ ...base, fields: { ...base.fields, termsAccepted: "Não" } }, [], packs)
       .status,
     "needs_review",
   );
   assert.equal(
-    planImport({ ...base, fields: { ...base.fields, termsAccepted: "" } })
+    planImport({ ...base, fields: { ...base.fields, termsAccepted: "" } }, [], packs)
       .status,
     "needs_review",
   );
@@ -406,6 +407,7 @@ test("matching catalog name alone is not confirmation", () => {
         appliesTo: "venue_events",
       },
     ],
+    packs,
   );
   assert.equal(r.status, "needs_review");
   assert.deepEqual(r.extras, []);
@@ -425,12 +427,13 @@ test("explicitly confirmed catalog extra is billed at snapshot price", () => {
         appliesTo: "venue_events",
       },
     ],
+    packs,
   );
   assert.equal(r.status, "created");
   assert.equal(r.event?.totalPrice, 445);
   assert.equal(r.extras[0]?.unitPrice, 45);
 });
-test("retry of a needs-review import stays needs_review without a party", async () => {
+test("retry of a needs-review import stays needs_review without duplicating its party", async () => {
   const seen = new Map();
   const uncertain = {
     ...base,
@@ -461,7 +464,7 @@ test("retry of a needs-review import stays needs_review without a party", async 
 });
 test("missing required photo choice is held for review", () =>
   assert.equal(
-    planImport({ ...base, fields: { ...base.fields, imageAuthorization: "" } })
+    planImport({ ...base, fields: { ...base.fields, imageAuthorization: "" } }, [], packs)
       .status,
     "needs_review",
   ));
