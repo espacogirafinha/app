@@ -7,6 +7,7 @@ import {
   eventSelectedExtrasTable,
   googleFormImportsTable,
   venueEventsTable,
+  venuePacksTable,
 } from "@workspace/db";
 import {
   FORM_ID,
@@ -37,7 +38,12 @@ router.post(
     if (
       !raw.length ||
       raw.length > 65536 ||
-      !verifySignature(raw, req.get("x-girafinha-signature"), secret)
+      !verifySignature(
+        raw,
+        req.get("x-girafinha-timestamp"),
+        req.get("x-girafinha-signature"),
+        secret,
+      )
     ) {
       res
         .status(401)
@@ -122,6 +128,11 @@ router.post(
                   .select()
                   .from(eventExtrasTable)
                   .where(eq(eventExtrasTable.isActive, true)),
+              listPacks: async () =>
+                tx
+                  .select()
+                  .from(venuePacksTable)
+                  .where(eq(venuePacksTable.isActive, true)),
               saveImport: async (
                 _key,
                 status,
