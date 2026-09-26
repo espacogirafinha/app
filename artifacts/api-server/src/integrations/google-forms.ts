@@ -16,6 +16,12 @@ type Extra = {
   appliesTo: string;
   category?: string | null;
 };
+type Pack = {
+  id: string;
+  name: string;
+  basePrice: string;
+  isActive: boolean;
+};
 const value = (v: unknown) =>
   typeof v === "string" ? v.trim() : v == null ? "" : String(v).trim();
 const field = (f: Fields, ...keys: string[]) =>
@@ -144,21 +150,39 @@ export function dedupKey(s: Submission): string | null {
 }
 export function verifySignature(
   raw: Buffer,
+  timestamp: unknown,
   signature: unknown,
   secret: unknown,
+  nowMs = Date.now(),
+  maxSkewSeconds = 300,
 ): boolean {
   if (
     typeof secret !== "string" ||
     !secret ||
+    typeof timestamp !== "string" ||
+    !/^\d{10}$/.test(timestamp) ||
     typeof signature !== "string" ||
     !/^[0-9a-f]{64}$/i.test(signature)
   )
     return false;
-  const expected = createHmac("sha256", secret).update(raw).digest();
+  const timestampMs = Number(timestamp) * 1000;
+  if (
+    !Number.isFinite(timestampMs) ||
+    Math.abs(nowMs - timestampMs) > maxSkewSeconds * 1000
+  )
+    return false;
+  const expected = createHmac("sha256", secret)
+    .update(timestamp)
+    .update(".")
+    .update(raw)
+    .digest();
   return timingSafeEqual(expected, Buffer.from(signature, "hex"));
 }
-const basePrices = { Essencial: 250, Completo: 400, Premium: 550 };
-export function planImport(s: Submission, catalog: Extra[] = []) {
+export function planImport(
+  s: Submission,
+  catalog: Extra[] = [],
+  packs: Pack[] = [],
+) {
   const n = normalizeSubmission(s);
   const reasons: string[] = [];
   if (
@@ -185,6 +209,18 @@ export function planImport(s: Submission, catalog: Extra[] = []) {
     return {
       status: "needs_review" as const,
       reasons: ["required event fields invalid"],
+      event: null,
+      extras: [],
+    };
+  const matchingPacks = packs.filter(
+    (pack) => pack.isActive && normalizePack(pack.name) === n.packName,
+  );
+  const packBasePrice =
+    matchingPacks.length === 1 ? parseMoney(matchingPacks[0].basePrice) : null;
+  if (packBasePrice === null || packBasePrice <= 0)
+    return {
+      status: "needs_review" as const,
+      reasons: ["pack price unavailable"],
       event: null,
       extras: [],
     };
@@ -248,7 +284,7 @@ export function planImport(s: Submission, catalog: Extra[] = []) {
   }
   const paid = n.amountPaid ?? 0;
   const total =
-    basePrices[n.packName] + extras.reduce((sum, x) => sum + x.totalPrice, 0);
+    packBasePrice + extras.reduce((sum, x) => sum + x.totalPrice, 0);
   const event = {
     ...n,
     phone: n.phone,
@@ -272,8 +308,8 @@ export function planImport(s: Submission, catalog: Extra[] = []) {
   return {
     status: reasons.length ? ("needs_review" as const) : ("created" as const),
     reasons,
-    event: reasons.length ? null : event,
-    extras: reasons.length ? [] : extras,
+    event,
+    extras,
   };
 }
 export type ImportResult = {
@@ -287,6 +323,7 @@ type Tx = {
   ) => Promise<{ status: string; venueEventId?: string | null } | null>;
   findEvent: (date: string, phone: string) => Promise<{ id: string } | null>;
   listExtras: () => Promise<Extra[]>;
+  listPacks: () => Promise<Pack[]>;
   saveImport: (
     id: string,
     status: string,
@@ -317,7 +354,7 @@ export async function importSubmission(
             : "already_exists",
         venueEventId: previous.venueEventId ?? undefined,
       };
-    const p = planImport(s, await tx.listExtras());
+    const p = planImport(s, await tx.listExtras(), await tx.listPacks());
     if (p.status === "rejected")
       return { status: "rejected", reasons: p.reasons };
     const n = normalizeSubmission(s);
@@ -334,12 +371,16 @@ export async function importSubmission(
         return { status: "already_exists", venueEventId: existing.id };
       }
     }
-    if (p.status === "needs_review" || !p.event) {
+    if (!p.event) {
       await tx.saveImport(key, "needs_review", true, p.reasons);
       return { status: "needs_review", reasons: p.reasons };
     }
     const id = await tx.createEvent(p.event);
     await tx.createExtras(id, p.extras);
+    if (p.status === "needs_review") {
+      await tx.saveImport(key, "needs_review", true, p.reasons, id);
+      return { status: "needs_review", venueEventId: id, reasons: p.reasons };
+    }
     await tx.saveImport(key, "created", false, [], id);
     return { status: "created", venueEventId: id };
   });
