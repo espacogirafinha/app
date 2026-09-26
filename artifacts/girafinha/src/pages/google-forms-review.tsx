@@ -3,7 +3,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ClipboardList, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { matchingReviewEvents } from "@/lib/google-forms-review";
+import { canConfirmReview, matchingReviewEvents } from "@/lib/google-forms-review";
 import { useListVenueEvents } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,7 @@ const reasonLabels: Record<string, string> = {
   "extra not confirmed": "Extra por confirmar",
   "extra requires review": "Extra sem correspondência segura no catálogo",
   "extra price invalid": "Preço do extra inválido",
+  "pack price unavailable": "Preço base do pack indisponível no catálogo",
   "matching date and phone": "Já existe uma festa com esta data e telefone",
 };
 
@@ -126,7 +127,10 @@ export default function GoogleFormsReviewPage() {
 
   async function resolve(
     review: Review,
-    decision: { action: "dismiss" } | { action: "link"; venueEventId: string },
+    decision:
+      | { action: "dismiss" }
+      | { action: "confirm" }
+      | { action: "link"; venueEventId: string },
   ) {
     setBusyId(review.id);
     try {
@@ -141,7 +145,9 @@ export default function GoogleFormsReviewPage() {
         title:
           decision.action === "dismiss"
             ? "Pedido descartado"
-            : "Festa associada ao pedido",
+            : decision.action === "confirm"
+              ? "Pedido revisto"
+              : "Festa associada ao pedido",
       });
     } catch (error) {
       toast({
@@ -163,8 +169,9 @@ export default function GoogleFormsReviewPage() {
           Pedidos do Formulário
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Respostas que precisam de confirmação antes de entrar nas Festas no
-          Espaço. Nenhum valor ou extra é cobrado neste ecrã.
+          Respostas que precisam de confirmação. Algumas já criaram uma festa
+          em rascunho; outras precisam de ser associadas manualmente. Nenhum
+          valor ou extra é cobrado neste ecrã.
         </p>
       </div>
       {isLoading ? (
@@ -239,48 +246,66 @@ export default function GoogleFormsReviewPage() {
                       ))}
                     </dl>
                   </details>
-                  <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center">
-                    <label
-                      className="text-sm font-medium"
-                      htmlFor={`event-${review.id}`}
-                    >
-                      Associar a uma festa já registada:
-                    </label>
-                    <select
-                      id={`event-${review.id}`}
-                      className="min-h-10 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm"
-                      value={selected}
-                      onChange={(e) =>
-                        setSelectedEvents((current) => ({
-                          ...current,
-                          [review.id]: e.target.value,
-                        }))
-                      }
-                      disabled={busyId === review.id || matches.length === 0}
-                    >
-                      <option value="">
-                        {matches.length
-                          ? "Escolher festa"
-                          : "Sem festa com a mesma data e telefone"}
-                      </option>
-                      {matches.map((event) => (
-                        <option key={event.id} value={event.id}>
-                          {event.customerName} · {event.eventDate}
+                  {canConfirmReview(review) ? (
+                    <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-sm">
+                        <p className="font-medium">A festa já foi criada na app.</p>
+                        <p className="text-muted-foreground">
+                          Confirma os dados, preço e pagamentos na festa. Quando estiver certo,
+                          fecha este alerta.
+                        </p>
+                      </div>
+                      <Button
+                        disabled={busyId === review.id}
+                        onClick={() => resolve(review, { action: "confirm" })}
+                      >
+                        Marcar como revisto
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center">
+                      <label
+                        className="text-sm font-medium"
+                        htmlFor={`event-${review.id}`}
+                      >
+                        Associar a uma festa já registada:
+                      </label>
+                      <select
+                        id={`event-${review.id}`}
+                        className="min-h-10 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm"
+                        value={selected}
+                        onChange={(e) =>
+                          setSelectedEvents((current) => ({
+                            ...current,
+                            [review.id]: e.target.value,
+                          }))
+                        }
+                        disabled={busyId === review.id || matches.length === 0}
+                      >
+                        <option value="">
+                          {matches.length
+                            ? "Escolher festa"
+                            : "Sem festa com a mesma data e telefone"}
                         </option>
-                      ))}
-                    </select>
-                    <Button
-                      disabled={!selected || busyId === review.id}
-                      onClick={() =>
-                        resolve(review, {
-                          action: "link",
-                          venueEventId: selected,
-                        })
-                      }
-                    >
-                      Associar
-                    </Button>
-                  </div>
+                        {matches.map((event) => (
+                          <option key={event.id} value={event.id}>
+                            {event.customerName} · {event.eventDate}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        disabled={!selected || busyId === review.id}
+                        onClick={() =>
+                          resolve(review, {
+                            action: "link",
+                            venueEventId: selected,
+                          })
+                        }
+                      >
+                        Associar
+                      </Button>
+                    </div>
+                  )}
                   {eventsError && (
                     <p className="text-sm text-destructive">
                       Não foi possível carregar as festas para associação.
