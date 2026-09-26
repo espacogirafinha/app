@@ -6,6 +6,7 @@ import vm from "node:vm";
 
 function simulatedSubmissions() {
   const sent = [];
+  const requests = [];
   const context = {
     Date,
     console: { log() {} },
@@ -30,6 +31,7 @@ function simulatedSubmissions() {
     UrlFetchApp: {
       fetch: (_url, request) => {
         sent.push(JSON.parse(request.payload));
+        requests.push(request);
         return { getResponseCode: () => 200 };
       },
     },
@@ -68,16 +70,28 @@ function simulatedSubmissions() {
     context.onGirafinhaFormSubmit({
       range: { getSheet: () => sheet, getRow: () => row },
     });
-  return sent;
+  return { sent, requests };
 }
 test("Google Form response identity survives row reordering", () => {
-  const [first, moved] = simulatedSubmissions();
+  const { sent: [first, moved] } = simulatedSubmissions();
   assert.equal(first.submissionId, moved.submissionId);
 });
 test("new time and email preferred; requested service never sent as confirmed extra", () => {
-  const [first] = simulatedSubmissions();
+  const { sent: [first] } = simulatedSubmissions();
   assert.equal(first.fields.time, "16:00h às 19:00h");
   assert.equal(first.fields.email, "new@example.invalid");
   assert.equal(first.fields.requestedService, "Animação com mascote");
   assert.equal("extras" in first.fields, false);
+});
+
+test("webhook signature includes timestamp and raw payload", () => {
+  const { requests: [request] } = simulatedSubmissions();
+  const timestamp = request.headers["x-girafinha-timestamp"];
+  assert.match(timestamp, /^\d{10}$/);
+  const expected = createHmac("sha256", "test-secret")
+    .update(timestamp)
+    .update(".")
+    .update(request.payload)
+    .digest("hex");
+  assert.equal(request.headers["x-girafinha-signature"], expected);
 });
