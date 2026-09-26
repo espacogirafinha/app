@@ -435,6 +435,7 @@ test("explicitly confirmed catalog extra is billed at snapshot price", () => {
 });
 test("retry of a needs-review import stays needs_review without duplicating its party", async () => {
   const seen = new Map();
+  let created = 0;
   const uncertain = {
     ...base,
     submissionId: "review-retry",
@@ -451,7 +452,8 @@ test("retry of a needs-review import stays needs_review without duplicating its 
           seen.set(key, { status });
         },
         createEvent: async () => {
-          throw Error("unexpected party");
+          created++;
+          return "review-party";
         },
         createExtras: async () => {},
       });
@@ -460,7 +462,9 @@ test("retry of a needs-review import stays needs_review without duplicating its 
   const first = await importSubmission(uncertain, store),
     second = await importSubmission(uncertain, store);
   assert.equal(first.status, "needs_review");
+  assert.equal(first.venueEventId, "review-party");
   assert.equal(second.status, "needs_review");
+  assert.equal(created, 1);
 });
 test("missing required photo choice is held for review", () =>
   assert.equal(
