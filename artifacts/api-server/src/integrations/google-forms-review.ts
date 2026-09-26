@@ -116,6 +116,7 @@ export function reviewLinkMatches(
 
 type Decision =
   | { action: "dismiss" }
+  | { action: "confirm" }
   | { action: "link"; venueEventId: string };
 type Import = {
   needsReview: boolean;
@@ -125,7 +126,7 @@ type Import = {
 };
 type Event = { id: string; eventDate: string; phone: string };
 type Patch = {
-  status: "rejected" | "already_exists";
+  status: "created" | "rejected" | "already_exists";
   needsReview: false;
   venueEventId: string | null;
 };
@@ -139,7 +140,7 @@ export async function resolveReview(
   decision: Decision,
   store: { transact: <T>(fn: (tx: ReviewTx) => Promise<T>) => Promise<T> },
 ): Promise<{
-  status: "rejected" | "already_exists" | "conflict" | "mismatch";
+  status: "created" | "rejected" | "already_exists" | "conflict" | "mismatch";
   venueEventId?: string;
 }> {
   return store.transact(async (tx) => {
@@ -152,6 +153,15 @@ export async function resolveReview(
         venueEventId: previous.venueEventId,
       });
       return { status: "rejected" };
+    }
+    if (decision.action === "confirm") {
+      if (!previous.venueEventId) return { status: "conflict" };
+      await tx.save({
+        status: "created",
+        needsReview: false,
+        venueEventId: previous.venueEventId,
+      });
+      return { status: "created", venueEventId: previous.venueEventId };
     }
     const event = await tx.findEvent(decision.venueEventId);
     if (!event || !reviewLinkMatches(previous.payload, event))
