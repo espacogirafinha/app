@@ -31,7 +31,7 @@ app.use(
   }),
 );
 app.use(cors({ credentials: true }));
-app.use("/api/integrations/google-forms", express.raw({ type: "application/json", limit: "64kb" }));
+app.use("/api/integrations/google-forms/venue-event", express.raw({ type: "application/json", limit: "64kb" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
