@@ -1,4 +1,4 @@
-﻿// Export your models here. Add one export per file
+// Export your models here. Add one export per file
 // export * from "./posts";
 //
 // Each model/table should ideally be split into different files.
@@ -28,3 +28,5 @@ export * from "./event-selected-extras";
 export * from "./event-attachments";
 
 export * from "./user-roles";
+
+export * from "./google-form-imports";

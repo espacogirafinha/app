@@ -1,0 +1,25 @@
+name: Google Forms integration checks
+
+on:
+  push:
+    branches:
+      - feat/google-forms-integration
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Google Forms API tests
+        run: node --experimental-strip-types --test artifacts/api-server/src/integrations/google-forms.test.ts artifacts/api-server/src/integrations/google-forms-review.test.ts
+      - name: Apps Script mapping tests
+        run: node docs/google-forms/Code.test.mjs
+      - name: Frontend review helper tests
+        run: node --experimental-strip-types --test artifacts/girafinha/src/lib/google-forms-review.test.ts
+      - name: Typecheck
+        run: corepack pnpm run typecheck
