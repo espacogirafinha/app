@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matchingReviewEvents } from "./google-forms-review.ts";
+import { canConfirmReview, matchingReviewEvents } from "./google-forms-review.ts";
 
 test("only same-date same-phone parties may be offered for association", () => {
   const rows = [
@@ -26,4 +26,9 @@ test("only same-date same-phone parties may be offered for association", () => {
     ).map((x) => x.id),
     ["right"],
   );
+});
+
+test("only reviews already linked to a party can be confirmed", () => {
+  assert.equal(canConfirmReview({ venueEventId: "event-1" }), true);
+  assert.equal(canConfirmReview({ venueEventId: null }), false);
 });
