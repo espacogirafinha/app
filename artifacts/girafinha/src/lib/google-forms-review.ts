@@ -1,3 +1,7 @@
+export function canConfirmReview(review: { venueEventId: string | null }): boolean {
+  return Boolean(review.venueEventId);
+}
+
 export function matchingReviewEvents<
   T extends { eventDate: string; phone: string },
 >(fields: { eventDate?: string; phone?: string }, events: T[]): T[] {
