@@ -84,7 +84,8 @@ router.post(
     const input = body as Record<string, unknown>;
     if (
       !(
-        (input.action === "dismiss" && Object.keys(input).length === 1) ||
+        ((input.action === "dismiss" || input.action === "confirm") &&
+          Object.keys(input).length === 1) ||
         (input.action === "link" &&
           Object.keys(input).length === 2 &&
           typeof input.venueEventId === "string" &&
@@ -97,10 +98,12 @@ router.post(
     const decision =
       input.action === "dismiss"
         ? { action: "dismiss" as const }
-        : {
-            action: "link" as const,
-            venueEventId: input.venueEventId as string,
-          };
+        : input.action === "confirm"
+          ? { action: "confirm" as const }
+          : {
+              action: "link" as const,
+              venueEventId: input.venueEventId as string,
+            };
     try {
       const result = await resolveReview(id, decision, {
         transact: (fn) =>
