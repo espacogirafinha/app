@@ -81,27 +81,62 @@ test("new time and email preferred; old fallback", () => {
   assert.equal(n.email, "new@example.com");
   assert.equal(n.startTime, "16:00");
 });
-test("valid HMAC", () => {
+test("valid HMAC binds timestamp and raw body", () => {
   const raw = Buffer.from("{}");
+  const timestamp = "1790452800";
+  const signature = createHmac("sha256", "secret")
+    .update(timestamp)
+    .update(".")
+    .update(raw)
+    .digest("hex");
   assert.equal(
-    verifySignature(
-      raw,
-      createHmac("sha256", "secret").update(raw).digest("hex"),
-      "secret",
-    ),
+    verifySignature(raw, timestamp, signature, "secret", 1790452800_000),
     true,
   );
 });
-test("invalid HMAC", () =>
-  assert.equal(verifySignature(Buffer.from("{}"), "00", "secret"), false));
-test("missing secret", () =>
-  assert.equal(verifySignature(Buffer.from("{}"), "00", ""), false));
-test("unknown pack never yields zero/zero paid", () =>
+test("stale webhook timestamp is rejected", () => {
+  const raw = Buffer.from("{}");
+  const timestamp = "1790452400";
+  const signature = createHmac("sha256", "secret")
+    .update(timestamp)
+    .update(".")
+    .update(raw)
+    .digest("hex");
   assert.equal(
-    planImport({ ...base, fields: { ...base.fields, pack: "Desconhecido" } })
-      .status,
-    "needs_review",
+    verifySignature(raw, timestamp, signature, "secret", 1790452800_000),
+    false,
+  );
+});
+test("invalid HMAC is rejected", () =>
+  assert.equal(
+    verifySignature(Buffer.from("{}"), "1790452800", "00", "secret", 1790452800_000),
+    false,
   ));
+test("missing secret is rejected", () =>
+  assert.equal(
+    verifySignature(Buffer.from("{}"), "1790452800", "00", "", 1790452800_000),
+    false,
+  ));
+const packs = [
+  { id: "pack-e", name: "Essencial", basePrice: "250.00", isActive: true },
+  { id: "pack-c", name: "Completo", basePrice: "400.00", isActive: true },
+  { id: "pack-p", name: "Premium", basePrice: "550.00", isActive: true },
+];
+
+test("unknown pack never yields zero/zero paid", () => {
+  const result = planImport(
+    { ...base, fields: { ...base.fields, pack: "Desconhecido" } },
+    [],
+    packs,
+  );
+  assert.equal(result.status, "needs_review");
+  assert.equal(result.event, null);
+});
+test("known pack with empty catalog stays review-only", () => {
+  const result = planImport(base, [], []);
+  assert.equal(result.status, "needs_review");
+  assert.equal(result.event, null);
+});
 test("Patricia needs review, never invents payment", () => {
   const result = planImport({
     ...base,
@@ -125,12 +160,15 @@ test("Patricia needs review, never invents payment", () => {
       deposit: "Sim",
       paymentMethod: "transferência bancária",
     },
-  });
+  }, [], packs);
   assert.equal(result.status, "needs_review");
-  assert.equal(result.event, null);
+  assert.ok(result.event);
+  assert.equal(result.event.totalPrice, 550);
+  assert.equal(result.event.amountPaid, 0);
+  assert.equal(result.event.paymentStatus, "unpaid");
 });
 test("Adriana dry run", () => {
-  const result = planImport(base);
+  const result = planImport(base, [], packs);
   assert.equal(result.status, "created");
   assert.equal(result.event?.totalPrice, 400);
   assert.equal(result.event?.amountPaid, 60);
@@ -139,10 +177,14 @@ test("Adriana dry run", () => {
 });
 test("ambiguous extras never billed", () =>
   assert.deepEqual(
-    planImport({
-      ...base,
-      fields: { ...base.fields, extras: "talvez queira mascote" },
-    }).extras,
+    planImport(
+      {
+        ...base,
+        fields: { ...base.fields, extras: "talvez queira mascote" },
+      },
+      [],
+      packs,
+    ).extras,
     [],
   ));
 test("confirmed active exact extra uses immutable catalog price", () => {
@@ -160,6 +202,7 @@ test("confirmed active exact extra uses immutable catalog price", () => {
         appliesTo: "venue_events",
       },
     ],
+    packs,
   );
   assert.equal(r.event?.totalPrice, 445);
   assert.equal(r.extras[0]?.unitPrice, 45);
@@ -174,6 +217,7 @@ test("same submission twice creates only once", async () => {
           seen.has(id) ? { status: "created" } : null,
         findEvent: async () => null,
         listExtras: async () => [],
+        listPacks: async () => packs,
         saveImport: async (id: string) => {
           seen.add(id);
         },
@@ -198,6 +242,7 @@ test("existing phone and date never overwritten or paid reduced", async () => {
         findImport: async () => null,
         findEvent: async () => ({ id: "existing", amountPaid: "100.00" }),
         listExtras: async () => [],
+        listPacks: async () => packs,
         saveImport: async () => {
           writes++;
         },
@@ -398,6 +443,7 @@ test("retry of a needs-review import stays needs_review without a party", async 
         findImport: async (key: string) => seen.get(key) ?? null,
         findEvent: async () => null,
         listExtras: async () => [],
+        listPacks: async () => packs,
         saveImport: async (key: string, status: string) => {
           seen.set(key, { status });
         },
