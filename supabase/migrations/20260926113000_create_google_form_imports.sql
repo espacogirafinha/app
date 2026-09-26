@@ -16,3 +16,6 @@ create table if not exists public.google_form_imports (
 create index if not exists google_form_imports_review_idx on public.google_form_imports(needs_review, submitted_at);
 alter table public.google_form_imports enable row level security;
 -- No policies: only the API's direct database connection may access these imports.
+
+-- Defense in depth: this table contains personal booking-form payloads and is API-internal only.
+revoke all on table public.google_form_imports from anon, authenticated;
