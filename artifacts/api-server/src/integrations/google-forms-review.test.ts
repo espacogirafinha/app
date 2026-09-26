@@ -207,3 +207,34 @@ test("association closes review and links a matching party without writing payme
     venueEventId: "event-1",
   });
 });
+
+test("confirm closes review for the party already created by the import", async () => {
+  let patch: unknown;
+  const store = {
+    transact: async (fn: any) =>
+      fn({
+        findImport: async () => ({
+          needsReview: true,
+          status: "needs_review",
+          venueEventId: "event-created",
+          payload: { fields: { eventDate: "2026-11-01", phone: "961148868" } },
+        }),
+        findEvent: async () => {
+          throw Error("confirm must not relink the party");
+        },
+        save: async (value: unknown) => {
+          patch = value;
+        },
+      }),
+  };
+
+  assert.deepEqual(
+    await resolveReview("import-1", { action: "confirm" }, store),
+    { status: "created", venueEventId: "event-created" },
+  );
+  assert.deepEqual(patch, {
+    status: "created",
+    needsReview: false,
+    venueEventId: "event-created",
+  });
+});
