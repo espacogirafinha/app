@@ -1,4 +1,4 @@
-﻿import { Router, type IRouter } from "express";
+import { Router, type IRouter } from "express";
 import reservationsRouter from "./reservations";
 import dashboardRouter from "./dashboard";
 import dashboardV2Router from "./dashboard-v2";
@@ -13,6 +13,7 @@ import settingsCatalogsRouter from "./settings-catalogs";
 import checklistsRouter from "./checklists";
 import selectedExtrasRouter from "./selected-extras";
 import eventAttachmentsRouter from "./event-attachments";
+import googleFormsReviewRouter from "./google-forms-review";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(settingsCatalogsRouter);
 router.use(checklistsRouter);
 router.use(selectedExtrasRouter);
 router.use(eventAttachmentsRouter);
+router.use(googleFormsReviewRouter);
 
 export default router;
