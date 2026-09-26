@@ -50,10 +50,12 @@ function onGirafinhaFormSubmit(e) {
   const secret=props.getProperty('GOOGLE_FORMS_INTEGRATION_SECRET');
   const endpoint=props.getProperty('GIRAFINHA_INTEGRATION_URL');
   if (!secret || !endpoint) throw new Error('Missing integration configuration');
-  const digest=Utilities.computeHmacSha256Signature(payload,secret,Utilities.Charset.UTF_8);
+  const timestamp=String(Math.floor(Date.now()/1000));
+  const signedValue=timestamp+'.'+payload;
+  const digest=Utilities.computeHmacSha256Signature(signedValue,secret,Utilities.Charset.UTF_8);
   const signature=digest.map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');
   const response=UrlFetchApp.fetch(endpoint, {method:'post',contentType:'application/json',payload,
-    headers:{'x-girafinha-signature':signature},muteHttpExceptions:true});
+    headers:{'x-girafinha-timestamp':timestamp,'x-girafinha-signature':signature},muteHttpExceptions:true});
   const status=response.getResponseCode();
   // Never log payload, signature, contact details or response body.
   if (status<200 || status>=300) throw new Error('Girafinha import HTTP '+status);
