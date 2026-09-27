@@ -11,7 +11,7 @@ import {
 } from "@workspace/api-zod";
 import { refundableDepositCreateValues, refundableDepositUpdateValues } from "../lib/refundable-deposits";
 import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary, type DbTransaction } from "../lib/event-payments";
-import { createEventWithOptionalInitialDeposit } from "../lib/event-payment-creation";
+import { createEventWithOptionalInitialDeposit, initialReservationDepositPaymentInput } from "../lib/event-payment-creation";
 
 const router: IRouter = Router();
 
@@ -205,15 +205,14 @@ router.post("/external-events", async (req, res): Promise<void> => {
       },
       initialReservationDeposit
         ? async (tx, created) => {
-            await createEventPaymentInTransaction(tx, {
-              module: "external_events",
-              entityId: created.id,
-              paymentType: "reservation_deposit",
-              amount: initialReservationDeposit.amount,
-              paymentMethod: initialReservationDeposit.paymentMethod,
-              paidAt: initialReservationDeposit.paidAt,
-              notes: initialReservationDeposit.notes ?? null,
-            });
+            const paymentInput = initialReservationDepositPaymentInput(
+              "external_events",
+              created.id,
+              initialReservationDeposit,
+            );
+            if (paymentInput) {
+              await createEventPaymentInTransaction(tx, paymentInput);
+            }
           }
         : undefined,
     );
