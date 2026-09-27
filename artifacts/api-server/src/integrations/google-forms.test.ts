@@ -673,3 +673,59 @@ test("refundable deposit is outside Google Forms payment reconciliation", () => 
   assert.equal(summary.remainingBalance, 450);
   assert.equal(summary.depositRemaining, 10);
 });
+
+test("Google Forms event, extras, deposit and import record are one atomic unit", async () => {
+  const state = {
+    events: [] as string[],
+    extras: [] as string[],
+    payments: [] as string[],
+    imports: [] as string[],
+  };
+
+  const store = {
+    async transact(fn: any) {
+      const snapshot = {
+        events: [...state.events],
+        extras: [...state.extras],
+        payments: [...state.payments],
+        imports: [...state.imports],
+      };
+      try {
+        return await fn({
+          findImport: async () => null,
+          findEvent: async () => null,
+          listExtras: async () => [],
+          listPacks: async () => packs,
+          createEvent: async () => {
+            state.events.push("event-1");
+            return "event-1";
+          },
+          createExtras: async () => {
+            state.extras.push("extras-complete");
+          },
+          createPayment: async () => {
+            state.payments.push("deposit-started");
+            throw new Error("payment write failed");
+          },
+          saveImport: async () => {
+            state.imports.push("import-saved");
+          },
+        });
+      } catch (error) {
+        state.events = snapshot.events;
+        state.extras = snapshot.extras;
+        state.payments = snapshot.payments;
+        state.imports = snapshot.imports;
+        throw error;
+      }
+    },
+  };
+
+  await assert.rejects(importSubmission(base, store));
+  assert.deepEqual(state, {
+    events: [],
+    extras: [],
+    payments: [],
+    imports: [],
+  });
+});
