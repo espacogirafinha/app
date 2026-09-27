@@ -248,12 +248,13 @@ begin
   if venue_id is not null then
     update public.venue_events set amount_paid = amount_paid where id = venue_id;
 
-    if tg_op <> 'DELETE'
-       and new.deleted_at is null
-       and new.payment_type = 'reservation_deposit' then
-      update public.venue_events
-      set reservation_deposit_policy = 'frozen_after_payment'
-      where id = venue_id and reservation_deposit_policy = 'auto_30';
+    if tg_op <> 'DELETE' then
+      if new.deleted_at is null
+         and new.payment_type = 'reservation_deposit' then
+        update public.venue_events
+        set reservation_deposit_policy = 'frozen_after_payment'
+        where id = venue_id and reservation_deposit_policy = 'auto_30';
+      end if;
     end if;
   end if;
 
