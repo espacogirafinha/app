@@ -2,6 +2,8 @@
 -- IMPORTANT: this migration is versioned but must not be applied
 -- until the event-payments feature is explicitly approved for rollout.
 
+begin;
+
 alter table public.venue_events
   add column expected_reservation_deposit_amount numeric(10,2),
   add column reservation_deposit_policy text;
@@ -98,11 +100,12 @@ begin
   from public.event_payments p
   where p.venue_event_id = new.id and p.deleted_at is null;
 
-  if tg_op = 'UPDATE'
-     and new.total_price is distinct from old.total_price
-     and received > new.total_price then
-    raise exception 'total_price cannot be lower than the amount already received'
-      using errcode = '23514';
+  if tg_op = 'UPDATE' then
+    if new.total_price is distinct from old.total_price
+       and received > new.total_price then
+      raise exception 'total_price cannot be lower than the amount already received'
+        using errcode = '23514';
+    end if;
   end if;
 
   new.amount_paid := received;
@@ -134,11 +137,12 @@ begin
   from public.event_payments p
   where p.external_event_id = new.id and p.deleted_at is null;
 
-  if tg_op = 'UPDATE'
-     and new.total_price is distinct from old.total_price
-     and received > new.total_price then
-    raise exception 'total_price cannot be lower than the amount already received'
-      using errcode = '23514';
+  if tg_op = 'UPDATE' then
+    if new.total_price is distinct from old.total_price
+       and received > new.total_price then
+      raise exception 'total_price cannot be lower than the amount already received'
+        using errcode = '23514';
+    end if;
   end if;
 
   new.amount_paid := received;
@@ -180,10 +184,11 @@ declare
   event_total numeric(10,2);
   other_received numeric(10,2);
 begin
-  if tg_op = 'UPDATE'
-     and (new.venue_event_id is distinct from old.venue_event_id
-       or new.external_event_id is distinct from old.external_event_id) then
-    raise exception 'event payment parent cannot be changed' using errcode = '23514';
+  if tg_op = 'UPDATE' then
+    if new.venue_event_id is distinct from old.venue_event_id
+       or new.external_event_id is distinct from old.external_event_id then
+      raise exception 'event payment parent cannot be changed' using errcode = '23514';
+    end if;
   end if;
 
   if new.deleted_at is not null then
@@ -371,3 +376,5 @@ begin
   end if;
 end;
 $$;
+
+commit;
