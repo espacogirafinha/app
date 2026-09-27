@@ -95,8 +95,12 @@ router.post("/event-payments", async (req, res): Promise<void> => {
 router.patch("/event-payments/:id", async (req, res): Promise<void> => {
   const params = UpdateEventPaymentParams.safeParse(req.params);
   const body = UpdateEventPaymentBody.safeParse(req.body);
-  if (!params.success || !body.success) {
-    res.status(400).json({ error: params.success ? body.error.message : params.error.message });
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
     return;
   }
 
