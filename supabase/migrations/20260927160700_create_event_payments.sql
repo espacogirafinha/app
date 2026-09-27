@@ -21,7 +21,7 @@ set reservation_deposit_policy = 'legacy_unknown'
 where reservation_deposit_policy is null;
 
 alter table public.venue_events
-  alter column reservation_deposit_policy set default 'auto_30',
+  alter column reservation_deposit_policy set default 'auto_20',
   alter column reservation_deposit_policy set not null;
 
 alter table public.external_events
@@ -32,13 +32,13 @@ alter table public.venue_events
   add constraint venue_events_expected_reservation_deposit_nonnegative
     check (expected_reservation_deposit_amount is null or expected_reservation_deposit_amount >= 0),
   add constraint venue_events_reservation_deposit_policy_check
-    check (reservation_deposit_policy in ('auto_30', 'manual', 'frozen_after_payment', 'legacy_unknown'));
+    check (reservation_deposit_policy in ('auto_20', 'manual', 'frozen_after_payment', 'legacy_unknown'));
 
 alter table public.external_events
   add constraint external_events_expected_reservation_deposit_nonnegative
     check (expected_reservation_deposit_amount is null or expected_reservation_deposit_amount >= 0),
   add constraint external_events_reservation_deposit_policy_check
-    check (reservation_deposit_policy in ('auto_30', 'manual', 'frozen_after_payment', 'legacy_unknown'));
+    check (reservation_deposit_policy in ('auto_20', 'manual', 'frozen_after_payment', 'legacy_unknown'));
 
 create table public.event_payments (
   id uuid primary key default gen_random_uuid(),
@@ -115,8 +115,8 @@ begin
     else 'paid'
   end;
 
-  if new.reservation_deposit_policy = 'auto_30' then
-    new.expected_reservation_deposit_amount := round(new.total_price * 0.30, 2);
+  if new.reservation_deposit_policy = 'auto_20' then
+    new.expected_reservation_deposit_amount := round(new.total_price * 0.20, 2);
   end if;
 
   return new;
@@ -272,7 +272,7 @@ begin
          and new.payment_type = 'reservation_deposit' then
         update public.venue_events
         set reservation_deposit_policy = 'frozen_after_payment'
-        where id = venue_id and reservation_deposit_policy = 'auto_30';
+        where id = venue_id and reservation_deposit_policy = 'auto_20';
       end if;
     end if;
   end if;

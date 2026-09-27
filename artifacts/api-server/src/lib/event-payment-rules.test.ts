@@ -21,12 +21,12 @@ test("multiple active payments are summed", () => {
   const summary = summarizeEventPayments({
     totalPrice: 550,
     payments: [payment("a", 50, "reservation_deposit"), payment("b", 100), payment("c", 150)],
-    expectedDeposit: 165,
+    expectedDeposit: 110,
   });
   assert.equal(summary.received, 300);
   assert.equal(summary.remainingBalance, 250);
   assert.equal(summary.depositReceived, 50);
-  assert.equal(summary.depositRemaining, 115);
+  assert.equal(summary.depositRemaining, 60);
   assert.equal(summary.paymentStatus, "partial");
 });
 
@@ -173,7 +173,9 @@ test("refundable deposit does not affect received or remaining", () => {
   assert.equal(withDeposit.remainingBalance, withoutDeposit.remainingBalance);
 });
 
-test("venue 30 percent suggestion is rounded to cents", () => {
-  assert.equal(suggestVenueReservationDeposit(550), 165);
-  assert.equal(suggestVenueReservationDeposit(333.33), 100);
+test("venue 20 percent suggestion is rounded to cents", () => {
+  assert.equal(suggestVenueReservationDeposit(400), 80);
+  assert.equal(suggestVenueReservationDeposit(550), 110);
+  assert.equal(suggestVenueReservationDeposit(600), 120);
+  assert.equal(suggestVenueReservationDeposit(333.33), 66.67);
 });

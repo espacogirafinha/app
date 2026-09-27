@@ -251,7 +251,7 @@ export async function createEventPaymentInTransaction(
     if (
       input.module === "venue_events"
       && input.paymentType === "reservation_deposit"
-      && event.reservationDepositPolicy === "auto_30"
+      && event.reservationDepositPolicy === "auto_20"
     ) {
       await tx
         .update(venueEventsTable)
@@ -317,7 +317,7 @@ export async function updateEventPayment(paymentId: string, input: UpdateEventPa
       if (
         module === "venue_events"
         && next.paymentType === "reservation_deposit"
-        && event.reservationDepositPolicy === "auto_30"
+        && event.reservationDepositPolicy === "auto_20"
       ) {
         await tx
           .update(venueEventsTable)

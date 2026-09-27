@@ -14,7 +14,7 @@ export const EVENT_PAYMENT_METHOD_OPTIONS: Array<{
 ];
 
 export function suggestVenueReservationDeposit(totalPrice: number) {
-  return Math.round(Math.max(0, totalPrice) * 30) / 100;
+  return Math.round(Math.max(0, totalPrice) * 20) / 100;
 }
 
 export function initialExpectedDeposit(

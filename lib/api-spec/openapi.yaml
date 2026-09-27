@@ -2687,7 +2687,7 @@ components:
 
     ReservationDepositPolicy:
       type: string
-      enum: [auto_30, manual, frozen_after_payment, legacy_unknown]
+      enum: [auto_20, manual, frozen_after_payment, legacy_unknown]
 
     EventPayment:
       type: object

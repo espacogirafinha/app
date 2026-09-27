@@ -27,7 +27,7 @@ export const venueEventsTable = pgTable("venue_events", {
   termsAccepted: boolean("terms_accepted").default(false),
   totalPrice: numeric("total_price", { precision: 10, scale: 2 }).notNull().default("0"),
   expectedReservationDepositAmount: numeric("expected_reservation_deposit_amount", { precision: 10, scale: 2 }),
-  reservationDepositPolicy: text("reservation_deposit_policy").notNull().default("auto_30"),
+  reservationDepositPolicy: text("reservation_deposit_policy").notNull().default("auto_20"),
   amountPaid: numeric("amount_paid", { precision: 10, scale: 2 }).notNull().default("0"),
   paymentMethod: text("payment_method"),
   notes: text("notes"),

@@ -111,8 +111,8 @@ router.post("/venue-events", async (req, res): Promise<void> => {
     initialReservationDeposit,
     ...body
   } = parsed.data;
-  const depositPolicy = reservationDepositPolicy ?? "auto_30";
-  const expectedDeposit = depositPolicy === "auto_30"
+  const depositPolicy = reservationDepositPolicy ?? "auto_20";
+  const expectedDeposit = depositPolicy === "auto_20"
     ? suggestVenueReservationDeposit(totalPrice)
     : expectedReservationDepositAmount ?? null;
 
@@ -252,7 +252,7 @@ router.patch("/venue-events/:id", async (req, res): Promise<void> => {
     }
     updateData.reservationDepositPolicy = nextPolicy;
 
-    if (nextPolicy === "auto_30") {
+    if (nextPolicy === "auto_20") {
       updateData.expectedReservationDepositAmount = String(suggestVenueReservationDeposit(nextTotal));
     } else if (expectedReservationDepositAmount !== undefined) {
       updateData.expectedReservationDepositAmount =

@@ -117,10 +117,10 @@ const initialState: VenueEventFormState = {
   imageAuthorization: "",
   termsAccepted: false,
   totalPrice: "220",
-  expectedReservationDepositAmount: "66",
-  reservationDepositPolicy: "auto_30",
+  expectedReservationDepositAmount: "44",
+  reservationDepositPolicy: "auto_20",
   depositState: "pending",
-  initialDepositAmount: "66",
+  initialDepositAmount: "44",
   initialDepositMethod: "",
   initialDepositPaidAt: "",
   initialDepositNotes: "",
@@ -176,7 +176,7 @@ export function VenueEventModal({
     setExtras([]);
     setBasePrice(nextPackPrice);
     setIsTotalManual(Boolean(event) && Math.abs(parseMoneyInput(nextForm.totalPrice) - nextPackPrice) > 0.01);
-    setIsExpectedDepositManual(event ? event.reservationDepositPolicy !== "auto_30" : false);
+    setIsExpectedDepositManual(event ? event.reservationDepositPolicy !== "auto_20" : false);
     setIsInitialDepositAmountManual(false);
     loadedExtrasEntityRef.current = null;
   }, [event, open]);
@@ -199,7 +199,7 @@ export function VenueEventModal({
   }, [basePrice, extrasTotal, isTotalManual, open]);
 
   useEffect(() => {
-    if (!open || form.reservationDepositPolicy !== "auto_30" || isExpectedDepositManual) return;
+    if (!open || form.reservationDepositPolicy !== "auto_20" || isExpectedDepositManual) return;
     const nextExpected = formatMoneyInput(suggestVenueReservationDeposit(totalPrice));
     setForm((current) => ({
       ...current,
@@ -479,8 +479,8 @@ export function VenueEventModal({
                 value={form.expectedReservationDepositAmount}
                 onValueChange={updateExpectedDeposit}
               />
-              {form.reservationDepositPolicy === "auto_30" && !isExpectedDepositManual ? (
-                <p className="text-xs text-muted-foreground">30% do total, atualizado automaticamente.</p>
+              {form.reservationDepositPolicy === "auto_20" && !isExpectedDepositManual ? (
+                <p className="text-xs text-muted-foreground">20% do total, atualizado automaticamente.</p>
               ) : null}
               {form.reservationDepositPolicy === "legacy_unknown" && !form.expectedReservationDepositAmount ? (
                 <p className="text-xs text-muted-foreground">Sinal esperado não registado.</p>

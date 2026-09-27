@@ -423,7 +423,7 @@ export function ExternalEventModal({
               {form.reservationDepositPolicy === "legacy_unknown" && !form.expectedReservationDepositAmount ? (
                 <p className="text-xs text-muted-foreground">Sinal esperado não registado.</p>
               ) : (
-                <p className="text-xs text-muted-foreground">Valor manual. Nos Serviços Externos não é aplicado 30% automático.</p>
+                <p className="text-xs text-muted-foreground">Valor manual. Nos Serviços Externos não é aplicada percentagem automática.</p>
               )}
             </Field>
             <div className="rounded-xl border border-border bg-muted/40 p-3">

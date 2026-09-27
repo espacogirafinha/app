@@ -2,7 +2,7 @@ export const EVENT_PAYMENT_MODULES = ["venue_events", "external_events"] as cons
 export const EVENT_PAYMENT_TYPES = ["reservation_deposit", "payment", "legacy_payment"] as const;
 export const EVENT_PAYMENT_METHODS = ["cash", "bank_transfer", "mbway"] as const;
 export const RESERVATION_DEPOSIT_POLICIES = [
-  "auto_30",
+  "auto_20",
   "manual",
   "frozen_after_payment",
   "legacy_unknown",
@@ -72,7 +72,7 @@ export function paymentStatusFromAmounts(totalPrice: number, received: number): 
 }
 
 export function suggestVenueReservationDeposit(totalPrice: number) {
-  return roundMoney(Math.max(0, totalPrice) * 0.3);
+  return roundMoney(Math.max(0, totalPrice) * 0.2);
 }
 
 export function validatePaymentDraft(input: PaymentDraft) {
