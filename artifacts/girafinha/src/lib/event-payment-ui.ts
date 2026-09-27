@@ -17,6 +17,17 @@ export function suggestVenueReservationDeposit(totalPrice: number) {
   return Math.round(Math.max(0, totalPrice) * 30) / 100;
 }
 
+export function initialExpectedDeposit(
+  module: "venue_events" | "external_events",
+  totalPrice: number,
+) {
+  return module === "venue_events" ? suggestVenueReservationDeposit(totalPrice) : null;
+}
+
+export function collectionDefaultAmount(remainingBalance: number) {
+  return Math.max(0, remainingBalance);
+}
+
 export function nextAutomaticVenueDeposit(input: {
   totalPrice: number;
   currentExpected: number;
