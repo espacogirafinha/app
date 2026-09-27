@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventExtrasDetails } from "@/components/event-extras-selector";
 import { EventAttachmentsDetails } from "@/components/event-attachments";
 import { ExternalEventModal } from "@/components/external-event-modal";
+import { EventPaymentsPanel } from "@/components/event-payments-panel";
 import { OperationalChecklist } from "@/components/operational-checklist";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -375,10 +376,7 @@ function ExternalEventRow({
               <Info label="Tipo" value={event.eventType} />
               <Info label="Tema" value={event.eventTheme} />
             </DetailsBlock>
-            <DetailsBlock title="Pagamento e ações">
-              <Info label="Total" value={`${event.totalPrice.toFixed(2)} €`} />
-              <Info label="Pago" value={`${event.amountPaid.toFixed(2)} €`} />
-              <Info label="Método" value={event.paymentMethod} />
+            <DetailsBlock title="Ações e caução">
               {shouldShowRefundableDeposit(event.refundableDepositAmount, event.refundableDepositStatus) ? (
                 <div className="mt-3 border-t border-border pt-3">
                   <p className="mb-2 font-semibold text-foreground">Caução</p>
@@ -424,6 +422,8 @@ function ExternalEventRow({
               </div>
             </DetailsBlock>
           </div>
+
+          <EventPaymentsPanel module="external_events" entityId={event.id} />
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <DetailsBlock title="Serviços incluídos">
@@ -473,7 +473,7 @@ function formatDepositDateTime(value: string) {
 
 function PaymentBadge({ status }: { status: ExternalEvent["paymentStatus"] }) {
   if (status === "paid") return <Badge className="rounded-md bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Pago</Badge>;
-  if (status === "partial") return <Badge className="rounded-md bg-amber-100 text-amber-800 hover:bg-amber-100">Sinal</Badge>;
+  if (status === "partial") return <Badge className="rounded-md bg-amber-100 text-amber-800 hover:bg-amber-100">Parcial</Badge>;
   return <Badge className="rounded-md bg-rose-100 text-rose-800 hover:bg-rose-100">Pendente</Badge>;
 }
 
