@@ -1,5 +1,3 @@
-import { financialPosition } from "./reports-finance";
-
 export type FinancialPaymentKind =
   | "reservation_deposit"
   | "payment"
@@ -22,16 +20,20 @@ export function eventFinancialPosition(
   totalPrice: number,
   amountPaidMirror: number,
 ): EventFinancialPosition {
-  const position = financialPosition(totalPrice, amountPaidMirror);
+  const revenue = roundMoney(Math.max(0, totalPrice));
+  const received = roundMoney(Math.max(0, amountPaidMirror));
+  const pending = roundMoney(Math.max(revenue - received, 0));
   const paymentStatus =
-    position.received <= 0
+    received <= 0
       ? "unpaid"
-      : position.received < position.revenue
+      : received < revenue
         ? "partial"
         : "paid";
 
   return {
-    ...position,
+    revenue,
+    received,
+    pending,
     paymentStatus,
   };
 }
