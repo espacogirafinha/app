@@ -102,11 +102,20 @@ export function parseAge(v: unknown): number | null {
 }
 export function parseDate(v: unknown): string | null {
   const s = value(v);
-  const m =
-    /^(\d{4})-(\d{2})-(\d{2})$/.exec(s) ??
-    /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
-  if (!m) return null;
-  const iso = s.includes("/") ? `${m[3]}-${m[2]}-${m[1]}` : s;
+  let iso: string;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    iso = s;
+  } else {
+    const ymdSlash = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(s);
+    const dmySlash = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
+    if (ymdSlash) {
+      iso = `${ymdSlash[1]}-${ymdSlash[2]}-${ymdSlash[3]}`;
+    } else if (dmySlash) {
+      iso = `${dmySlash[3]}-${dmySlash[2]}-${dmySlash[1]}`;
+    } else {
+      return null;
+    }
+  }
   const d = new Date(`${iso}T12:00:00Z`);
   return !Number.isNaN(d.valueOf()) && d.toISOString().slice(0, 10) === iso
     ? iso

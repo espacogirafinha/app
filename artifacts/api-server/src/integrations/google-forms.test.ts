@@ -261,6 +261,14 @@ test("existing phone and date never overwritten or paid reduced", async () => {
 });
 test("thousands separator is not mistaken for decimal", () =>
   assert.equal(parseMoney("1.000,00 €"), 1000));
+test("Google Sheet display date yyyy/mm/dd is normalized", () =>
+  assert.equal(
+    normalizeSubmission({
+      ...base,
+      fields: { ...base.fields, eventDate: "2027/12/30" },
+    }).eventDate,
+    "2027-12-30",
+  ));
 test("invalid calendar date stays unknown", () =>
   assert.equal(
     normalizeSubmission({
