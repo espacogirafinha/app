@@ -13,6 +13,7 @@ import {
   combineFinancialTotals,
   type FinancialLine,
 } from "../lib/reports-finance";
+import { eventFinancialPosition, isEventDateInRange } from "../lib/event-finance-read-model";
 
 const router: IRouter = Router();
 const ACTIVE_PARTICIPANT_STATUSES = new Set(["registered", "confirmed", "attended"]);
@@ -119,7 +120,8 @@ function venueReport(venueEvents: VenueEventRow[]) {
 
   for (const event of venueEvents) {
     const total = money(event.totalPrice);
-    financialLines.push({ revenue: total, received: money(event.amountPaid) });
+    const financial = eventFinancialPosition(total, money(event.amountPaid));
+    financialLines.push({ revenue: financial.revenue, received: financial.received });
     childrenTotal += event.childrenCount ?? 0;
     addStat(packStats, event.packName || "Sem pack", total);
     if (event.source) addStat(sourceStats, event.source, total);
@@ -143,7 +145,8 @@ function externalReport(externalEvents: ExternalEventRow[], externalServices: Ex
 
   for (const event of externalEvents) {
     const total = money(event.totalPrice);
-    financialLines.push({ revenue: total, received: money(event.amountPaid) });
+    const financial = eventFinancialPosition(total, money(event.amountPaid));
+    financialLines.push({ revenue: financial.revenue, received: financial.received });
 
     const services = (servicesByEvent.get(event.id) ?? []).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     for (const service of services) addStat(serviceStats, service.serviceLabel || service.serviceType, money(service.price));
@@ -221,15 +224,15 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
   ]);
 
   const venueEvents = venueEventsRows.filter(
-    (event) => isActiveStatus(event.status) && event.eventDate >= startDate && event.eventDate <= endDate,
+    (event) => isActiveStatus(event.status) && isEventDateInRange(event.eventDate, startDate, endDate),
   );
   const externalEvents = externalEventsRows.filter(
-    (event) => isActiveStatus(event.status) && event.eventDate >= startDate && event.eventDate <= endDate,
+    (event) => isActiveStatus(event.status) && isEventDateInRange(event.eventDate, startDate, endDate),
   );
   const activeExternalEventIds = new Set(externalEvents.map((event) => event.id));
   const externalServices = externalServicesRows.filter((service) => activeExternalEventIds.has(service.externalEventId));
   const workshopRowsInRange = workshopsRows.filter(
-    (workshop) => isActiveStatus(workshop.status) && workshop.date >= startDate && workshop.date <= endDate,
+    (workshop) => isActiveStatus(workshop.status) && isEventDateInRange(workshop.date, startDate, endDate),
   );
   const activeWorkshopIds = new Set(workshopRowsInRange.map((workshop) => workshop.id));
   const workshopParticipants = workshopParticipantsRows.filter(

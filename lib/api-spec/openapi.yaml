@@ -3427,10 +3427,18 @@ components:
           type: integer
         availableSeats:
           type: integer
+        totalRevenue:
+          type: number
         totalReceived:
           type: number
         totalPending:
           type: number
+        paidCount:
+          type: integer
+        partialCount:
+          type: integer
+        unpaidCount:
+          type: integer
         participants:
           type: array
           items:
@@ -3451,8 +3459,12 @@ components:
         - participantsCount
         - activeParticipantsCount
         - availableSeats
+        - totalRevenue
         - totalReceived
         - totalPending
+        - paidCount
+        - partialCount
+        - unpaidCount
         - createdAt
         - updatedAt
 
@@ -3658,16 +3670,28 @@ components:
           type: integer
         nextSevenDaysCount:
           type: integer
+        revenue:
+          type: number
         received:
           type: number
         pending:
           type: number
+        paidCount:
+          type: integer
+        partialCount:
+          type: integer
+        unpaidCount:
+          type: integer
       required:
         - totalCount
         - upcomingCount
         - nextSevenDaysCount
+        - revenue
         - received
         - pending
+        - paidCount
+        - partialCount
+        - unpaidCount
 
     DashboardV2WorkshopAreaSummary:
       allOf:
@@ -3711,6 +3735,8 @@ components:
           type: number
         pending:
           type: number
+        financialStatusText:
+          type: string
         nextAction:
           type: string
         href:
@@ -3732,6 +3758,7 @@ components:
         - total
         - received
         - pending
+        - financialStatusText
         - nextAction
         - href
         - services
