@@ -208,8 +208,12 @@ router.patch("/venue-events/:id", async (req, res): Promise<void> => {
     if (
       expectedReservationDepositAmount !== undefined
       && reservationDepositPolicy === undefined
-      && (current.expectedReservationDepositAmount === null
-        || Math.abs(expectedReservationDepositAmount - money(current.expectedReservationDepositAmount)) > 0.001)
+      && (
+        expectedReservationDepositAmount === null
+          ? current.expectedReservationDepositAmount !== null
+          : current.expectedReservationDepositAmount === null
+            || Math.abs(expectedReservationDepositAmount - money(current.expectedReservationDepositAmount)) > 0.001
+      )
     ) {
       nextPolicy = "manual";
     }
