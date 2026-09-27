@@ -176,7 +176,7 @@ export function VenueEventModal({
     setExtras([]);
     setBasePrice(nextPackPrice);
     setIsTotalManual(Boolean(event) && Math.abs(parseMoneyInput(nextForm.totalPrice) - nextPackPrice) > 0.01);
-    setIsExpectedDepositManual(Boolean(event) && event.reservationDepositPolicy !== "auto_30");
+    setIsExpectedDepositManual(event ? event.reservationDepositPolicy !== "auto_30" : false);
     setIsInitialDepositAmountManual(false);
     loadedExtrasEntityRef.current = null;
   }, [event, open]);
