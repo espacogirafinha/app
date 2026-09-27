@@ -216,7 +216,10 @@ export async function listEventPayments(module: EventPaymentModule, entityId: st
   };
 }
 
-export async function createEventPayment(input: CreateEventPaymentInput) {
+export async function createEventPaymentInTransaction(
+  tx: DbTransaction,
+  input: CreateEventPaymentInput,
+) {
   try {
     validatePaymentDraft({
       paymentType: input.paymentType,
@@ -226,43 +229,45 @@ export async function createEventPayment(input: CreateEventPaymentInput) {
       source: "manual",
     });
 
-    return await db.transaction(async (tx) => {
-      const event = await lockEvent(tx, input.module, input.entityId);
-      const rows = await activePaymentRows(tx, input.module, input.entityId);
-      assertPaymentWithinBalance(event.totalPrice, rows.map(toPaymentLike), input.amount);
+    const event = await lockEvent(tx, input.module, input.entityId);
+    const rows = await activePaymentRows(tx, input.module, input.entityId);
+    assertPaymentWithinBalance(event.totalPrice, rows.map(toPaymentLike), input.amount);
 
-      const [created] = await tx
-        .insert(eventPaymentsTable)
-        .values({
-          venueEventId: input.module === "venue_events" ? input.entityId : null,
-          externalEventId: input.module === "external_events" ? input.entityId : null,
-          paymentType: input.paymentType,
-          amount: String(input.amount),
-          paymentMethod: input.paymentMethod,
-          paidAt: input.paidAt,
-          notes: input.notes ?? null,
-          source: "manual",
-          sourceReference: null,
-        })
-        .returning();
+    const [created] = await tx
+      .insert(eventPaymentsTable)
+      .values({
+        venueEventId: input.module === "venue_events" ? input.entityId : null,
+        externalEventId: input.module === "external_events" ? input.entityId : null,
+        paymentType: input.paymentType,
+        amount: String(input.amount),
+        paymentMethod: input.paymentMethod,
+        paidAt: input.paidAt,
+        notes: input.notes ?? null,
+        source: "manual",
+        sourceReference: null,
+      })
+      .returning();
 
-      if (
-        input.module === "venue_events"
-        && input.paymentType === "reservation_deposit"
-        && event.reservationDepositPolicy === "auto_30"
-      ) {
-        await tx
-          .update(venueEventsTable)
-          .set({ reservationDepositPolicy: "frozen_after_payment" })
-          .where(eq(venueEventsTable.id, input.entityId));
-      }
+    if (
+      input.module === "venue_events"
+      && input.paymentType === "reservation_deposit"
+      && event.reservationDepositPolicy === "auto_30"
+    ) {
+      await tx
+        .update(venueEventsTable)
+        .set({ reservationDepositPolicy: "frozen_after_payment" })
+        .where(eq(venueEventsTable.id, input.entityId));
+    }
 
-      const summary = await synchronizeEventPaymentSummary(tx, input.module, input.entityId);
-      return { payment: publicPayment(created), summary };
-    });
+    const summary = await synchronizeEventPaymentSummary(tx, input.module, input.entityId);
+    return { payment: publicPayment(created), summary };
   } catch (error) {
     translateRuleError(error);
   }
+}
+
+export async function createEventPayment(input: CreateEventPaymentInput) {
+  return db.transaction((tx) => createEventPaymentInTransaction(tx, input));
 }
 
 export async function updateEventPayment(paymentId: string, input: UpdateEventPaymentInput) {

@@ -10,7 +10,8 @@ import {
   UpdateExternalEventParams,
 } from "@workspace/api-zod";
 import { refundableDepositCreateValues, refundableDepositUpdateValues } from "../lib/refundable-deposits";
-import { getActiveReceivedAmount, synchronizeEventPaymentSummary } from "../lib/event-payments";
+import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary } from "../lib/event-payments";
+import { createEventWithOptionalInitialDeposit } from "../lib/event-payment-creation";
 
 const router: IRouter = Router();
 
@@ -148,6 +149,7 @@ router.post("/external-events", async (req, res): Promise<void> => {
     paymentStatus: _legacyPaymentStatus,
     expectedReservationDepositAmount,
     reservationDepositPolicy,
+    initialReservationDeposit,
     refundableDepositAmount,
     refundableDepositStatus,
     refundableDepositReceivedAt,
@@ -157,50 +159,79 @@ router.post("/external-events", async (req, res): Promise<void> => {
   } = parsed.data;
   const depositPolicy = reservationDepositPolicy ?? "manual";
 
-  const row = await db.transaction(async (tx) => {
-    const [created] = await tx
-      .insert(externalEventsTable)
-      .values(compactObject({
-        ...body,
-        status: body.status ?? "draft",
-        paymentStatus: "unpaid",
-        guestCount: body.guestCount ?? 0,
-        totalPrice: String(totalPrice),
-        expectedReservationDepositAmount:
-          expectedReservationDepositAmount === undefined || expectedReservationDepositAmount === null
-            ? null
-            : String(expectedReservationDepositAmount),
-        reservationDepositPolicy: depositPolicy,
-        amountPaid: "0",
-        ...refundableDepositCreateValues({
-          refundableDepositAmount,
-          refundableDepositStatus,
-          refundableDepositReceivedAt,
-          refundableDepositReturnedAt,
-          refundableDepositNotes,
-        }),
-      }) as typeof externalEventsTable.$inferInsert)
-      .returning();
+  try {
+    const row = await createEventWithOptionalInitialDeposit(
+      (work) => db.transaction(work),
+      async (tx) => {
+        const [created] = await tx
+          .insert(externalEventsTable)
+          .values(compactObject({
+            ...body,
+            status: body.status ?? "draft",
+            paymentStatus: "unpaid",
+            guestCount: body.guestCount ?? 0,
+            totalPrice: String(totalPrice),
+            expectedReservationDepositAmount:
+              expectedReservationDepositAmount === undefined || expectedReservationDepositAmount === null
+                ? null
+                : String(expectedReservationDepositAmount),
+            reservationDepositPolicy: depositPolicy,
+            amountPaid: "0",
+            ...refundableDepositCreateValues({
+              refundableDepositAmount,
+              refundableDepositStatus,
+              refundableDepositReceivedAt,
+              refundableDepositReturnedAt,
+              refundableDepositNotes,
+            }),
+          }) as typeof externalEventsTable.$inferInsert)
+          .returning();
 
-    if (services.length > 0) {
-      await tx.insert(externalEventServicesTable).values(
-        services.map((service, index) => compactObject({
-          externalEventId: created.id,
-          serviceType: service.serviceType,
-          serviceLabel: service.serviceLabel,
-          price: String(service.price ?? 0),
-          status: service.status ?? "planned",
-          notes: service.notes,
-          sortOrder: service.sortOrder ?? index + 1,
-        }) as typeof externalEventServicesTable.$inferInsert),
-      );
+        if (services.length > 0) {
+          await tx.insert(externalEventServicesTable).values(
+            services.map((service, index) => compactObject({
+              externalEventId: created.id,
+              serviceType: service.serviceType,
+              serviceLabel: service.serviceLabel,
+              price: String(service.price ?? 0),
+              status: service.status ?? "planned",
+              notes: service.notes,
+              sortOrder: service.sortOrder ?? index + 1,
+            }) as typeof externalEventServicesTable.$inferInsert),
+          );
+        }
+
+        return created;
+      },
+      initialReservationDeposit
+        ? async (tx, created) => {
+            await createEventPaymentInTransaction(tx, {
+              module: "external_events",
+              entityId: created.id,
+              paymentType: "reservation_deposit",
+              amount: initialReservationDeposit.amount,
+              paymentMethod: initialReservationDeposit.paymentMethod,
+              paidAt: initialReservationDeposit.paidAt,
+              notes: initialReservationDeposit.notes ?? null,
+            });
+          }
+        : undefined,
+    );
+
+    const [fresh] = await db
+      .select()
+      .from(externalEventsTable)
+      .where(eq(externalEventsTable.id, row.id));
+
+    const servicesByEventId = await getServicesByEventIds([row.id]);
+    res.status(201).json(formatExternalEvent(fresh ?? row, servicesByEventId.get(row.id) ?? []));
+  } catch (error) {
+    if (error instanceof Error && "status" in error && typeof (error as { status?: unknown }).status === "number") {
+      res.status((error as { status: number }).status).json({ error: error.message });
+      return;
     }
-
-    return created;
-  });
-
-  const servicesByEventId = await getServicesByEventIds([row.id]);
-  res.status(201).json(formatExternalEvent(row, servicesByEventId.get(row.id) ?? []));
+    throw error;
+  }
 });
 
 router.get("/external-events/:id", async (req, res): Promise<void> => {

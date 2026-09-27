@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
-import { getActiveReceivedAmount, synchronizeEventPaymentSummary } from "../lib/event-payments";
+import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary } from "../lib/event-payments";
+import { createEventWithOptionalInitialDeposit } from "../lib/event-payment-creation";
 import { suggestVenueReservationDeposit } from "../lib/event-payment-rules";
 import { db, eventChecklistsTable, eventSelectedExtrasTable, venueEventsTable } from "@workspace/db";
 import {
@@ -107,30 +108,63 @@ router.post("/venue-events", async (req, res): Promise<void> => {
     amountPaid: _legacyAmountPaid,
     expectedReservationDepositAmount,
     reservationDepositPolicy,
+    initialReservationDeposit,
     ...body
   } = parsed.data;
   const depositPolicy = reservationDepositPolicy ?? "auto_30";
   const expectedDeposit = depositPolicy === "auto_30"
     ? suggestVenueReservationDeposit(totalPrice)
     : expectedReservationDepositAmount ?? null;
-  const values = compactObject({
-    ...body,
-    status: body.status ?? "draft",
-    paymentStatus: "unpaid",
-    childrenCount: body.childrenCount ?? 0,
-    termsAccepted: body.termsAccepted ?? false,
-    totalPrice: String(totalPrice),
-    expectedReservationDepositAmount: expectedDeposit === null ? null : String(expectedDeposit),
-    reservationDepositPolicy: depositPolicy,
-    amountPaid: "0",
-  });
 
-  const [row] = await db
-    .insert(venueEventsTable)
-    .values(values as typeof venueEventsTable.$inferInsert)
-    .returning();
+  try {
+    const row = await createEventWithOptionalInitialDeposit(
+      (work) => db.transaction(work),
+      async (tx) => {
+        const [created] = await tx
+          .insert(venueEventsTable)
+          .values(compactObject({
+            ...body,
+            status: body.status ?? "draft",
+            paymentStatus: "unpaid",
+            childrenCount: body.childrenCount ?? 0,
+            termsAccepted: body.termsAccepted ?? false,
+            totalPrice: String(totalPrice),
+            expectedReservationDepositAmount: expectedDeposit === null ? null : String(expectedDeposit),
+            reservationDepositPolicy: depositPolicy,
+            amountPaid: "0",
+          }) as typeof venueEventsTable.$inferInsert)
+          .returning();
 
-  res.status(201).json(formatVenueEvent(row));
+        return created;
+      },
+      initialReservationDeposit
+        ? async (tx, created) => {
+            await createEventPaymentInTransaction(tx, {
+              module: "venue_events",
+              entityId: created.id,
+              paymentType: "reservation_deposit",
+              amount: initialReservationDeposit.amount,
+              paymentMethod: initialReservationDeposit.paymentMethod,
+              paidAt: initialReservationDeposit.paidAt,
+              notes: initialReservationDeposit.notes ?? null,
+            });
+          }
+        : undefined,
+    );
+
+    const [fresh] = await db
+      .select()
+      .from(venueEventsTable)
+      .where(eq(venueEventsTable.id, row.id));
+
+    res.status(201).json(formatVenueEvent(fresh ?? row));
+  } catch (error) {
+    if (error instanceof Error && "status" in error && typeof (error as { status?: unknown }).status === "number") {
+      res.status((error as { status: number }).status).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
 });
 
 router.get("/venue-events/:id", async (req, res): Promise<void> => {

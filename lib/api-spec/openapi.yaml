@@ -2670,6 +2670,21 @@ components:
       type: string
       enum: [cash, bank_transfer, mbway]
 
+    InitialReservationDeposit:
+      type: object
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        paymentMethod:
+          $ref: "#/components/schemas/EventPaymentMethod"
+        paidAt:
+          type: string
+          format: date-time
+        notes:
+          type: ["string", "null"]
+      required: [amount, paymentMethod, paidAt]
+
     ReservationDepositPolicy:
       type: string
       enum: [auto_30, manual, frozen_after_payment, legacy_unknown]
@@ -2874,6 +2889,8 @@ components:
           minimum: 0
         reservationDepositPolicy:
           $ref: "#/components/schemas/ReservationDepositPolicy"
+        initialReservationDeposit:
+          $ref: "#/components/schemas/InitialReservationDeposit"
         amountPaid:
           type: number
         remainingBalance:
@@ -2970,7 +2987,6 @@ components:
         - startTime
         - packName
         - totalPrice
-        - amountPaid
 
     UpdateVenueEventBody:
       type: object
@@ -3228,6 +3244,8 @@ components:
           minimum: 0
         reservationDepositPolicy:
           $ref: "#/components/schemas/ReservationDepositPolicy"
+        initialReservationDeposit:
+          $ref: "#/components/schemas/InitialReservationDeposit"
         amountPaid:
           type: number
           deprecated: true
@@ -3259,7 +3277,6 @@ components:
         - eventDate
         - startTime
         - totalPrice
-        - amountPaid
         - services
 
     UpdateExternalEventBody:
