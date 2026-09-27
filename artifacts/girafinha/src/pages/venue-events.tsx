@@ -22,6 +22,7 @@ import { EventExtrasDetails } from "@/components/event-extras-selector";
 import { EventAttachmentsDetails } from "@/components/event-attachments";
 import { OperationalChecklist } from "@/components/operational-checklist";
 import { VenueEventModal } from "@/components/venue-event-modal";
+import { EventPaymentsPanel } from "@/components/event-payments-panel";
 import { useToast } from "@/hooks/use-toast";
 import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import {
@@ -334,11 +335,8 @@ function VenueEventRow({
               <Info label="Catering" value={event.cateringNotes} />
               <Info label="Alergias" value={event.allergies} />
             </DetailsBlock>
-            <DetailsBlock title="Pagamento e ações">
-              <Info label="Total" value={`${event.totalPrice.toFixed(2)} €`} />
-              <Info label="Pago" value={`${event.amountPaid.toFixed(2)} €`} />
-              <Info label="Método" value={event.paymentMethod} />
-              <div className="mt-3 flex flex-wrap gap-2">
+            <DetailsBlock title="Ações">
+              <div className="flex flex-wrap gap-2">
                 <VenueEventModal
                   event={event}
                   trigger={
@@ -373,6 +371,7 @@ function VenueEventRow({
               </div>
             </DetailsBlock>
           </div>
+          <EventPaymentsPanel module="venue_events" entityId={event.id} />
           <EventExtrasDetails module="venue_events" entityId={event.id} />
           <EventAttachmentsDetails entityType="venue_event" entityId={event.id} />
           <div className="mt-4">
@@ -392,7 +391,7 @@ function VenueEventRow({
 
 function PaymentBadge({ status }: { status: VenueEvent["paymentStatus"] }) {
   if (status === "paid") return <Badge className="rounded-md bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Pago</Badge>;
-  if (status === "partial") return <Badge className="rounded-md bg-amber-100 text-amber-800 hover:bg-amber-100">Sinal</Badge>;
+  if (status === "partial") return <Badge className="rounded-md bg-amber-100 text-amber-800 hover:bg-amber-100">Parcial</Badge>;
   return <Badge className="rounded-md bg-rose-100 text-rose-800 hover:bg-rose-100">Pendente</Badge>;
 }
 
