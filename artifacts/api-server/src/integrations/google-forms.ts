@@ -253,7 +253,7 @@ export function planImport(
   ].filter(
     (x) =>
       x &&
-      !/^n[aã]o pretendo adicionar nenhum serviço extra$/i.test(x) &&
+      !/^n[aã]o pretendo adicionar nenhum serviço extra[.!]?$/i.test(x) &&
       !/^n[aã]o$/i.test(x),
   );
   if (requested.length) reasons.push("requested extras require review");

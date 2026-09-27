@@ -328,17 +328,23 @@ test("form request for service is review, even if catalog matches", () => {
   assert.equal(r.status, "needs_review");
   assert.deepEqual(r.extras, []);
 });
-test("form says no extra, no review", () =>
-  assert.equal(
-    planImport({
-      ...base,
-      fields: {
-        ...base.fields,
-        requestedService: "Não pretendo adicionar nenhum serviço extra",
-      },
-    }, [], packs).status,
-    "created",
-  ));
+test("form says no extra, no review", () => {
+  for (const requestedService of [
+    "Não pretendo adicionar nenhum serviço extra",
+    "Não pretendo adicionar nenhum serviço extra.",
+  ]) {
+    assert.equal(
+      planImport({
+        ...base,
+        fields: {
+          ...base.fields,
+          requestedService,
+        },
+      }, [], packs).status,
+      "created",
+    );
+  }
+});
 test("included child snack on actual form does not require review", () =>
   assert.equal(
     planImport({
