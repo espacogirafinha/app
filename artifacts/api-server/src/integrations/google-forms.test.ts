@@ -7,6 +7,7 @@ import {
   parseTimeRange,
   normalizePack,
   normalizeImageAuthorization,
+  normalizePaymentMethod,
   parseAge,
   normalizeSubmission,
   dedupKey,
@@ -14,6 +15,7 @@ import {
   planImport,
   importSubmission,
 } from "./google-forms.ts";
+import { summarizeEventPayments } from "../lib/event-payment-rules.ts";
 
 const base = {
   formId: "19JReWvo-11bzk6X1iIARghDLEh0pLDaJHr2Bu8RmMFc",
@@ -164,15 +166,23 @@ test("Patricia needs review, never invents payment", () => {
   assert.equal(result.status, "needs_review");
   assert.ok(result.event);
   assert.equal(result.event.totalPrice, 550);
-  assert.equal(result.event.amountPaid, 0);
-  assert.equal(result.event.paymentStatus, "unpaid");
+  assert.equal(result.event.expectedReservationDepositAmount, 110);
+  assert.equal(result.event.reservationDepositPolicy, "auto_20");
+  assert.equal(result.deposit, null);
 });
 test("Adriana dry run", () => {
   const result = planImport(base, [], packs);
   assert.equal(result.status, "created");
   assert.equal(result.event?.totalPrice, 400);
-  assert.equal(result.event?.amountPaid, 60);
-  assert.equal(result.event?.paymentStatus, "partial");
+  assert.equal(result.event?.expectedReservationDepositAmount, 80);
+  assert.equal(result.event?.reservationDepositPolicy, "frozen_after_payment");
+  assert.equal(result.deposit?.amount, 60);
+  assert.equal(result.deposit?.paymentMethod, null);
+  assert.equal(result.deposit?.paidAt, null);
+  assert.equal(
+    result.deposit?.sourceReference,
+    `google_forms:${base.formId}:${base.submissionId}:deposit`,
+  );
   assert.deepEqual(result.extras, []);
 });
 test("ambiguous extras never billed", () =>
@@ -207,9 +217,10 @@ test("confirmed active exact extra uses immutable catalog price", () => {
   assert.equal(r.event?.totalPrice, 445);
   assert.equal(r.extras[0]?.unitPrice, 45);
 });
-test("same submission twice creates only once", async () => {
+test("same submission twice creates one party and one deposit payment", async () => {
   const seen = new Set<string>();
   let created = 0;
+  let payments = 0;
   const store = {
     async transact(fn: any) {
       return fn({
@@ -226,12 +237,16 @@ test("same submission twice creates only once", async () => {
           return "id";
         },
         createExtras: async () => {},
+        createPayment: async () => {
+          payments++;
+        },
       });
     },
   };
   await importSubmission(base, store);
   const second = await importSubmission(base, store);
   assert.equal(created, 1);
+  assert.equal(payments, 1);
   assert.equal(second.status, "already_exists");
 });
 test("existing phone and date never overwritten or paid reduced", async () => {
@@ -251,6 +266,9 @@ test("existing phone and date never overwritten or paid reduced", async () => {
         },
         createExtras: async () => {
           throw Error("overwrite");
+        },
+        createPayment: async () => {
+          throw Error("duplicate payment");
         },
       });
     },
@@ -470,6 +488,9 @@ test("retry of a needs-review import stays needs_review without duplicating its 
           return "review-party";
         },
         createExtras: async () => {},
+        createPayment: async () => {
+          throw Error("invalid deposit must not create a payment");
+        },
       });
     },
   };
@@ -486,3 +507,167 @@ test("missing required photo choice is held for review", () =>
       .status,
     "needs_review",
   ));
+
+test("payment methods from the form normalize conservatively", () => {
+  assert.equal(normalizePaymentMethod(" Dinheiro "), "cash");
+  assert.equal(normalizePaymentMethod("Transferência"), "bank_transfer");
+  assert.equal(normalizePaymentMethod("Transferencia"), "bank_transfer");
+  assert.equal(normalizePaymentMethod("Transferência bancária"), "bank_transfer");
+  assert.equal(normalizePaymentMethod("MB Way"), "mbway");
+  assert.equal(normalizePaymentMethod("Mbway"), "mbway");
+  assert.equal(normalizePaymentMethod("MBWay"), "mbway");
+  assert.equal(normalizePaymentMethod("Outro"), null);
+  assert.equal(normalizePaymentMethod(""), null);
+});
+
+test("Premium 550 with 100 deposit keeps 20 percent expected signal and 10 remaining", () => {
+  const result = planImport({
+    ...base,
+    submissionId: "premium-100",
+    fields: {
+      ...base.fields,
+      pack: "Premium",
+      deposit: "100",
+      paymentMethod: "MB Way",
+    },
+  }, [], packs);
+
+  assert.equal(result.event?.totalPrice, 550);
+  assert.equal(result.event?.expectedReservationDepositAmount, 110);
+  assert.equal(result.event?.reservationDepositPolicy, "frozen_after_payment");
+  assert.equal(result.deposit?.amount, 100);
+  assert.equal(result.deposit?.paymentMethod, "mbway");
+  assert.equal(result.deposit?.paidAt, null);
+
+  const summary = summarizeEventPayments({
+    totalPrice: result.event?.totalPrice ?? 0,
+    expectedDeposit: result.event?.expectedReservationDepositAmount ?? null,
+    payments: result.deposit
+      ? [{
+          paymentType: "reservation_deposit",
+          amount: result.deposit.amount,
+          deletedAt: null,
+        }]
+      : [],
+  });
+  assert.equal(summary.depositRemaining, 10);
+});
+
+test("submitted_at is never used as paid_at", () => {
+  const result = planImport({
+    ...base,
+    submissionId: "no-payment-date",
+    submittedAt: "2026-09-27T20:30:00Z",
+    fields: {
+      ...base.fields,
+      deposit: "100",
+      paymentMethod: "MBWay",
+    },
+  }, [], packs);
+
+  assert.equal(result.deposit?.paidAt, null);
+});
+
+test("form without a received deposit creates no event payment", async () => {
+  const submission = {
+    ...base,
+    submissionId: "no-deposit",
+    fields: { ...base.fields, deposit: "0", paymentMethod: "" },
+  };
+  let payments = 0;
+  const store = {
+    async transact(fn: any) {
+      return fn({
+        findImport: async () => null,
+        findEvent: async () => null,
+        listExtras: async () => [],
+        listPacks: async () => packs,
+        saveImport: async () => {},
+        createEvent: async () => "no-deposit-event",
+        createExtras: async () => {},
+        createPayment: async () => {
+          payments++;
+        },
+      });
+    },
+  };
+
+  const result = await importSubmission(submission, store);
+  assert.equal(result.status, "created");
+  assert.equal(payments, 0);
+});
+
+test("existing party never receives an automatic duplicate deposit", async () => {
+  let payments = 0;
+  const store = {
+    async transact(fn: any) {
+      return fn({
+        findImport: async () => null,
+        findEvent: async () => ({ id: "existing-party" }),
+        listExtras: async () => [],
+        listPacks: async () => packs,
+        saveImport: async () => {},
+        createEvent: async () => {
+          throw Error("must not create event");
+        },
+        createExtras: async () => {
+          throw Error("must not create extras");
+        },
+        createPayment: async () => {
+          payments++;
+        },
+      });
+    },
+  };
+
+  const result = await importSubmission(base, store);
+  assert.equal(result.status, "already_exists");
+  assert.equal(payments, 0);
+});
+
+test("historical imported party is not backfilled by new webhook logic", async () => {
+  let payments = 0;
+  const store = {
+    async transact(fn: any) {
+      return fn({
+        findImport: async () => ({ status: "created", venueEventId: "historical-party" }),
+        findEvent: async () => null,
+        listExtras: async () => [],
+        listPacks: async () => packs,
+        saveImport: async () => {
+          throw Error("existing import must not be rewritten");
+        },
+        createEvent: async () => {
+          throw Error("historical import must not create event");
+        },
+        createExtras: async () => {
+          throw Error("historical import must not create extras");
+        },
+        createPayment: async () => {
+          payments++;
+        },
+      });
+    },
+  };
+
+  const result = await importSubmission(base, store);
+  assert.equal(result.status, "already_exists");
+  assert.equal(result.venueEventId, "historical-party");
+  assert.equal(payments, 0);
+});
+
+test("refundable deposit is outside Google Forms payment reconciliation", () => {
+  const summary = summarizeEventPayments({
+    totalPrice: 550,
+    expectedDeposit: 110,
+    refundableDepositAmount: 500,
+    payments: [{
+      paymentType: "reservation_deposit",
+      amount: 100,
+      deletedAt: null,
+    }],
+  });
+  assert.equal(summary.received, 100);
+  assert.equal(summary.remainingBalance, 450);
+  assert.equal(summary.depositRemaining, 10);
+});
