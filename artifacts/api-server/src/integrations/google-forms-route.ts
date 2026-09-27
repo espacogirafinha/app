@@ -9,6 +9,7 @@ import {
   venueEventsTable,
   venuePacksTable,
 } from "@workspace/db";
+import { createEventPaymentInTransaction } from "../lib/event-payments";
 import {
   FORM_ID,
   dedupKey,
@@ -155,7 +156,13 @@ router.post(
                   });
               },
               createEvent: async (event) => {
-                const { extraText, totalPrice, amountPaid, ...rest } = event;
+                const {
+                  extraText,
+                  totalPrice,
+                  expectedReservationDepositAmount,
+                  reservationDepositPolicy,
+                  ...rest
+                } = event;
                 void extraText;
                 const [row] = await tx
                   .insert(venueEventsTable)
@@ -163,7 +170,10 @@ router.post(
                     ...rest,
                     termsAccepted: rest.termsAccepted ?? false,
                     totalPrice: String(totalPrice),
-                    amountPaid: String(amountPaid),
+                    expectedReservationDepositAmount: String(
+                      expectedReservationDepositAmount,
+                    ),
+                    reservationDepositPolicy,
                   })
                   .returning({ id: venueEventsTable.id });
                 return row.id;
@@ -184,6 +194,19 @@ router.post(
                         totalPrice: String(x.totalPrice),
                       })),
                     );
+              },
+              createPayment: async (id, payment) => {
+                await createEventPaymentInTransaction(tx, {
+                  module: "venue_events",
+                  entityId: id,
+                  paymentType: "reservation_deposit",
+                  amount: payment.amount,
+                  paymentMethod: payment.paymentMethod,
+                  paidAt: null,
+                  notes: null,
+                  source: "google_forms",
+                  sourceReference: payment.sourceReference,
+                });
               },
             });
           }),
