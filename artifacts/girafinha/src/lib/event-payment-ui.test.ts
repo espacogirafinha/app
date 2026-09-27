@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   EVENT_PAYMENT_METHOD_OPTIONS,
+  collectionDefaultAmount,
+  initialExpectedDeposit,
   nextAutomaticVenueDeposit,
   paymentMethodLabel,
   paymentSummaryLabel,
@@ -88,4 +90,27 @@ test("supported payment methods are exactly the approved three", () => {
     "mbway",
   ]);
   assert.equal(paymentMethodLabel(null), "Método não registado");
+});
+
+test("external service has no automatic 30 percent deposit", () => {
+  assert.equal(initialExpectedDeposit("external_events", 550), null);
+  assert.equal(initialExpectedDeposit("venue_events", 550), 165);
+});
+
+test("charge action defaults to the current remaining balance", () => {
+  assert.equal(collectionDefaultAmount(185), 185);
+  assert.equal(collectionDefaultAmount(0), 0);
+});
+
+test("partial reservation deposit keeps the remaining deposit visible", () => {
+  assert.equal(paymentSummaryLabel({
+    totalPrice: 550,
+    received: 100,
+    remainingBalance: 450,
+    historicalOverpayment: 0,
+    paymentStatus: "partial",
+    expectedDeposit: 165,
+    depositReceived: 100,
+    depositRemaining: 65,
+  }, [{ paymentType: "reservation_deposit" }]), "Sinal recebido parcialmente · Faltam 65,00 € do sinal");
 });
