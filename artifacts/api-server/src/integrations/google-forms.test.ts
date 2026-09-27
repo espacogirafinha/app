@@ -255,7 +255,7 @@ test("existing phone and date never overwritten or paid reduced", async () => {
     async transact(fn: any) {
       return fn({
         findImport: async () => null,
-        findEvent: async () => ({ id: "existing", amountPaid: "100.00" }),
+        findEvent: async () => ({ id: "existing" }),
         listExtras: async () => [],
         listPacks: async () => packs,
         saveImport: async () => {
@@ -513,9 +513,11 @@ test("payment methods from the form normalize conservatively", () => {
   assert.equal(normalizePaymentMethod("Transferência"), "bank_transfer");
   assert.equal(normalizePaymentMethod("Transferencia"), "bank_transfer");
   assert.equal(normalizePaymentMethod("Transferência bancária"), "bank_transfer");
+  assert.equal(normalizePaymentMethod("  TRANSFERÊNCIA   BANCÁRIA "), "bank_transfer");
   assert.equal(normalizePaymentMethod("MB Way"), "mbway");
   assert.equal(normalizePaymentMethod("Mbway"), "mbway");
   assert.equal(normalizePaymentMethod("MBWay"), "mbway");
+  assert.equal(normalizePaymentMethod("mb way"), "mbway");
   assert.equal(normalizePaymentMethod("Outro"), null);
   assert.equal(normalizePaymentMethod(""), null);
 });
