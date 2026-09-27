@@ -24,11 +24,31 @@ jobs:
         run: |
           corepack pnpm --filter @workspace/api-spec codegen
           printf 'export * from "./generated/api";\n' > lib/api-zod/src/index.ts
-      - name: Verify no obsolete 30 percent payment policy remains
+      - name: Verify obsolete reservation-deposit policy is absent
         shell: bash
         run: |
-          if git grep -n -E 'auto_30|30%|30 percent|30 por cento|0\.30|\* 30\) / 100' -- .; then
-            echo "Obsolete 30 percent reservation-deposit reference found."
+          obsolete_policy="auto""_30"
+          if git grep -n -F "$obsolete_policy" -- .; then
+            echo "Obsolete automatic reservation-deposit policy found."
+            exit 1
+          fi
+
+          old_percent_pattern='30''%|30 ''percent|30 por cento|0\\.30|\\* 30\\) / 100'
+          if git grep -n -E "$old_percent_pattern" -- \
+            artifacts/api-server/src/lib/event-payment-rules.ts \
+            artifacts/api-server/src/lib/event-payment-rules.test.ts \
+            artifacts/api-server/src/lib/event-payments.ts \
+            artifacts/api-server/src/routes/venue-events.ts \
+            artifacts/girafinha/src/components/venue-event-modal.tsx \
+            artifacts/girafinha/src/components/external-event-modal.tsx \
+            artifacts/girafinha/src/lib/event-payment-ui.ts \
+            artifacts/girafinha/src/lib/event-payment-ui.test.ts \
+            lib/api-client-react/src/generated \
+            lib/api-spec/openapi.yaml \
+            lib/api-zod/src/generated \
+            lib/db/src/schema/venue-events.ts \
+            supabase/migrations/20260927160700_create_event_payments.sql; then
+            echo "Obsolete reservation-deposit percentage reference found."
             exit 1
           fi
       - name: Backend payment tests
