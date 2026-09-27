@@ -98,6 +98,13 @@ begin
   from public.event_payments p
   where p.venue_event_id = new.id and p.deleted_at is null;
 
+  if tg_op = 'UPDATE'
+     and new.total_price is distinct from old.total_price
+     and received > new.total_price then
+    raise exception 'total_price cannot be lower than the amount already received'
+      using errcode = '23514';
+  end if;
+
   new.amount_paid := received;
   new.payment_status := case
     when received <= 0 then 'unpaid'
@@ -126,6 +133,13 @@ begin
   into received
   from public.event_payments p
   where p.external_event_id = new.id and p.deleted_at is null;
+
+  if tg_op = 'UPDATE'
+     and new.total_price is distinct from old.total_price
+     and received > new.total_price then
+    raise exception 'total_price cannot be lower than the amount already received'
+      using errcode = '23514';
+  end if;
 
   new.amount_paid := received;
   new.payment_status := case
