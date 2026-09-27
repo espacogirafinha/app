@@ -2889,8 +2889,6 @@ components:
           minimum: 0
         reservationDepositPolicy:
           $ref: "#/components/schemas/ReservationDepositPolicy"
-        initialReservationDeposit:
-          $ref: "#/components/schemas/InitialReservationDeposit"
         amountPaid:
           type: number
         remainingBalance:
@@ -2973,6 +2971,8 @@ components:
           minimum: 0
         reservationDepositPolicy:
           $ref: "#/components/schemas/ReservationDepositPolicy"
+        initialReservationDeposit:
+          $ref: "#/components/schemas/InitialReservationDeposit"
         amountPaid:
           type: number
           deprecated: true
