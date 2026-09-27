@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - feat/google-forms-integration
-      - fix/google-forms-sheet-date
 
 jobs:
   verify:
