@@ -15,7 +15,7 @@ import {
   validatePaymentDraft,
 } from "./event-payment-rules";
 
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export class EventPaymentServiceError extends Error {
   constructor(
