@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { suggestVenueReservationDeposit, type EventPaymentMethod } from "../lib/event-payment-rules";
+import { suggestVenueReservationDeposit, type EventPaymentMethod } from "../lib/event-payment-rules.ts";
 
 export const FORM_ID = "19JReWvo-11bzk6X1iIARghDLEh0pLDaJHr2Bu8RmMFc";
 type Fields = Record<string, unknown>;
