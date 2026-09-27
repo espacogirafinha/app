@@ -1,3 +1,5 @@
+import type { EventPaymentMethod, EventPaymentModule } from "./event-payment-rules";
+
 export type TransactionRunner<TTransaction> = <TResult>(
   work: (transaction: TTransaction) => Promise<TResult>,
 ) => Promise<TResult>;
@@ -14,4 +16,29 @@ export async function createEventWithOptionalInitialDeposit<TTransaction, TEvent
     }
     return event;
   });
+}
+
+export type InitialReservationDepositInput = {
+  amount: number;
+  paymentMethod: EventPaymentMethod;
+  paidAt: Date;
+  notes?: string | null;
+};
+
+export function initialReservationDepositPaymentInput(
+  module: EventPaymentModule,
+  entityId: string,
+  deposit?: InitialReservationDepositInput,
+) {
+  if (!deposit) return undefined;
+
+  return {
+    module,
+    entityId,
+    paymentType: "reservation_deposit" as const,
+    amount: deposit.amount,
+    paymentMethod: deposit.paymentMethod,
+    paidAt: deposit.paidAt,
+    notes: deposit.notes ?? null,
+  };
 }
