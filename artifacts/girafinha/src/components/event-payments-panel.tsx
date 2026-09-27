@@ -18,6 +18,7 @@ import type {
 } from "@workspace/api-client-react";
 import {
   EVENT_PAYMENT_METHOD_OPTIONS,
+  collectionDefaultAmount,
   formatEuro,
   paymentMethodLabel,
   paymentSummaryLabel,
@@ -101,7 +102,7 @@ export function EventPaymentsPanel({
     setEditor({
       mode: "create",
       paymentType: "payment",
-      amount: summary.remainingBalance.toFixed(2),
+      amount: collectionDefaultAmount(summary.remainingBalance).toFixed(2),
       paymentMethod: "",
       paidAt: toDateTimeLocalInput(),
       notes: "",
