@@ -724,6 +724,15 @@ export const EventPaymentMethod = {
   mbway: "mbway",
 } as const;
 
+export interface InitialReservationDeposit {
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  paymentMethod: EventPaymentMethod;
+  paidAt: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export type ReservationDepositPolicy =
   (typeof ReservationDepositPolicy)[keyof typeof ReservationDepositPolicy];
 
@@ -901,8 +910,9 @@ export interface CreateVenueEventBody {
    */
   expectedReservationDepositAmount?: number | null;
   reservationDepositPolicy?: ReservationDepositPolicy;
+  initialReservationDeposit?: InitialReservationDeposit;
   /** @deprecated */
-  amountPaid: number;
+  amountPaid?: number;
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */
@@ -1072,8 +1082,9 @@ export interface CreateExternalEventBody {
    */
   expectedReservationDepositAmount?: number | null;
   reservationDepositPolicy?: ReservationDepositPolicy;
+  initialReservationDeposit?: InitialReservationDeposit;
   /** @deprecated */
-  amountPaid: number;
+  amountPaid?: number;
   /** @minimum 0 */
   refundableDepositAmount?: number;
   refundableDepositStatus?: RefundableDepositStatus;

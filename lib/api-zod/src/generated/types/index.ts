@@ -71,6 +71,7 @@ export * from "./getReportsDataParams";
 export * from "./getReportsV2Params";
 export * from "./getTasksSummaryParams";
 export * from "./healthStatus";
+export * from "./initialReservationDeposit";
 export * from "./listChecklistItemsParams";
 export * from "./listChecklistsParams";
 export * from "./listChecklistTemplateItemsParams";

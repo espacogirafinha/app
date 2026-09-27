@@ -602,6 +602,8 @@ export const ListVenueEventsResponse = zod.array(ListVenueEventsResponseItem);
  */
 export const createVenueEventBodyExpectedReservationDepositAmountMin = 0;
 
+export const createVenueEventBodyInitialReservationDepositAmountExclusiveMin = 0;
+
 export const CreateVenueEventBody = zod.object({
   customerName: zod.string(),
   phone: zod.string(),
@@ -636,7 +638,17 @@ export const CreateVenueEventBody = zod.object({
   reservationDepositPolicy: zod
     .enum(["auto_30", "manual", "frozen_after_payment", "legacy_unknown"])
     .optional(),
-  amountPaid: zod.number(),
+  initialReservationDeposit: zod
+    .object({
+      amount: zod
+        .number()
+        .gt(createVenueEventBodyInitialReservationDepositAmountExclusiveMin),
+      paymentMethod: zod.enum(["cash", "bank_transfer", "mbway"]),
+      paidAt: zod.coerce.date(),
+      notes: zod.string().nullish(),
+    })
+    .optional(),
+  amountPaid: zod.number().optional(),
   paymentMethod: zod.string().nullish(),
   notes: zod.string().nullish(),
 });
@@ -898,6 +910,8 @@ export const ListExternalEventsResponse = zod.array(
  */
 export const createExternalEventBodyExpectedReservationDepositAmountMin = 0;
 
+export const createExternalEventBodyInitialReservationDepositAmountExclusiveMin = 0;
+
 export const createExternalEventBodyRefundableDepositAmountMin = 0;
 
 export const CreateExternalEventBody = zod.object({
@@ -926,7 +940,17 @@ export const CreateExternalEventBody = zod.object({
   reservationDepositPolicy: zod
     .enum(["auto_30", "manual", "frozen_after_payment", "legacy_unknown"])
     .optional(),
-  amountPaid: zod.number(),
+  initialReservationDeposit: zod
+    .object({
+      amount: zod
+        .number()
+        .gt(createExternalEventBodyInitialReservationDepositAmountExclusiveMin),
+      paymentMethod: zod.enum(["cash", "bank_transfer", "mbway"]),
+      paidAt: zod.coerce.date(),
+      notes: zod.string().nullish(),
+    })
+    .optional(),
+  amountPaid: zod.number().optional(),
   refundableDepositAmount: zod
     .number()
     .min(createExternalEventBodyRefundableDepositAmountMin)

@@ -8,6 +8,7 @@
 import type { ExternalEventPaymentStatus } from "./externalEventPaymentStatus";
 import type { ExternalEventServiceInput } from "./externalEventServiceInput";
 import type { ExternalEventStatus } from "./externalEventStatus";
+import type { InitialReservationDeposit } from "./initialReservationDeposit";
 import type { RefundableDepositStatus } from "./refundableDepositStatus";
 import type { ReservationDepositPolicy } from "./reservationDepositPolicy";
 
@@ -46,8 +47,9 @@ export interface CreateExternalEventBody {
    */
   expectedReservationDepositAmount?: number | null;
   reservationDepositPolicy?: ReservationDepositPolicy;
+  initialReservationDeposit?: InitialReservationDeposit;
   /** @deprecated */
-  amountPaid: number;
+  amountPaid?: number;
   /** @minimum 0 */
   refundableDepositAmount?: number;
   refundableDepositStatus?: RefundableDepositStatus;
