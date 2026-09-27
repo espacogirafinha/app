@@ -25,6 +25,7 @@ export * from "./workshops";
 export * from "./settings-catalogs";
 export * from "./checklists";
 export * from "./event-selected-extras";
+export * from "./event-payments";
 export * from "./event-attachments";
 
 export * from "./user-roles";
