@@ -359,6 +359,23 @@ export function planImport(
     deposit,
   };
 }
+export function googleFormsDepositPaymentInput(
+  entityId: string,
+  deposit: NonNullable<ReturnType<typeof planImport>["deposit"]>,
+) {
+  return {
+    module: "venue_events" as const,
+    entityId,
+    paymentType: "reservation_deposit" as const,
+    amount: deposit.amount,
+    paymentMethod: deposit.paymentMethod,
+    paidAt: null,
+    notes: null,
+    source: "google_forms",
+    sourceReference: deposit.sourceReference,
+  };
+}
+
 export type ImportResult = {
   status: "created" | "already_exists" | "needs_review" | "rejected";
   venueEventId?: string;
