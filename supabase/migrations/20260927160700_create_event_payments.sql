@@ -77,7 +77,7 @@ create unique index event_payments_source_reference_unique
 alter table public.event_payments enable row level security;
 revoke all on table public.event_payments from anon, authenticated;
 
-create temporary table event_payments_backfill_snapshot on commit drop as
+create temporary table event_payments_backfill_snapshot as
 select 'venue_events'::text as module, id, amount_paid
 from public.venue_events
 union all
@@ -237,8 +237,13 @@ declare
   venue_id uuid;
   external_id uuid;
 begin
-  venue_id := coalesce(new.venue_event_id, old.venue_event_id);
-  external_id := coalesce(new.external_event_id, old.external_event_id);
+  if tg_op = 'DELETE' then
+    venue_id := old.venue_event_id;
+    external_id := old.external_event_id;
+  else
+    venue_id := new.venue_event_id;
+    external_id := new.external_event_id;
+  end if;
 
   if venue_id is not null then
     update public.venue_events set amount_paid = amount_paid where id = venue_id;
@@ -256,9 +261,12 @@ begin
     update public.external_events set amount_paid = amount_paid where id = external_id;
   end if;
 
-  return coalesce(new, old);
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
 end;
-$$;
+$;
 
 create trigger event_payments_sync_insert_delete
 after insert or delete on public.event_payments
