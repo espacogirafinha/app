@@ -9,7 +9,7 @@ import {
   suggestVenueReservationDeposit,
   summarizeEventPayments,
   validatePaymentDraft,
-} from "./event-payment-rules";
+} from "./event-payment-rules.ts";
 
 const payment = (
   id: string,
