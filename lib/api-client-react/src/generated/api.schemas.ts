@@ -1196,8 +1196,12 @@ export interface Workshop {
   participantsCount: number;
   activeParticipantsCount: number;
   availableSeats: number;
+  totalRevenue: number;
   totalReceived: number;
   totalPending: number;
+  paidCount: number;
+  partialCount: number;
+  unpaidCount: number;
   participants?: WorkshopParticipant[];
   createdAt: string;
   updatedAt: string;
@@ -1303,8 +1307,12 @@ export interface DashboardV2AreaSummary {
   totalCount: number;
   upcomingCount: number;
   nextSevenDaysCount: number;
+  revenue: number;
   received: number;
   pending: number;
+  paidCount: number;
+  partialCount: number;
+  unpaidCount: number;
 }
 
 export type DashboardV2WorkshopAreaSummary = DashboardV2AreaSummary & {
@@ -1351,6 +1359,7 @@ export interface DashboardV2AgendaItem {
   total: number;
   received: number;
   pending: number;
+  financialStatusText: string;
   nextAction: string;
   href: string;
   services: string[];

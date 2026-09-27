@@ -22,6 +22,7 @@ export interface DashboardV2AgendaItem {
   total: number;
   received: number;
   pending: number;
+  financialStatusText: string;
   nextAction: string;
   href: string;
   services: string[];

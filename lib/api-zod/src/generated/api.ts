@@ -1257,8 +1257,12 @@ export const ListWorkshopsResponseItem = zod.object({
   participantsCount: zod.number(),
   activeParticipantsCount: zod.number(),
   availableSeats: zod.number(),
+  totalRevenue: zod.number(),
   totalReceived: zod.number(),
   totalPending: zod.number(),
+  paidCount: zod.number(),
+  partialCount: zod.number(),
+  unpaidCount: zod.number(),
   participants: zod
     .array(
       zod.object({
@@ -1330,8 +1334,12 @@ export const GetWorkshopResponse = zod.object({
   participantsCount: zod.number(),
   activeParticipantsCount: zod.number(),
   availableSeats: zod.number(),
+  totalRevenue: zod.number(),
   totalReceived: zod.number(),
   totalPending: zod.number(),
+  paidCount: zod.number(),
+  partialCount: zod.number(),
+  unpaidCount: zod.number(),
   participants: zod
     .array(
       zod.object({
@@ -1399,8 +1407,12 @@ export const UpdateWorkshopResponse = zod.object({
   participantsCount: zod.number(),
   activeParticipantsCount: zod.number(),
   availableSeats: zod.number(),
+  totalRevenue: zod.number(),
   totalReceived: zod.number(),
   totalPending: zod.number(),
+  paidCount: zod.number(),
+  partialCount: zod.number(),
+  unpaidCount: zod.number(),
   participants: zod
     .array(
       zod.object({
@@ -2099,23 +2111,35 @@ export const GetDashboardV2Response = zod.object({
       totalCount: zod.number(),
       upcomingCount: zod.number(),
       nextSevenDaysCount: zod.number(),
+      revenue: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      paidCount: zod.number(),
+      partialCount: zod.number(),
+      unpaidCount: zod.number(),
     }),
     externalEvents: zod.object({
       totalCount: zod.number(),
       upcomingCount: zod.number(),
       nextSevenDaysCount: zod.number(),
+      revenue: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      paidCount: zod.number(),
+      partialCount: zod.number(),
+      unpaidCount: zod.number(),
     }),
     workshops: zod
       .object({
         totalCount: zod.number(),
         upcomingCount: zod.number(),
         nextSevenDaysCount: zod.number(),
+        revenue: zod.number(),
         received: zod.number(),
         pending: zod.number(),
+        paidCount: zod.number(),
+        partialCount: zod.number(),
+        unpaidCount: zod.number(),
       })
       .and(
         zod.object({
@@ -2138,6 +2162,7 @@ export const GetDashboardV2Response = zod.object({
       total: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      financialStatusText: zod.string(),
       nextAction: zod.string(),
       href: zod.string(),
       services: zod.array(zod.string()),
