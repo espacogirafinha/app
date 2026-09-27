@@ -286,7 +286,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 create trigger event_payments_sync_insert_delete
 after insert or delete on public.event_payments
