@@ -33,9 +33,11 @@ export type CreateEventPaymentInput = {
   entityId: string;
   paymentType: Exclude<EventPaymentType, "legacy_payment">;
   amount: number;
-  paymentMethod: EventPaymentMethod;
-  paidAt: Date;
+  paymentMethod: EventPaymentMethod | null;
+  paidAt: Date | null;
   notes?: string | null;
+  source?: string;
+  sourceReference?: string | null;
 };
 
 export type UpdateEventPaymentInput = {
@@ -221,12 +223,13 @@ export async function createEventPaymentInTransaction(
   input: CreateEventPaymentInput,
 ) {
   try {
+    const source = input.source ?? "manual";
     validatePaymentDraft({
       paymentType: input.paymentType,
       amount: input.amount,
       paymentMethod: input.paymentMethod,
       paidAt: input.paidAt,
-      source: "manual",
+      source,
     });
 
     const event = await lockEvent(tx, input.module, input.entityId);
@@ -243,8 +246,8 @@ export async function createEventPaymentInTransaction(
         paymentMethod: input.paymentMethod,
         paidAt: input.paidAt,
         notes: input.notes ?? null,
-        source: "manual",
-        sourceReference: null,
+        source,
+        sourceReference: input.sourceReference ?? null,
       })
       .returning();
 
