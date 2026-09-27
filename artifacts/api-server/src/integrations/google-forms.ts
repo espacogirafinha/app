@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { suggestVenueReservationDeposit, type EventPaymentMethod } from "../lib/event-payment-rules";
 
 export const FORM_ID = "19JReWvo-11bzk6X1iIARghDLEh0pLDaJHr2Bu8RmMFc";
 type Fields = Record<string, unknown>;
@@ -91,6 +92,20 @@ export function normalizeImageAuthorization(v: unknown): string | null {
   if (/visiv/.test(s)) return "rosto_visivel";
   return null;
 }
+export function normalizePaymentMethod(v: unknown): EventPaymentMethod | null {
+  const s = value(v)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (/^(dinheiro|cash)$/.test(s)) return "cash";
+  if (/^(transferencia|transferencia bancaria|bank transfer)$/.test(s))
+    return "bank_transfer";
+  if (/^mb\s*way$/.test(s)) return "mbway";
+  return null;
+}
 export function parseAge(v: unknown): number | null {
   const s = value(v).toLowerCase();
   if (/^\d{1,2}$/.test(s)) return Number(s);
@@ -145,8 +160,8 @@ export function normalizeSubmission(s: Submission) {
     allergies: field(f, "allergies") || null,
     imageAuthorization: normalizeImageAuthorization(f.imageAuthorization),
     termsAccepted: parseTerms(f.termsAccepted),
-    amountPaid: parseMoney(f.deposit),
-    paymentMethod: field(f, "paymentMethod") || null,
+    depositAmount: parseMoney(f.deposit),
+    paymentMethod: normalizePaymentMethod(f.paymentMethod),
     source: field(f, "source") || "Google Forms",
     notes: field(f, "notes") || null,
     extraText: field(f, "extras"),
@@ -206,6 +221,7 @@ export function planImport(
       reasons: ["invalid envelope"],
       event: null,
       extras: [],
+      deposit: null,
     };
   if (
     !n.customerName ||
@@ -220,6 +236,7 @@ export function planImport(
       reasons: ["required event fields invalid"],
       event: null,
       extras: [],
+      deposit: null,
     };
   const matchingPacks = packs.filter(
     (pack) => pack.isActive && normalizePack(pack.name) === n.packName,
@@ -232,8 +249,9 @@ export function planImport(
       reasons: ["pack price unavailable"],
       event: null,
       extras: [],
+      deposit: null,
     };
-  if (n.amountPaid === null) reasons.push("missing or invalid deposit");
+  if (n.depositAmount === null) reasons.push("missing or invalid deposit");
   if (field(s.fields, "birthdayChildAge") && n.birthdayChildAge === null)
     reasons.push("ambiguous age");
   if (!n.imageAuthorization)
@@ -291,19 +309,38 @@ export function planImport(
       } else reasons.push("extra requires review");
     }
   }
-  const paid = n.amountPaid ?? 0;
+  const depositAmount = n.depositAmount ?? 0;
   const total =
     packBasePrice + extras.reduce((sum, x) => sum + x.totalPrice, 0);
+  if (depositAmount > total) reasons.push("deposit exceeds total");
+
+  const expectedReservationDepositAmount = suggestVenueReservationDeposit(total);
+  const deposit =
+    depositAmount > 0 && depositAmount <= total
+      ? {
+          amount: depositAmount,
+          paymentMethod: n.paymentMethod,
+          paidAt: null,
+          source: "google_forms" as const,
+          sourceReference: `google_forms:${s.formId}:${s.submissionId}:deposit`,
+        }
+      : null;
+
+  const {
+    depositAmount: _depositAmount,
+    paymentMethod: _paymentMethod,
+    ...eventFields
+  } = n;
   const event = {
-    ...n,
+    ...eventFields,
     phone: n.phone,
     eventDate: n.eventDate,
     startTime: n.startTime,
     endTime: n.endTime,
     packName: n.packName,
     totalPrice: total,
-    amountPaid: paid,
-    paymentStatus: paid >= total ? "paid" : paid > 0 ? "partial" : "unpaid",
+    expectedReservationDepositAmount,
+    reservationDepositPolicy: deposit ? ("frozen_after_payment" as const) : ("auto_20" as const),
     status: "draft",
     notes:
       [
@@ -319,6 +356,7 @@ export function planImport(
     reasons,
     event,
     extras,
+    deposit,
   };
 }
 export type ImportResult = {
@@ -346,6 +384,10 @@ type Tx = {
   createExtras: (
     id: string,
     extras: ReturnType<typeof planImport>["extras"],
+  ) => Promise<void>;
+  createPayment: (
+    id: string,
+    payment: NonNullable<ReturnType<typeof planImport>["deposit"]>,
   ) => Promise<void>;
 };
 export async function importSubmission(
@@ -386,6 +428,7 @@ export async function importSubmission(
     }
     const id = await tx.createEvent(p.event);
     await tx.createExtras(id, p.extras);
+    if (p.deposit) await tx.createPayment(id, p.deposit);
     if (p.status === "needs_review") {
       await tx.saveImport(key, "needs_review", true, p.reasons, id);
       return { status: "needs_review", venueEventId: id, reasons: p.reasons };
