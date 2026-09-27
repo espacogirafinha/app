@@ -10,7 +10,7 @@ import {
   UpdateExternalEventParams,
 } from "@workspace/api-zod";
 import { refundableDepositCreateValues, refundableDepositUpdateValues } from "../lib/refundable-deposits";
-import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary } from "../lib/event-payments";
+import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary, type DbTransaction } from "../lib/event-payments";
 import { createEventWithOptionalInitialDeposit } from "../lib/event-payment-creation";
 
 const router: IRouter = Router();
@@ -160,7 +160,7 @@ router.post("/external-events", async (req, res): Promise<void> => {
   const depositPolicy = reservationDepositPolicy ?? "manual";
 
   try {
-    const row = await createEventWithOptionalInitialDeposit(
+    const row = await createEventWithOptionalInitialDeposit<DbTransaction, typeof externalEventsTable.$inferSelect>(
       (work) => db.transaction(work),
       async (tx) => {
         const [created] = await tx
