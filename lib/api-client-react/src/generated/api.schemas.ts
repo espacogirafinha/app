@@ -737,7 +737,7 @@ export type ReservationDepositPolicy =
   (typeof ReservationDepositPolicy)[keyof typeof ReservationDepositPolicy];
 
 export const ReservationDepositPolicy = {
-  auto_30: "auto_30",
+  auto_20: "auto_20",
   manual: "manual",
   frozen_after_payment: "frozen_after_payment",
   legacy_unknown: "legacy_unknown",

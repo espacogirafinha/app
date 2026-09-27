@@ -583,7 +583,7 @@ export const ListVenueEventsResponseItem = zod.object({
     .min(listVenueEventsResponseExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod.enum([
-    "auto_30",
+    "auto_20",
     "manual",
     "frozen_after_payment",
     "legacy_unknown",
@@ -636,7 +636,7 @@ export const CreateVenueEventBody = zod.object({
     .min(createVenueEventBodyExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod
-    .enum(["auto_30", "manual", "frozen_after_payment", "legacy_unknown"])
+    .enum(["auto_20", "manual", "frozen_after_payment", "legacy_unknown"])
     .optional(),
   initialReservationDeposit: zod
     .object({
@@ -696,7 +696,7 @@ export const GetVenueEventResponse = zod.object({
     .min(getVenueEventResponseExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod.enum([
-    "auto_30",
+    "auto_20",
     "manual",
     "frozen_after_payment",
     "legacy_unknown",
@@ -751,7 +751,7 @@ export const UpdateVenueEventBody = zod.object({
     .min(updateVenueEventBodyExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod
-    .enum(["auto_30", "manual", "frozen_after_payment", "legacy_unknown"])
+    .enum(["auto_20", "manual", "frozen_after_payment", "legacy_unknown"])
     .optional(),
   amountPaid: zod.number().optional(),
   paymentMethod: zod.string().nullish(),
@@ -794,7 +794,7 @@ export const UpdateVenueEventResponse = zod.object({
     .min(updateVenueEventResponseExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod.enum([
-    "auto_30",
+    "auto_20",
     "manual",
     "frozen_after_payment",
     "legacy_unknown",
@@ -854,7 +854,7 @@ export const ListExternalEventsResponseItem = zod.object({
     .min(listExternalEventsResponseExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod.enum([
-    "auto_30",
+    "auto_20",
     "manual",
     "frozen_after_payment",
     "legacy_unknown",
@@ -938,7 +938,7 @@ export const CreateExternalEventBody = zod.object({
     .min(createExternalEventBodyExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod
-    .enum(["auto_30", "manual", "frozen_after_payment", "legacy_unknown"])
+    .enum(["auto_20", "manual", "frozen_after_payment", "legacy_unknown"])
     .optional(),
   initialReservationDeposit: zod
     .object({
@@ -1023,7 +1023,7 @@ export const GetExternalEventResponse = zod.object({
     .min(getExternalEventResponseExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod.enum([
-    "auto_30",
+    "auto_20",
     "manual",
     "frozen_after_payment",
     "legacy_unknown",
@@ -1106,7 +1106,7 @@ export const UpdateExternalEventBody = zod.object({
     .min(updateExternalEventBodyExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod
-    .enum(["auto_30", "manual", "frozen_after_payment", "legacy_unknown"])
+    .enum(["auto_20", "manual", "frozen_after_payment", "legacy_unknown"])
     .optional(),
   amountPaid: zod.number().optional(),
   refundableDepositAmount: zod
@@ -1174,7 +1174,7 @@ export const UpdateExternalEventResponse = zod.object({
     .min(updateExternalEventResponseExpectedReservationDepositAmountMin)
     .nullish(),
   reservationDepositPolicy: zod.enum([
-    "auto_30",
+    "auto_20",
     "manual",
     "frozen_after_payment",
     "legacy_unknown",
