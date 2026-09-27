@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/google-forms-integration
+      - fix/google-forms-no-extra-option
 
 jobs:
   verify:
