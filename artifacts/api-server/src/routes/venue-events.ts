@@ -1,5 +1,7 @@
 import { Router, type IRouter } from "express";
 import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
+import { getActiveReceivedAmount, synchronizeEventPaymentSummary } from "../lib/event-payments";
+import { suggestVenueReservationDeposit } from "../lib/event-payment-rules";
 import { db, eventChecklistsTable, eventSelectedExtrasTable, venueEventsTable } from "@workspace/db";
 import {
   CreateVenueEventBody,
@@ -11,12 +13,6 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-
-function computePaymentStatus(totalPrice: number, amountPaid: number): "unpaid" | "partial" | "paid" {
-  if (amountPaid >= totalPrice) return "paid";
-  if (amountPaid > 0) return "partial";
-  return "unpaid";
-}
 
 function compactObject<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>;
@@ -54,6 +50,8 @@ function formatVenueEvent(row: typeof venueEventsTable.$inferSelect) {
     imageAuthorization: row.imageAuthorization,
     termsAccepted: row.termsAccepted ?? false,
     totalPrice,
+    expectedReservationDepositAmount: row.expectedReservationDepositAmount === null ? null : money(row.expectedReservationDepositAmount),
+    reservationDepositPolicy: row.reservationDepositPolicy,
     amountPaid,
     remainingBalance: Math.max(0, totalPrice - amountPaid),
     paymentMethod: row.paymentMethod,
@@ -104,16 +102,27 @@ router.post("/venue-events", async (req, res): Promise<void> => {
     return;
   }
 
-  const { totalPrice, amountPaid, ...body } = parsed.data;
-  const paymentStatus = computePaymentStatus(totalPrice, amountPaid);
+  const {
+    totalPrice,
+    amountPaid: _legacyAmountPaid,
+    expectedReservationDepositAmount,
+    reservationDepositPolicy,
+    ...body
+  } = parsed.data;
+  const depositPolicy = reservationDepositPolicy ?? "auto_30";
+  const expectedDeposit = depositPolicy === "auto_30"
+    ? suggestVenueReservationDeposit(totalPrice)
+    : expectedReservationDepositAmount ?? null;
   const values = compactObject({
     ...body,
     status: body.status ?? "draft",
-    paymentStatus,
+    paymentStatus: "unpaid",
     childrenCount: body.childrenCount ?? 0,
     termsAccepted: body.termsAccepted ?? false,
     totalPrice: String(totalPrice),
-    amountPaid: String(amountPaid),
+    expectedReservationDepositAmount: expectedDeposit === null ? null : String(expectedDeposit),
+    reservationDepositPolicy: depositPolicy,
+    amountPaid: "0",
   });
 
   const [row] = await db
@@ -157,37 +166,82 @@ router.patch("/venue-events/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const updateData: Record<string, unknown> = compactObject({ ...parsed.data });
-  if (parsed.data.totalPrice !== undefined) updateData.totalPrice = String(parsed.data.totalPrice);
-  if (parsed.data.amountPaid !== undefined) updateData.amountPaid = String(parsed.data.amountPaid);
-  if (parsed.data.totalPrice !== undefined || parsed.data.amountPaid !== undefined) {
-    const [current] = await db
+  const result = await db.transaction(async (tx) => {
+    const [current] = await tx
+      .select()
+      .from(venueEventsTable)
+      .where(eq(venueEventsTable.id, params.data.id))
+      .for("update");
+
+    if (!current) return { status: 404 as const, error: "Venue event not found" };
+
+    if (
+      parsed.data.amountPaid !== undefined
+      && Math.abs(parsed.data.amountPaid - money(current.amountPaid)) > 0.001
+    ) {
+      return { status: 400 as const, error: "amountPaid is read-only; use /event-payments" };
+    }
+    if (
+      parsed.data.paymentStatus !== undefined
+      && parsed.data.paymentStatus !== current.paymentStatus
+    ) {
+      return { status: 400 as const, error: "paymentStatus is derived from event payments" };
+    }
+
+    const received = await getActiveReceivedAmount(tx, "venue_events", params.data.id);
+    const nextTotal = parsed.data.totalPrice ?? money(current.totalPrice);
+    if (nextTotal + 0.001 < received) {
+      return { status: 400 as const, error: "totalPrice cannot be lower than the amount already received" };
+    }
+
+    const {
+      amountPaid: _amountPaid,
+      paymentStatus: _paymentStatus,
+      expectedReservationDepositAmount,
+      reservationDepositPolicy,
+      ...body
+    } = parsed.data;
+    const updateData: Record<string, unknown> = compactObject({ ...body });
+    if (parsed.data.totalPrice !== undefined) updateData.totalPrice = String(parsed.data.totalPrice);
+
+    let nextPolicy = reservationDepositPolicy ?? current.reservationDepositPolicy;
+    if (
+      expectedReservationDepositAmount !== undefined
+      && reservationDepositPolicy === undefined
+      && (current.expectedReservationDepositAmount === null
+        || Math.abs(expectedReservationDepositAmount - money(current.expectedReservationDepositAmount)) > 0.001)
+    ) {
+      nextPolicy = "manual";
+    }
+    updateData.reservationDepositPolicy = nextPolicy;
+
+    if (nextPolicy === "auto_30") {
+      updateData.expectedReservationDepositAmount = String(suggestVenueReservationDeposit(nextTotal));
+    } else if (expectedReservationDepositAmount !== undefined) {
+      updateData.expectedReservationDepositAmount =
+        expectedReservationDepositAmount === null ? null : String(expectedReservationDepositAmount);
+    }
+
+    await tx
+      .update(venueEventsTable)
+      .set(updateData)
+      .where(eq(venueEventsTable.id, params.data.id));
+
+    await synchronizeEventPaymentSummary(tx, "venue_events", params.data.id);
+    const [row] = await tx
       .select()
       .from(venueEventsTable)
       .where(eq(venueEventsTable.id, params.data.id));
 
-    if (!current) {
-      res.status(404).json({ error: "Venue event not found" });
-      return;
-    }
+    return { status: 200 as const, row };
+  });
 
-    const total = parsed.data.totalPrice ?? money(current.totalPrice);
-    const paid = parsed.data.amountPaid ?? money(current.amountPaid);
-    updateData.paymentStatus = computePaymentStatus(total, paid);
-  }
-
-  const [row] = await db
-    .update(venueEventsTable)
-    .set(updateData)
-    .where(eq(venueEventsTable.id, params.data.id))
-    .returning();
-
-  if (!row) {
-    res.status(404).json({ error: "Venue event not found" });
+  if (result.status !== 200) {
+    res.status(result.status).json({ error: result.error });
     return;
   }
 
-  res.json(formatVenueEvent(row));
+  res.json(formatVenueEvent(result.row));
 });
 
 router.delete("/venue-events/:id", async (req, res): Promise<void> => {
