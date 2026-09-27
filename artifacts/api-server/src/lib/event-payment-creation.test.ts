@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createEventWithOptionalInitialDeposit } from "./event-payment-creation.ts";
+import { createEventWithOptionalInitialDeposit, initialReservationDepositPaymentInput } from "./event-payment-creation.ts";
 
 type Store = {
   events: string[];
@@ -75,4 +75,29 @@ test("failed initial deposit rolls back event creation", async () => {
   );
 
   assert.deepEqual(store, { events: [], payments: [] });
+});
+
+test("pending deposit creates no payment input", () => {
+  assert.equal(initialReservationDepositPaymentInput("venue_events", "venue-1"), undefined);
+});
+
+test("received initial deposit is always a reservation_deposit", () => {
+  const paidAt = new Date("2026-09-27T12:00:00Z");
+  assert.deepEqual(
+    initialReservationDepositPaymentInput("venue_events", "venue-1", {
+      amount: 100,
+      paymentMethod: "mbway",
+      paidAt,
+      notes: null,
+    }),
+    {
+      module: "venue_events",
+      entityId: "venue-1",
+      paymentType: "reservation_deposit",
+      amount: 100,
+      paymentMethod: "mbway",
+      paidAt,
+      notes: null,
+    },
+  );
 });
