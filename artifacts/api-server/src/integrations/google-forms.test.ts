@@ -11,6 +11,7 @@ import {
   parseAge,
   normalizeSubmission,
   dedupKey,
+  googleFormsDepositPaymentInput,
   verifySignature,
   planImport,
   importSubmission,
@@ -728,4 +729,33 @@ test("Google Forms event, extras, deposit and import record are one atomic unit"
     payments: [],
     imports: [],
   });
+});
+
+test("Google Forms deposit maps explicitly to reservation_deposit ledger input", () => {
+  const result = planImport({
+    ...base,
+    submissionId: "ledger-map",
+    fields: {
+      ...base.fields,
+      pack: "Premium",
+      deposit: "100",
+      paymentMethod: "MB Way",
+    },
+  }, [], packs);
+
+  assert.ok(result.deposit);
+  assert.deepEqual(
+    googleFormsDepositPaymentInput("venue-1", result.deposit),
+    {
+      module: "venue_events",
+      entityId: "venue-1",
+      paymentType: "reservation_deposit",
+      amount: 100,
+      paymentMethod: "mbway",
+      paidAt: null,
+      notes: null,
+      source: "google_forms",
+      sourceReference: `google_forms:${base.formId}:ledger-map:deposit`,
+    },
+  );
 });
