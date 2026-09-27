@@ -13,6 +13,7 @@ import { createEventPaymentInTransaction } from "../lib/event-payments";
 import {
   FORM_ID,
   dedupKey,
+  googleFormsDepositPaymentInput,
   importSubmission,
   verifySignature,
   type Submission,
@@ -196,17 +197,10 @@ router.post(
                     );
               },
               createPayment: async (id, payment) => {
-                await createEventPaymentInTransaction(tx, {
-                  module: "venue_events",
-                  entityId: id,
-                  paymentType: "reservation_deposit",
-                  amount: payment.amount,
-                  paymentMethod: payment.paymentMethod,
-                  paidAt: null,
-                  notes: null,
-                  source: "google_forms",
-                  sourceReference: payment.sourceReference,
-                });
+                await createEventPaymentInTransaction(
+                  tx,
+                  googleFormsDepositPaymentInput(id, payment),
+                );
               },
             });
           }),
