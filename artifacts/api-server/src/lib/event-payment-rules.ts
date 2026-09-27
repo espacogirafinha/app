@@ -30,20 +30,23 @@ export type PaymentDraft = {
 };
 
 export class EventPaymentRuleError extends Error {
+  readonly code:
+    | "invalid_amount"
+    | "invalid_payment_type"
+    | "invalid_payment_method"
+    | "manual_method_required"
+    | "manual_paid_at_required"
+    | "manual_legacy_not_allowed"
+    | "invalid_paid_at"
+    | "overpayment";
+
   constructor(
-    public readonly code:
-      | "invalid_amount"
-      | "invalid_payment_type"
-      | "invalid_payment_method"
-      | "manual_method_required"
-      | "manual_paid_at_required"
-      | "manual_legacy_not_allowed"
-      | "invalid_paid_at"
-      | "overpayment",
+    code: EventPaymentRuleError["code"],
     message: string,
   ) {
     super(message);
     this.name = "EventPaymentRuleError";
+    this.code = code;
   }
 }
 
