@@ -179,3 +179,13 @@ test("venue 20 percent suggestion is rounded to cents", () => {
   assert.equal(suggestVenueReservationDeposit(600), 120);
   assert.equal(suggestVenueReservationDeposit(333.33), 66.67);
 });
+
+test("Google Forms sourced payment may preserve unknown method and payment date", () => {
+  assert.doesNotThrow(() => validatePaymentDraft({
+    paymentType: "reservation_deposit",
+    amount: 100,
+    paymentMethod: null,
+    paidAt: null,
+    source: "google_forms",
+  }));
+});
