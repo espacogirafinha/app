@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
-import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary } from "../lib/event-payments";
+import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary, type DbTransaction } from "../lib/event-payments";
 import { createEventWithOptionalInitialDeposit } from "../lib/event-payment-creation";
 import { suggestVenueReservationDeposit } from "../lib/event-payment-rules";
 import { db, eventChecklistsTable, eventSelectedExtrasTable, venueEventsTable } from "@workspace/db";
@@ -117,7 +117,7 @@ router.post("/venue-events", async (req, res): Promise<void> => {
     : expectedReservationDepositAmount ?? null;
 
   try {
-    const row = await createEventWithOptionalInitialDeposit(
+    const row = await createEventWithOptionalInitialDeposit<DbTransaction, typeof venueEventsTable.$inferSelect>(
       (work) => db.transaction(work),
       async (tx) => {
         const [created] = await tx
