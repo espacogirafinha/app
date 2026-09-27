@@ -5,9 +5,6 @@ on:
     branches:
       - feat/event-payments
 
-permissions:
-  contents: write
-
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -20,10 +17,6 @@ jobs:
           node-version: 22
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - name: Regenerate OpenAPI clients and validators
-        run: |
-          corepack pnpm --filter @workspace/api-spec codegen
-          printf 'export * from "./generated/api";\n' > lib/api-zod/src/index.ts
       - name: Dashboard financial tests
         run: node --experimental-strip-types --test artifacts/api-server/src/lib/dashboard-finance.test.ts
       - name: Calendar financial tests
@@ -36,12 +29,3 @@ jobs:
         run: corepack pnpm run typecheck
       - name: Build
         run: corepack pnpm run build
-      - name: Commit regenerated API files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/api-client-react/src/generated lib/api-zod/src/generated lib/api-zod/src/index.ts
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: regenerate dashboard finance API"
-            git push origin HEAD:feat/event-payments
-          fi
