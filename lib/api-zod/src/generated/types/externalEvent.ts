@@ -9,6 +9,7 @@ import type { ExternalEventPaymentStatus } from "./externalEventPaymentStatus";
 import type { ExternalEventService } from "./externalEventService";
 import type { ExternalEventStatus } from "./externalEventStatus";
 import type { RefundableDepositStatus } from "./refundableDepositStatus";
+import type { ReservationDepositPolicy } from "./reservationDepositPolicy";
 
 export interface ExternalEvent {
   id: string;
@@ -40,6 +41,12 @@ export interface ExternalEvent {
   /** @nullable */
   accessNotes?: string | null;
   totalPrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  expectedReservationDepositAmount?: number | null;
+  reservationDepositPolicy: ReservationDepositPolicy;
   amountPaid: number;
   /** @minimum 0 */
   refundableDepositAmount: number;
