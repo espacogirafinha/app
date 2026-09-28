@@ -1355,12 +1355,12 @@ paths:
           in: query
           schema:
             type: string
-            format: date
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
         - name: endDate
           in: query
           schema:
             type: string
-            format: date
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
         - name: search
           in: query
           schema:
