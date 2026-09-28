@@ -16,6 +16,21 @@ export type ExpenseFinancialRow = {
   supplier: string | null;
 };
 
+export type DatedExpenseFinancialRow = ExpenseFinancialRow & {
+  expenseDate: string;
+  deletedAt: Date | string | null;
+};
+
+export function expensesForPeriod(
+  rows: DatedExpenseFinancialRow[],
+  startDate: string,
+  endDate: string,
+) {
+  return rows
+    .filter((row) => row.deletedAt === null && row.expenseDate >= startDate && row.expenseDate <= endDate)
+    .map(({ expenseDate: _expenseDate, deletedAt: _deletedAt, ...row }) => row);
+}
+
 export type CashPaymentRow = {
   amount: number;
   paidAt: Date | string | null;
