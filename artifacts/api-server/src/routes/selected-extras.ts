@@ -70,9 +70,14 @@ router.get("/selected-extras", async (req, res): Promise<void> => {
 
 router.patch("/selected-extras/:id", async (req, res): Promise<void> => {
   const params = UpdateSelectedExtraCostParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
   const body = UpdateSelectedExtraCostBody.safeParse(req.body);
-  if (!params.success || !body.success) {
-    res.status(400).json({ error: !params.success ? params.error.message : body.error.message });
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
     return;
   }
 
