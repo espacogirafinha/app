@@ -3,7 +3,7 @@ import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
 import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary, type DbTransaction } from "../lib/event-payments";
 import { createEventWithOptionalInitialDeposit, initialReservationDepositPaymentInput } from "../lib/event-payment-creation";
 import { suggestVenueReservationDeposit } from "../lib/event-payment-rules";
-import { db, eventChecklistsTable, eventSelectedExtrasTable, venueEventsTable } from "@workspace/db";
+import { db, eventChecklistsTable, eventSelectedExtrasTable, venueEventsTable, venuePacksTable } from "@workspace/db";
 import {
   CreateVenueEventBody,
   DeleteVenueEventParams,
@@ -40,6 +40,7 @@ function formatVenueEvent(row: typeof venueEventsTable.$inferSelect) {
     paymentStatus: row.paymentStatus,
     source: row.source,
     packName: row.packName,
+    packEstimatedCost: row.packEstimatedCost === null ? null : money(row.packEstimatedCost),
     birthdayChildName: row.birthdayChildName,
     birthdayChildAge: row.birthdayChildAge,
     childrenCount: row.childrenCount ?? 0,
@@ -109,12 +110,24 @@ router.post("/venue-events", async (req, res): Promise<void> => {
     expectedReservationDepositAmount,
     reservationDepositPolicy,
     initialReservationDeposit,
+    packEstimatedCost,
     ...body
   } = parsed.data;
   const depositPolicy = reservationDepositPolicy ?? "auto_20";
   const expectedDeposit = depositPolicy === "auto_20"
     ? suggestVenueReservationDeposit(totalPrice)
     : expectedReservationDepositAmount ?? null;
+  let snapshotPackCost = packEstimatedCost ?? null;
+  if (packEstimatedCost === undefined) {
+    const [catalogPack] = await db
+      .select({ estimatedCost: venuePacksTable.estimatedCost })
+      .from(venuePacksTable)
+      .where(eq(venuePacksTable.name, body.packName))
+      .limit(1);
+    snapshotPackCost = catalogPack?.estimatedCost === null || catalogPack?.estimatedCost === undefined
+      ? null
+      : money(catalogPack.estimatedCost);
+  }
 
   try {
     const row = await createEventWithOptionalInitialDeposit<DbTransaction, typeof venueEventsTable.$inferSelect>(
@@ -129,6 +142,7 @@ router.post("/venue-events", async (req, res): Promise<void> => {
             childrenCount: body.childrenCount ?? 0,
             termsAccepted: body.termsAccepted ?? false,
             totalPrice: String(totalPrice),
+            packEstimatedCost: snapshotPackCost === null ? null : String(snapshotPackCost),
             expectedReservationDepositAmount: expectedDeposit === null ? null : String(expectedDeposit),
             reservationDepositPolicy: depositPolicy,
             amountPaid: "0",
@@ -232,10 +246,14 @@ router.patch("/venue-events/:id", async (req, res): Promise<void> => {
       paymentStatus: _paymentStatus,
       expectedReservationDepositAmount,
       reservationDepositPolicy,
+      packEstimatedCost,
       ...body
     } = parsed.data;
     const updateData: Record<string, unknown> = compactObject({ ...body });
     if (parsed.data.totalPrice !== undefined) updateData.totalPrice = String(parsed.data.totalPrice);
+    if (packEstimatedCost !== undefined) {
+      updateData.packEstimatedCost = packEstimatedCost === null ? null : String(packEstimatedCost);
+    }
 
     let nextPolicy = reservationDepositPolicy ?? current.reservationDepositPolicy;
     if (
