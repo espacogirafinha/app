@@ -63,6 +63,7 @@ type CatalogFormState = {
   description: string;
   category: string;
   basePrice: string;
+  baseCost: string;
   defaultStartTime: string;
   defaultEndTime: string;
   appliesTo: EventExtra["appliesTo"];
@@ -78,6 +79,7 @@ const emptyForm: CatalogFormState = {
   description: "",
   category: "",
   basePrice: "0",
+  baseCost: "",
   defaultStartTime: "",
   defaultEndTime: "",
   appliesTo: "all",
@@ -393,6 +395,9 @@ function CatalogCard({
 
         <div className="grid grid-cols-2 gap-2 text-sm">
           <Info label="Preço base" value={formatCurrency(item.basePrice)} strong />
+          {kind === "event-extras" && "baseCost" in item ? (
+            <Info label="Custo sugerido" value={item.baseCost === null ? "Por apurar" : formatCurrency(item.baseCost)} />
+          ) : null}
           <Info label="Ordem" value={String(item.sortOrder)} className="hidden md:block" />
           {kind === "venue-packs" && "defaultStartTime" in item && (item.defaultStartTime || item.defaultEndTime) ? (
             <Info
@@ -446,6 +451,7 @@ function CatalogModal({
     event.preventDefault();
 
     const basePrice = parseMoneyInput(form.basePrice);
+    const baseCost = form.baseCost.trim() === "" ? null : parseMoneyInput(form.baseCost);
     const sortOrder = Number.parseInt(form.sortOrder || "0", 10);
 
     if (!form.name.trim()) {
@@ -460,6 +466,11 @@ function CatalogModal({
 
     if (basePrice < 0 || Number.isNaN(basePrice)) {
       toast({ title: "Preço base inválido", description: "O preço base deve ser igual ou superior a 0.", variant: "destructive" });
+      return;
+    }
+
+    if (baseCost !== null && (baseCost < 0 || Number.isNaN(baseCost))) {
+      toast({ title: "Custo sugerido inválido", description: "Deixe vazio se ainda não souber o custo.", variant: "destructive" });
       return;
     }
 
@@ -505,6 +516,17 @@ function CatalogModal({
             <Field label="Preço base">
               <MoneyInput value={form.basePrice} onValueChange={(value) => patch({ basePrice: value })} />
             </Field>
+
+            {kind === "event-extras" ? (
+              <Field label="Custo sugerido">
+                <MoneyInput
+                  value={form.baseCost}
+                  onValueChange={(value) => patch({ baseCost: value })}
+                  normalizeOnBlur={false}
+                  placeholder="Deixar vazio se desconhecido"
+                />
+              </Field>
+            ) : null}
 
             <Field label="Ordem">
               <Input type="number" step="1" value={form.sortOrder} onChange={(event) => patch({ sortOrder: event.target.value })} />
@@ -613,6 +635,7 @@ function toFormState(kind: CatalogKind, item?: CatalogItem): CatalogFormState {
     description: "description" in item && item.description ? item.description : "",
     category: "category" in item && item.category ? item.category : "",
     basePrice: String(item.basePrice),
+    baseCost: kind === "event-extras" && "baseCost" in item && item.baseCost !== null ? String(item.baseCost) : "",
     defaultStartTime: "defaultStartTime" in item && item.defaultStartTime ? item.defaultStartTime : "",
     defaultEndTime: "defaultEndTime" in item && item.defaultEndTime ? item.defaultEndTime : "",
     appliesTo: kind === "event-extras" && "appliesTo" in item ? item.appliesTo : "all",
@@ -631,6 +654,7 @@ function toPayload(
 ): CatalogSavePayload {
   const nextForm = { ...form, ...overrides };
   const basePrice = parseMoneyInput(nextForm.basePrice);
+  const baseCost = nextForm.baseCost.trim() === "" ? null : parseMoneyInput(nextForm.baseCost);
   const sortOrder = Number.parseInt(nextForm.sortOrder || "0", 10);
 
   if (kind === "venue-packs") {
@@ -665,6 +689,7 @@ function toPayload(
     name: nextForm.name.trim(),
     category: nullable(nextForm.category),
     basePrice,
+    baseCost,
     appliesTo: nextForm.appliesTo,
     isActive: nextForm.isActive,
     sortOrder,
