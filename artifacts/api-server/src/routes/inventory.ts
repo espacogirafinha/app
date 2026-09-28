@@ -18,12 +18,14 @@ import {
 import {
   adjustmentDelta,
   calculateCurrentStock,
+  filterInventoryItems,
   inventoryStockState,
   inventorySummary,
-  matchesInventorySearch,
   missingToMinimum,
   nextStockAfterDelta,
+  normalizeInventoryMetadata,
   signedMovementDelta,
+  sortInventoryMovementsNewestFirst,
 } from "../lib/inventory-stock";
 
 const router: IRouter = Router();
@@ -113,29 +115,43 @@ function itemPayload(body: {
   notes?: string | null;
   isActive?: boolean;
 }): Partial<typeof inventoryItemsTable.$inferInsert> {
+  const normalized =
+    body.name !== undefined && body.unit !== undefined
+      ? normalizeInventoryMetadata({
+          name: body.name,
+          category: body.category,
+          brand: body.brand,
+          color: body.color,
+          size: body.size,
+          unit: body.unit,
+          location: body.location,
+          notes: body.notes,
+        })
+      : null;
+
   return Object.fromEntries(
     Object.entries({
       itemType: body.itemType,
-      name: body.name?.trim(),
-      category: body.category === undefined ? undefined : body.category?.trim() || null,
-      brand: body.brand === undefined ? undefined : body.brand?.trim() || null,
-      color: body.color === undefined ? undefined : body.color?.trim() || null,
-      size: body.size === undefined ? undefined : body.size?.trim() || null,
-      unit: body.unit?.trim(),
+      name: normalized?.name ?? body.name?.trim(),
+      category: body.category === undefined ? undefined : normalized?.category ?? body.category?.trim() || null,
+      brand: body.brand === undefined ? undefined : normalized?.brand ?? body.brand?.trim() || null,
+      color: body.color === undefined ? undefined : normalized?.color ?? body.color?.trim() || null,
+      size: body.size === undefined ? undefined : normalized?.size ?? body.size?.trim() || null,
+      unit: normalized?.unit ?? body.unit?.trim(),
       minimumStock:
         body.minimumStock === undefined
           ? undefined
           : body.minimumStock === null
             ? null
             : String(body.minimumStock),
-      location: body.location === undefined ? undefined : body.location?.trim() || null,
+      location: body.location === undefined ? undefined : normalized?.location ?? body.location?.trim() || null,
       referenceCost:
         body.referenceCost === undefined
           ? undefined
           : body.referenceCost === null
             ? null
             : String(body.referenceCost),
-      notes: body.notes === undefined ? undefined : body.notes?.trim() || null,
+      notes: body.notes === undefined ? undefined : normalized?.notes ?? body.notes?.trim() || null,
       isActive: body.isActive,
     }).filter(([, value]) => value !== undefined),
   ) as Partial<typeof inventoryItemsTable.$inferInsert>;
@@ -149,55 +165,13 @@ router.get("/inventory-items", async (req, res): Promise<void> => {
   }
 
   const { search, itemType, category, activity, stockStatus } = parsed.data;
-  let items = await loadInventoryItems();
-
-  if (activity === "inactive") {
-    items = items.filter((item) => !item.isActive);
-  } else if (activity !== "all") {
-    items = items.filter((item) => item.isActive);
-  }
-
-  if (itemType) items = items.filter((item) => item.itemType === itemType);
-  if (category) {
-    const target = category.trim().toLocaleLowerCase("pt-PT");
-    items = items.filter(
-      (item) => item.category?.toLocaleLowerCase("pt-PT") === target,
-    );
-  }
-
-  if (stockStatus === "low") {
-    items = items.filter((item) => item.stockState === "low");
-  } else if (stockStatus === "out") {
-    items = items.filter((item) => item.stockState === "out");
-  } else if (stockStatus === "to_restock") {
-    items = items.filter(
-      (item) =>
-        item.minimumStock !== null && item.currentStock < item.minimumStock,
-    );
-  }
-
-  if (search) {
-    items = items.filter((item) =>
-      matchesInventorySearch(
-        [
-          item.name,
-          item.category,
-          item.brand,
-          item.color,
-          item.size,
-          item.location,
-          item.notes,
-        ],
-        search,
-      ),
-    );
-  }
-
-  items.sort(
-    (a, b) =>
-      a.name.localeCompare(b.name, "pt-PT", { sensitivity: "base" })
-      || a.id.localeCompare(b.id),
-  );
+  const items = filterInventoryItems(await loadInventoryItems(), {
+    search,
+    itemType,
+    category,
+    activity,
+    stockStatus,
+  });
 
   res.json(items);
 });
@@ -221,20 +195,24 @@ router.post("/inventory-items", async (req, res): Promise<void> => {
   }
 
   const created = await db.transaction(async (tx) => {
+    const metadata = normalizeInventoryMetadata({
+      name: body.name,
+      category: body.category,
+      brand: body.brand,
+      color: body.color,
+      size: body.size,
+      unit: body.unit,
+      location: body.location,
+      notes: body.notes,
+    });
+
     const [item] = await tx
       .insert(inventoryItemsTable)
       .values({
         itemType: body.itemType,
-        name: body.name.trim(),
-        category: body.category?.trim() || null,
-        brand: body.brand?.trim() || null,
-        color: body.color?.trim() || null,
-        size: body.size?.trim() || null,
-        unit: body.unit.trim(),
+        ...metadata,
         minimumStock: body.minimumStock === null || body.minimumStock === undefined ? null : String(body.minimumStock),
-        location: body.location?.trim() || null,
         referenceCost: body.referenceCost === null || body.referenceCost === undefined ? null : String(body.referenceCost),
-        notes: body.notes?.trim() || null,
         isActive: body.isActive ?? true,
       })
       .returning();
@@ -339,7 +317,7 @@ router.get("/inventory-items/:id/movements", async (req, res): Promise<void> => 
       desc(inventoryMovementsTable.createdAt),
     );
 
-  res.json(rows.map(formatMovement));
+  res.json(sortInventoryMovementsNewestFirst(rows).map(formatMovement));
 });
 
 router.post("/inventory-items/:id/movements", async (req, res): Promise<void> => {
