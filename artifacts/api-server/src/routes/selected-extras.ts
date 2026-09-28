@@ -11,6 +11,14 @@ function money(value: unknown) {
   return Number.parseFloat(String(value ?? 0));
 }
 
+function moneyOrNull(value: unknown) {
+  return value === null || value === undefined ? null : Number.parseFloat(String(value));
+}
+
+function roundMoney(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 function iso(value: Date | null | undefined) {
   return value?.toISOString() ?? new Date().toISOString();
 }
@@ -24,8 +32,10 @@ function formatSelectedExtra(row: SelectedExtraRow) {
     extraName: row.extraName,
     category: row.category,
     unitPrice: money(row.unitPrice),
+    unitCost: moneyOrNull(row.unitCost),
     quantity: row.quantity,
     totalPrice: money(row.totalPrice),
+    totalCost: moneyOrNull(row.totalCost),
     notes: row.notes,
     sortOrder: row.sortOrder,
     createdAt: iso(row.createdAt),
@@ -72,18 +82,28 @@ router.post("/selected-extras", async (req, res): Promise<void> => {
 
     return tx
       .insert(eventSelectedExtrasTable)
-      .values(items.map((item, index) => ({
-        module,
-        entityId,
-        extraId: item.extraId ?? null,
-        extraName: item.extraName,
-        category: item.category ?? null,
-        unitPrice: String(item.unitPrice),
-        quantity: item.quantity,
-        totalPrice: String(item.totalPrice),
-        notes: item.notes ?? null,
-        sortOrder: item.sortOrder ?? index,
-      })))
+      .values(items.map((item, index) => {
+        const quantity = item.quantity;
+        const unitPrice = roundMoney(item.unitPrice);
+        const unitCost = item.unitCost === null || item.unitCost === undefined
+          ? null
+          : roundMoney(item.unitCost);
+
+        return {
+          module,
+          entityId,
+          extraId: item.extraId ?? null,
+          extraName: item.extraName,
+          category: item.category ?? null,
+          unitPrice: String(unitPrice),
+          unitCost: unitCost === null ? null : String(unitCost),
+          quantity,
+          totalPrice: String(roundMoney(quantity * unitPrice)),
+          totalCost: unitCost === null ? null : String(roundMoney(quantity * unitCost)),
+          notes: item.notes ?? null,
+          sortOrder: item.sortOrder ?? index,
+        };
+      }))
       .returning();
   });
 
