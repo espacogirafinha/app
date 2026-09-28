@@ -22,6 +22,7 @@ const savedEvent: VenueEvent = {
   status: "confirmed",
   paymentStatus: "unpaid",
   packName: "Pack Simples",
+  packEstimatedCost: null,
   birthdayChildName: null,
   birthdayChildAge: null,
   childrenCount: 10,
