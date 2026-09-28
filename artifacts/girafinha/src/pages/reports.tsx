@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { endOfMonth, endOfYear, format, parseISO, startOfMonth, startOfYear } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
@@ -18,12 +19,26 @@ import {
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NullableNumericMoneyInput } from "@/components/money-input";
+import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  getGetReportsV2QueryKey,
   useGetReportsV2,
+  useUpdateSelectedExtraCost,
   type ReportsV2,
   type ReportsV2AreaSummary,
+  type ReportsV2ExtraOccurrence,
   type ReportsV2RevenueStat,
 } from "@workspace/api-client-react";
 
@@ -204,7 +219,10 @@ export default function ReportsPage() {
           </div>
 
           <div className="hidden md:block"><AreaDetails report={report} /></div>
-          <ExtrasReportSection extras={report.extras} />
+          <ExtrasReportSection
+            extras={report.extras}
+            reportParams={{ startDate: period.startDate, endDate: period.endDate }}
+          />
         </>
       )}
     </div>
@@ -393,7 +411,61 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
   );
 }
 
-function ExtrasReportSection({ extras }: { extras: ReportsV2["extras"] }) {
+function ExtrasReportSection({
+  extras,
+  reportParams,
+}: {
+  extras: ReportsV2["extras"];
+  reportParams: { startDate: string; endDate: string };
+}) {
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftCost, setDraftCost] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+  const updateCost = useUpdateSelectedExtraCost();
+  const { toast } = useToast();
+
+  const selectedItem = selectedLabel
+    ? extras.items.find((item) => item.label === selectedLabel) ?? null
+    : null;
+  const editingOccurrence = editingId
+    ? selectedItem?.occurrences.find((occurrence) => occurrence.id === editingId) ?? null
+    : null;
+
+  const openCostEditor = (occurrence: ReportsV2ExtraOccurrence) => {
+    setEditingId(occurrence.id);
+    setDraftCost(occurrence.unitCost);
+  };
+
+  const saveCost = async () => {
+    if (!editingOccurrence) return;
+    if (draftCost !== null && draftCost < 0) {
+      toast({ title: "Custo inválido", description: "O custo não pode ser negativo.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      await updateCost.mutateAsync({
+        id: editingOccurrence.id,
+        data: { unitCost: draftCost },
+      });
+      await queryClient.invalidateQueries({
+        queryKey: getGetReportsV2QueryKey(reportParams),
+      });
+      setEditingId(null);
+      toast({ title: "Custo do fornecedor atualizado" });
+    } catch {
+      toast({ title: "Não foi possível atualizar o custo", variant: "destructive" });
+    }
+  };
+
+  const draftTotalCost = editingOccurrence && draftCost !== null
+    ? roundCurrency(editingOccurrence.quantity * draftCost)
+    : null;
+  const draftMargin = editingOccurrence && draftTotalCost !== null
+    ? roundCurrency(editingOccurrence.totalPrice - draftTotalCost)
+    : null;
+
   return (
     <section className="space-y-3" aria-label="Extras">
       <div>
@@ -419,7 +491,20 @@ function ExtrasReportSection({ extras }: { extras: ReportsV2["extras"] }) {
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
           {extras.items.map((item) => (
-            <Card key={item.label} className="border-border/70 shadow-sm">
+            <Card
+              key={item.label}
+              role="button"
+              tabIndex={0}
+              aria-label={`Ver ocorrências de ${item.label}`}
+              className="cursor-pointer border-border/70 shadow-sm transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => setSelectedLabel(item.label)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedLabel(item.label);
+                }
+              }}
+            >
               <CardContent className="space-y-2 p-3 md:p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -441,8 +526,116 @@ function ExtrasReportSection({ extras }: { extras: ReportsV2["extras"] }) {
           ))}
         </div>
       )}
+
+      <Dialog open={Boolean(selectedItem)} onOpenChange={(open) => {
+        if (!open) {
+          setEditingId(null);
+          setSelectedLabel(null);
+        }
+      }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedItem?.label ?? "Extra"}</DialogTitle>
+            <DialogDescription>
+              Ocorrências individuais no período. Os custos por apurar aparecem primeiro.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {selectedItem?.occurrences.map((occurrence) => (
+              <div key={occurrence.id} className="rounded-xl border border-border p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold">{occurrence.birthdayChildName || occurrence.customerName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(parseISO(occurrence.eventDate), "dd MMM yyyy", { locale: pt })} · {occurrence.extraName}
+                    </p>
+                  </div>
+                  {occurrence.unitCost === null ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">Custo por apurar</span>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                  <div><p className="text-muted-foreground">Quantidade</p><p className="font-bold">{occurrence.quantity}</p></div>
+                  <div><p className="text-muted-foreground">Cliente pagou</p><p className="font-bold">{euro(occurrence.totalPrice)}</p></div>
+                  <div><p className="text-muted-foreground">Fornecedor</p><p className="font-bold">{occurrence.totalCost === null ? "Por apurar" : euro(occurrence.totalCost)}</p></div>
+                  <div><p className="text-muted-foreground">Margem</p><p className="font-bold">{occurrence.margin === null ? "Por apurar" : euro(occurrence.margin)}</p></div>
+                </div>
+
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={occurrence.unitCost === null ? "default" : "outline"}
+                    onClick={() => openCostEditor(occurrence)}
+                  >
+                    {occurrence.unitCost === null ? "Adicionar custo" : "Editar custo"}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(editingOccurrence)} onOpenChange={(open) => {
+        if (!open) setEditingId(null);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingOccurrence?.unitCost === null ? "Adicionar custo" : "Editar custo"}</DialogTitle>
+            <DialogDescription>
+              Altera apenas o custo deste extra nesta Festa.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingOccurrence ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm">
+                <p><span className="text-muted-foreground">Extra:</span> <strong>{editingOccurrence.extraName}</strong></p>
+                <p className="mt-1"><span className="text-muted-foreground">Cliente pagou:</span> <strong>{euro(editingOccurrence.totalPrice)}</strong></p>
+                {editingOccurrence.quantity > 1 ? (
+                  <p className="mt-1 text-xs text-muted-foreground">{editingOccurrence.quantity} × {euro(editingOccurrence.unitPrice)}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Pago ao fornecedor{editingOccurrence.quantity > 1 ? " / unidade" : ""}</Label>
+                <NullableNumericMoneyInput
+                  value={draftCost}
+                  onValueChange={setDraftCost}
+                  min="0"
+                  placeholder="Por apurar"
+                  aria-label="Pago ao fornecedor"
+                />
+              </div>
+
+              <div className="rounded-xl border border-border p-3">
+                <p className="text-xs text-muted-foreground">Margem</p>
+                <p className="mt-1 text-xl font-bold">{draftMargin === null ? "Por apurar" : euro(draftMargin)}</p>
+                {draftTotalCost !== null && editingOccurrence.quantity > 1 ? (
+                  <p className="mt-1 text-xs text-muted-foreground">Fornecedor total: {euro(draftTotalCost)}</p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditingId(null)}>Cancelar</Button>
+            <Button type="button" onClick={() => void saveCost()} disabled={updateCost.isPending}>
+              {updateCost.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
+}
+
+function roundCurrency(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 function DetailCard({ title, icon: Icon, empty, mobile, className = "", children }: {
