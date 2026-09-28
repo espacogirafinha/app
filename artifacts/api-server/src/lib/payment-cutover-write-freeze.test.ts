@@ -103,8 +103,12 @@ test("GETs continuam disponíveis durante o freeze", async () => {
 });
 
 test("Workshops continuam fora do bloqueio", async () => {
-  for (const method of ["POST", "PATCH", "DELETE"]) {
-    const result = await runMiddleware(method, "/api/workshops/workshop-1", "true");
+  for (const [method, path] of [
+    ["POST", "/api/workshops"],
+    ["PATCH", "/api/workshops/workshop-1"],
+    ["DELETE", "/api/workshops/workshop-1"],
+  ] as const) {
+    const result = await runMiddleware(method, path, "true");
     assert.equal(result.nextCalled, true);
     assert.equal(result.status, 200);
   }
