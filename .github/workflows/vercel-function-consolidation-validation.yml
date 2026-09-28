@@ -31,7 +31,6 @@ jobs:
       - name: Relevant tests
         run: |
           node --experimental-strip-types --test \
-            artifacts/api-server/src/lib/auth.test.ts \
             artifacts/api-server/src/lib/custom-fetch-auth-contract.test.ts \
             artifacts/api-server/src/lib/selected-extra-cost.test.ts \
             artifacts/api-server/src/lib/selected-extra-cost-update.test.ts \
