@@ -329,7 +329,7 @@ function InventoryCard({
           </div>
         </div>
 
-        {item.minimumStock !== null ? (
+        {item.minimumStock != null ? (
           <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-xs">
             <span>Mínimo {formatQuantity(item.minimumStock)} {item.unit}</span>
             {item.missingToMinimum > 0 ? (
@@ -675,7 +675,7 @@ function InventoryDetailDialog({
   onEdit: (item: InventoryItem) => void;
   onAdjust: (item: InventoryItem) => void;
 }) {
-  const movementsQuery = useListInventoryMovements(item?.id ?? "", { query: { enabled: Boolean(item) } });
+  const movementsQuery = useListInventoryMovements(item?.id ?? "");
   const updateItem = useUpdateInventoryItem();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -704,7 +704,7 @@ function InventoryDetailDialog({
           </div>
           <DialogDescription>
             {formatQuantity(item.currentStock)} {item.unit} em stock
-            {item.minimumStock !== null ? " · mínimo " + formatQuantity(item.minimumStock) : ""}
+            {item.minimumStock != null ? " · mínimo " + formatQuantity(item.minimumStock) : ""}
           </DialogDescription>
         </DialogHeader>
 
@@ -714,7 +714,7 @@ function InventoryDetailDialog({
           <Info label="Marca" value={item.brand || "—"} />
           <Info label="Cor" value={item.color || "—"} />
           <Info label="Tamanho" value={item.size || "—"} />
-          <Info label="Custo ref." value={item.referenceCost === null ? "—" : euro(item.referenceCost)} />
+          <Info label="Custo ref." value={item.referenceCost == null ? "—" : euro(item.referenceCost)} />
         </div>
 
         {item.notes ? <div className="rounded-xl bg-muted/40 p-3 text-sm whitespace-pre-wrap">{item.notes}</div> : null}
@@ -809,9 +809,9 @@ function formFromItem(item: InventoryItem): InventoryForm {
     color: item.color ?? "",
     size: item.size ?? "",
     unit: item.unit,
-    minimumStock: item.minimumStock === null ? "" : formatQuantity(item.minimumStock),
+    minimumStock: item.minimumStock == null ? "" : formatQuantity(item.minimumStock),
     location: item.location ?? "",
-    referenceCost: item.referenceCost,
+    referenceCost: item.referenceCost ?? null,
     notes: item.notes ?? "",
     isActive: item.isActive,
     initialStock: "0",
