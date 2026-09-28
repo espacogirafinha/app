@@ -92,7 +92,7 @@ export function EventExtrasSelector({
   };
 
   return (
-    <section className="space-y-3 rounded-xl border border-border p-3 md:p-4">
+    <section className="space-y-3 rounded-xl border border-border p-3 md:p-4" data-testid="event-extras-selector" data-selected-count={extras.length}>
       <div>
         <h3 className="font-semibold text-foreground">Extras</h3>
         <p className="text-xs text-muted-foreground">Adicione extras do catálogo ou um extra específico desta reserva.</p>
