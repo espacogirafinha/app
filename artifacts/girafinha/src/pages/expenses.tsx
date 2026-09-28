@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, Plus, ReceiptText, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -368,6 +368,20 @@ function ExpenseDialog({
 }) {
   const [form, setForm] = useState<ExpenseForm>(emptyForm());
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!open) return;
+    setForm(expense ? {
+      expenseDate: expense.expenseDate,
+      description: expense.description,
+      amount: String(expense.amount),
+      categoryId: expense.categoryId,
+      expenseType: expense.expenseType,
+      supplier: expense.supplier ?? "",
+      notes: expense.notes ?? "",
+      venueEventId: expense.venueEventId ?? "",
+    } : emptyForm());
+  }, [expense, open]);
 
   const initialize = (nextOpen: boolean) => {
     if (nextOpen) {
