@@ -29,9 +29,27 @@ jobs:
             artifacts/api-server/src/lib/reports-finance.test.ts
       - name: Install Chromium
         run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Start isolated local app
+        run: |
+          PORT=4174 VITE_SUPABASE_URL=http://127.0.0.1:9999 VITE_SUPABASE_ANON_KEY=test-anon-key \
+            corepack pnpm --filter @workspace/girafinha dev > /tmp/reports-extra-cost-vite.log 2>&1 &
+          echo $! > /tmp/reports-extra-cost-vite.pid
+          for i in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:4174/reports-extra-cost-test.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/reports-extra-cost-vite.log
+          exit 1
       - name: Reports browser integration
         run: corepack pnpm exec playwright test --config=playwright.reports-extra-cost.config.ts
       - name: Typecheck
         run: corepack pnpm run typecheck
       - name: Build
         run: corepack pnpm run build
+      - name: Stop isolated local app
+        if: always()
+        run: |
+          if [ -f /tmp/reports-extra-cost-vite.pid ]; then kill $(cat /tmp/reports-extra-cost-vite.pid) || true; fi
+          cat /tmp/reports-extra-cost-vite.log || true
