@@ -29,3 +29,12 @@ test("null stays unknown", () => {
 test("negative supplier cost is rejected", () => {
   assert.throws(() => selectedExtraCostPatch(1, -0.01), /invalid_unit_cost/);
 });
+
+
+test("cost patch exposes only supplier snapshot fields", () => {
+  const patch = selectedExtraCostPatch(2, 35);
+  assert.deepEqual(Object.keys(patch).sort(), ["totalCost", "unitCost"]);
+  assert.equal("totalPrice" in patch, false);
+  assert.equal("amountPaid" in patch, false);
+  assert.equal("paymentStatus" in patch, false);
+});
