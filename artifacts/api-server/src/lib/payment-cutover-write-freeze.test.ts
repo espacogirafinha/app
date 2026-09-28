@@ -74,6 +74,19 @@ test("freeze=false preserves current write behavior", async () => {
   assert.equal(result.body, undefined);
 });
 
+test("freeze=false não bloqueia o novo endpoint de pagamentos", async () => {
+  for (const [method, path] of [
+    ["POST", "/api/event-payments"],
+    ["PATCH", "/api/event-payments/payment-1"],
+    ["DELETE", "/api/event-payments/payment-1"],
+  ] as const) {
+    const result = await runMiddleware(method, path, "false");
+    assert.equal(result.nextCalled, true);
+    assert.equal(result.status, 200);
+    assert.equal(result.body, undefined);
+  }
+});
+
 for (const [method, path, label] of [
   ["POST", "/api/venue-events", "criar Festa"],
   ["PATCH", "/api/venue-events/venue-1", "editar Festa"],
