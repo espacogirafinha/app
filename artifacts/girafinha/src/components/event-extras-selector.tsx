@@ -25,10 +25,12 @@ export function EventExtrasSelector({
   module,
   extras,
   onChange,
+  supplierCostsEnabled = false,
 }: {
   module: SelectedExtraModule;
   extras: EventExtraDraft[];
   onChange: (extras: EventExtraDraft[]) => void;
+  supplierCostsEnabled?: boolean;
 }) {
   const catalogQuery = useListEventExtras();
   const options = (catalogQuery.data ?? [])
@@ -44,10 +46,10 @@ export function EventExtrasSelector({
       extraName: extra.name,
       category: extra.category,
       unitPrice: extra.basePrice,
-      unitCost: extra.baseCost ?? null,
+      unitCost: supplierCostsEnabled ? extra.baseCost ?? null : null,
       quantity: 1,
       totalPrice: extra.basePrice,
-      totalCost: extra.baseCost ?? null,
+      totalCost: supplierCostsEnabled && extra.baseCost !== null && extra.baseCost !== undefined ? extra.baseCost : null,
       notes: null,
       sortOrder: extras.length + 1,
       custom: false,
@@ -145,28 +147,35 @@ export function EventExtrasSelector({
                 </Button>
               </div>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor={`extra-name-${extra.localId}`}>Nome</Label>
-                  <Input
-                    id={`extra-name-${extra.localId}`}
-                    value={extra.extraName}
-                    onChange={(event) => updateExtra(extra.localId, { extraName: event.target.value })}
-                    placeholder="Ex.: Mascote"
-                  />
+              {supplierCostsEnabled ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor={`extra-name-${extra.localId}`}>Nome</Label>
+                    <Input
+                      id={`extra-name-${extra.localId}`}
+                      value={extra.extraName}
+                      onChange={(event) => updateExtra(extra.localId, { extraName: event.target.value })}
+                      placeholder="Ex.: Mascote"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`extra-category-${extra.localId}`}>Categoria</Label>
+                    <Input
+                      id={`extra-category-${extra.localId}`}
+                      value={extra.category ?? ""}
+                      onChange={(event) => updateExtra(extra.localId, { category: event.target.value || null })}
+                      placeholder="Ex.: Animação"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`extra-category-${extra.localId}`}>Categoria</Label>
-                  <Input
-                    id={`extra-category-${extra.localId}`}
-                    value={extra.category ?? ""}
-                    onChange={(event) => updateExtra(extra.localId, { category: event.target.value || null })}
-                    placeholder="Ex.: Animação"
-                  />
+              ) : (
+                <div className="mt-1">
+                  <p className="break-words font-semibold">{extra.extraName}</p>
+                  {extra.category && <p className="text-xs text-muted-foreground">{extra.category}</p>}
                 </div>
-              </div>
+              )}
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className={`mt-3 grid gap-3 sm:grid-cols-3 ${supplierCostsEnabled ? "lg:grid-cols-4" : ""}`}>
                 <div className="space-y-2">
                   <Label>Quantidade</Label>
                   <Input
@@ -185,24 +194,33 @@ export function EventExtrasSelector({
                     aria-label={`Preço de ${extra.extraName || "extra"}`}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Eu pago ao fornecedor</Label>
-                  <NullableNumericMoneyInput
-                    value={extra.unitCost ?? null}
-                    onValueChange={(value) => updateExtra(extra.localId, { unitCost: value })}
-                    placeholder="Por apurar"
-                    aria-label={`Custo de ${extra.extraName || "extra"}`}
-                  />
-                </div>
-                <div className="rounded-xl border border-border bg-muted/40 p-3">
-                  <p className="text-xs text-muted-foreground">Margem</p>
-                  <p className="mt-1 text-lg font-bold">
-                    {calculateExtraLine(extra).margin === null ? "Por apurar" : `${calculateExtraLine(extra).margin?.toFixed(2)} €`}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Cliente: {extra.totalPrice.toFixed(2)} € · Fornecedor: {extra.totalCost === null || extra.totalCost === undefined ? "—" : `${extra.totalCost.toFixed(2)} €`}
-                  </p>
-                </div>
+                {supplierCostsEnabled ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Eu pago ao fornecedor</Label>
+                      <NullableNumericMoneyInput
+                        value={extra.unitCost ?? null}
+                        onValueChange={(value) => updateExtra(extra.localId, { unitCost: value })}
+                        placeholder="Por apurar"
+                        aria-label={`Custo de ${extra.extraName || "extra"}`}
+                      />
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/40 p-3">
+                      <p className="text-xs text-muted-foreground">Margem</p>
+                      <p className="mt-1 text-lg font-bold">
+                        {calculateExtraLine(extra).margin === null ? "Por apurar" : `${calculateExtraLine(extra).margin?.toFixed(2)} €`}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Cliente: {extra.totalPrice.toFixed(2)} € · Fornecedor: {extra.totalCost === null || extra.totalCost === undefined ? "—" : `${extra.totalCost.toFixed(2)} €`}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-xl border border-border bg-muted/40 p-3">
+                    <p className="text-xs text-muted-foreground">Total</p>
+                    <p className="mt-1 text-lg font-bold">{extra.totalPrice.toFixed(2)} €</p>
+                  </div>
+                )}
               </div>
               <div className="mt-3 space-y-2">
                 <Label>Notas</Label>
