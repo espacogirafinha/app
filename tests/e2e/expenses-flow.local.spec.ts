@@ -153,9 +153,9 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
   });
 
   await page.goto("/expenses-flow-test.html");
-  await expect(page.getByText("86,40 €")).toBeVisible();
-  await expect(page.getByText("220,00 €")).toBeVisible();
-  await expect(page.getByText("306,40 €")).toBeVisible();
+  await expect(page.getByText("86,40 €").first()).toBeVisible();
+  await expect(page.getByText("220,00 €").first()).toBeVisible();
+  await expect(page.getByText("306,40 €").first()).toBeVisible();
 
   await page.getByRole("button", { name: "Adicionar despesa" }).click();
   const createDialog = page.getByRole("dialog", { name: "Adicionar despesa" });
