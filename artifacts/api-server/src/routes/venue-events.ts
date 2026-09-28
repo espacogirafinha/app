@@ -3,6 +3,7 @@ import { and, eq, gte, ilike, lte, or } from "drizzle-orm";
 import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary, type DbTransaction } from "../lib/event-payments";
 import { createEventWithOptionalInitialDeposit, initialReservationDepositPaymentInput } from "../lib/event-payment-creation";
 import { suggestVenueReservationDeposit } from "../lib/event-payment-rules";
+import { resolveVenuePackSnapshotCost } from "../lib/venue-pack-cost";
 import { db, eventChecklistsTable, eventSelectedExtrasTable, venueEventsTable, venuePacksTable } from "@workspace/db";
 import {
   CreateVenueEventBody,
@@ -117,16 +118,19 @@ router.post("/venue-events", async (req, res): Promise<void> => {
   const expectedDeposit = depositPolicy === "auto_20"
     ? suggestVenueReservationDeposit(totalPrice)
     : expectedReservationDepositAmount ?? null;
-  let snapshotPackCost = packEstimatedCost ?? null;
+  let snapshotPackCost = resolveVenuePackSnapshotCost(packEstimatedCost, null);
   if (packEstimatedCost === undefined) {
     const [catalogPack] = await db
       .select({ estimatedCost: venuePacksTable.estimatedCost })
       .from(venuePacksTable)
       .where(eq(venuePacksTable.name, body.packName))
       .limit(1);
-    snapshotPackCost = catalogPack?.estimatedCost === null || catalogPack?.estimatedCost === undefined
-      ? null
-      : money(catalogPack.estimatedCost);
+    snapshotPackCost = resolveVenuePackSnapshotCost(
+      undefined,
+      catalogPack?.estimatedCost === null || catalogPack?.estimatedCost === undefined
+        ? null
+        : money(catalogPack.estimatedCost),
+    );
   }
 
   try {
