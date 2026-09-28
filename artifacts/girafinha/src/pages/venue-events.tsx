@@ -401,7 +401,7 @@ function VenueEventRow({
             </DetailsBlock>
           </div>
           <EventPaymentsPanel module="venue_events" entityId={event.id} />
-          <EventExtrasDetails module="venue_events" entityId={event.id} />
+          <EventExtrasDetails module="venue_events" entityId={event.id} supplierCostsEnabled />
           <EventAttachmentsDetails entityType="venue_event" entityId={event.id} />
           <div className="mt-4">
             <OperationalChecklist module="venue_events" entityId={event.id} title={`Checklist ${event.customerName}`} />
