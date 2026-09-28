@@ -105,3 +105,58 @@ test("saved snapshots stay unchanged if catalog suggestions later change", () =>
   assert.equal(saved.totalPrice, 90);
   assert.equal(saved.totalCost, 75);
 });
+
+
+test("three extras survive save and reopen round trip", () => {
+  const initial = [
+    {
+      localId: "m",
+      extraId: "11111111-1111-1111-1111-111111111111",
+      extraName: "Mascote",
+      category: "Animação",
+      unitPrice: 90,
+      unitCost: 75,
+      quantity: 1,
+      totalPrice: 90,
+      totalCost: 75,
+      notes: null,
+      sortOrder: 1,
+      custom: false,
+    },
+    {
+      localId: "p",
+      extraId: "22222222-2222-2222-2222-222222222222",
+      extraName: "Pinturas",
+      category: "Animação",
+      unitPrice: 100,
+      unitCost: 70,
+      quantity: 1,
+      totalPrice: 100,
+      totalCost: 70,
+      notes: null,
+      sortOrder: 2,
+      custom: false,
+    },
+    {
+      localId: "b",
+      extraId: "33333333-3333-3333-3333-333333333333",
+      extraName: "Bolo",
+      category: "Catering",
+      unitPrice: 55,
+      unitCost: 38,
+      quantity: 1,
+      totalPrice: 55,
+      totalCost: 38,
+      notes: null,
+      sortOrder: 3,
+      custom: false,
+    },
+  ];
+
+  const saved = toSelectedExtraInputs(initial);
+  const reopened = toEventExtraDrafts(saved);
+
+  assert.equal(reopened.length, 3);
+  assert.deepEqual(reopened.map((extra) => extra.extraName), ["Mascote", "Pinturas", "Bolo"]);
+  assert.equal(reopened.reduce((sum, extra) => sum + extra.totalPrice, 0), 245);
+});
