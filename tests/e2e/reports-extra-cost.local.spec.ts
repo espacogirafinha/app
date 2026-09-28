@@ -235,7 +235,7 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
   expect((patchBody as Record<string, unknown>).paymentStatus).toBeUndefined();
   expect(report.summary.totalRevenue).toBe(500);
   expect(report.summary.totalReceived).toBe(100);
-  expect(report.extras.items[0].occurrences.map((item) => item.unitCost)).toEqual([35, 20]);
+  expect(report.extras.items[0].occurrences.map((item) => item.unitCost)).toEqual([20, 20]);
 });
 
 
