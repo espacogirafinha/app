@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { appendEventExtraDraft, calculateExtraLine, removeEventExtraDraft, toEventExtraDrafts, toSelectedExtraInputs } from "../lib/event-extras";
+import { appendEventExtraDraft, calculateExtraLine, removeEventExtraDraft, toEventExtraDrafts, toSelectedExtraInputs } from "../lib/event-extras.ts";
 
 test("custom extras keep a reservation-specific snapshot without a catalog id", () => {
   const [draft] = toEventExtraDrafts([
