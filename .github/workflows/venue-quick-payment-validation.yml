@@ -16,7 +16,7 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - name: Relevant tests
-        run: corepack pnpm exec tsx --test artifacts/girafinha/src/lib/venue-quick-payment.test.ts artifacts/api-server/src/lib/event-payment-rules.test.ts
+        run: node --experimental-strip-types --test artifacts/girafinha/src/lib/venue-quick-payment.test.ts artifacts/api-server/src/lib/event-payment-rules.test.ts
       - name: Typecheck
         run: corepack pnpm run typecheck
       - name: Build
