@@ -97,3 +97,93 @@ export function matchesInventorySearch(
     field?.toLocaleLowerCase("pt-PT").includes(normalized),
   );
 }
+
+
+export type InventoryFilterableItem = {
+  id: string;
+  itemType: "consumable" | "material";
+  name: string;
+  category?: string | null;
+  brand?: string | null;
+  color?: string | null;
+  size?: string | null;
+  location?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  currentStock: number;
+  minimumStock: number | null;
+  stockState: InventoryStockState;
+};
+
+export function filterInventoryItems<T extends InventoryFilterableItem>(
+  items: T[],
+  filters: {
+    search?: string;
+    itemType?: "consumable" | "material";
+    category?: string;
+    activity?: "active" | "inactive" | "all";
+    stockStatus?: "low" | "out" | "to_restock";
+  },
+) {
+  const activity = filters.activity ?? "active";
+  const targetCategory = filters.category?.trim().toLocaleLowerCase("pt-PT");
+
+  return items
+    .filter((item) => {
+      if (activity === "active" && !item.isActive) return false;
+      if (activity === "inactive" && item.isActive) return false;
+      if (filters.itemType && item.itemType !== filters.itemType) return false;
+      if (
+        targetCategory
+        && item.category?.toLocaleLowerCase("pt-PT") !== targetCategory
+      ) return false;
+      if (filters.stockStatus === "low" && item.stockState !== "low") return false;
+      if (filters.stockStatus === "out" && item.stockState !== "out") return false;
+      if (
+        filters.stockStatus === "to_restock"
+        && !(item.minimumStock !== null && item.currentStock < item.minimumStock)
+      ) return false;
+      return matchesInventorySearch(
+        [item.name, item.category, item.brand, item.color, item.size, item.location, item.notes],
+        filters.search,
+      );
+    })
+    .sort(
+      (a, b) =>
+        a.name.localeCompare(b.name, "pt-PT", { sensitivity: "base" })
+        || a.id.localeCompare(b.id),
+    );
+}
+
+export function sortInventoryMovementsNewestFirst<
+  T extends { occurredAt: Date | string; createdAt: Date | string },
+>(movements: T[]) {
+  return [...movements].sort((a, b) => {
+    const occurred = new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime();
+    if (occurred !== 0) return occurred;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+}
+
+export function normalizeInventoryMetadata(input: {
+  name: string;
+  category?: string | null;
+  brand?: string | null;
+  color?: string | null;
+  size?: string | null;
+  unit: string;
+  location?: string | null;
+  notes?: string | null;
+}) {
+  const optional = (value?: string | null) => value?.trim() || null;
+  return {
+    name: input.name.trim(),
+    category: optional(input.category),
+    brand: optional(input.brand),
+    color: optional(input.color),
+    size: optional(input.size),
+    unit: input.unit.trim(),
+    location: optional(input.location),
+    notes: optional(input.notes),
+  };
+}
