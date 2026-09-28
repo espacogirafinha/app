@@ -23,6 +23,7 @@ import { EventAttachmentsDetails } from "@/components/event-attachments";
 import { OperationalChecklist } from "@/components/operational-checklist";
 import { VenueEventModal } from "@/components/venue-event-modal";
 import { EventPaymentsPanel } from "@/components/event-payments-panel";
+import { VenueQuickMarkPaidDialog } from "@/components/venue-quick-mark-paid-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import {
@@ -225,10 +226,10 @@ function VenueEventRow({
 
   return (
     <div id={"venue-event-" + event.id} className="scroll-mt-6 transition-colors hover:bg-muted/30">
-      <div className="relative md:hidden">
+      <div className="md:hidden">
         <button
           type="button"
-          className="w-full rounded-none p-3 pb-14 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          className="w-full rounded-none p-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
           onClick={onToggle}
           aria-expanded={expanded}
           aria-controls={"venue-event-details-" + event.id}
@@ -252,18 +253,34 @@ function VenueEventRow({
             <p className="font-semibold text-foreground">{event.packName}</p>
             {event.partyTheme ? <p className="mt-0.5 break-words text-muted-foreground">Tema: {event.partyTheme}</p> : null}
           </div>
-
-          <p className={"mt-3 pr-28 text-sm font-bold " + (event.remainingBalance > 0 ? "text-rose-700" : "text-emerald-700")}>
-            Falta {event.remainingBalance.toFixed(2)} €
-          </p>
         </button>
 
-        <Button asChild variant="outline" size="sm" className="absolute bottom-3 right-3 z-10 min-h-9 rounded-xl px-3">
-          <a href={whatsappUrl} target="_blank" rel="noreferrer" onClick={(clickEvent) => clickEvent.stopPropagation()}>
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp
-          </a>
-        </Button>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {event.remainingBalance > 0 ? (
+              <>
+                <p className="text-sm font-bold text-rose-700">Falta {event.remainingBalance.toFixed(2)} €</p>
+                <VenueQuickMarkPaidDialog
+                  eventId={event.id}
+                  customerName={event.customerName}
+                  remainingBalance={event.remainingBalance}
+                  trigger={
+                    <Button type="button" size="sm" className="min-h-9 rounded-xl px-3">
+                      Marcar como paga
+                    </Button>
+                  }
+                />
+              </>
+            ) : null}
+          </div>
+
+          <Button asChild variant="outline" size="sm" className="min-h-9 rounded-xl px-3">
+            <a href={whatsappUrl} target="_blank" rel="noreferrer">
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </a>
+          </Button>
+        </div>
       </div>
 
       <div className="hidden p-4 md:block">
@@ -302,6 +319,18 @@ function VenueEventRow({
             </div>
           </div>
           <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
+            {event.remainingBalance > 0 ? (
+              <VenueQuickMarkPaidDialog
+                eventId={event.id}
+                customerName={event.customerName}
+                remainingBalance={event.remainingBalance}
+                trigger={
+                  <Button type="button" size="sm" className="rounded-xl">
+                    Marcar como paga
+                  </Button>
+                }
+              />
+            ) : null}
             <Button asChild variant="outline" size="sm" className="rounded-xl">
               <a href={whatsappUrl} target="_blank" rel="noreferrer">
                 <MessageCircle className="h-4 w-4" />
