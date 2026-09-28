@@ -2267,9 +2267,19 @@ export const UpdateExpenseCategoryResponse = zod.object({
 /**
  * @summary List active expenses
  */
+export const listExpensesQueryStartDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+export const listExpensesQueryEndDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+
 export const ListExpensesQueryParams = zod.object({
-  startDate: zod.date().optional(),
-  endDate: zod.date().optional(),
+  startDate: zod.coerce
+    .string()
+    .regex(listExpensesQueryStartDateRegExp)
+    .optional(),
+  endDate: zod.coerce.string().regex(listExpensesQueryEndDateRegExp).optional(),
   search: zod.coerce.string().optional(),
   categoryId: zod.coerce.string().uuid().optional(),
   expenseType: zod.enum(["operational", "investment"]).optional(),

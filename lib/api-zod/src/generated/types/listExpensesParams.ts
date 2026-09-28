@@ -8,8 +8,14 @@
 import type { ExpenseType } from "./expenseType";
 
 export type ListExpensesParams = {
-  startDate?: Date;
-  endDate?: Date;
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  startDate?: string;
+  /**
+   * @pattern ^\d{4}-\d{2}-\d{2}$
+   */
+  endDate?: string;
   search?: string;
   categoryId?: string;
   expenseType?: ExpenseType;
