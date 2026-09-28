@@ -28,12 +28,8 @@ export interface Workshop {
   participantsCount: number;
   activeParticipantsCount: number;
   availableSeats: number;
-  totalRevenue: number;
   totalReceived: number;
   totalPending: number;
-  paidCount: number;
-  partialCount: number;
-  unpaidCount: number;
   participants?: WorkshopParticipant[];
   createdAt: string;
   updatedAt: string;
