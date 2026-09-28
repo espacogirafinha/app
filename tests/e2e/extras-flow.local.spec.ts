@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { formControl } from "./helpers/transactions";
 
 const eventId = "11111111-1111-4111-8111-111111111111";
 
@@ -143,9 +144,9 @@ test("Festa real UI: 3 extras chegam num único payload e reaparecem ao reabrir"
   await createDialog.getByLabel("Preço de Pinturas faciais").fill("100");
   await createDialog.getByLabel("Custo de Pinturas faciais").fill("0");
 
-  await createDialog.getByLabel("Nome").first().fill("Teste múltiplos extras");
-  await createDialog.getByLabel("Telemóvel").fill("000000000");
-  await createDialog.getByLabel("Data").fill("2026-12-15");
+  await formControl(createDialog, "Nome").first().fill("Teste múltiplos extras");
+  await formControl(createDialog, "Telemóvel").fill("000000000");
+  await formControl(createDialog, "Data").fill("2026-12-15");
 
   await createDialog.getByRole("button", { name: "Guardar Festa", exact: true }).click();
   await expect(createDialog).toBeHidden();
