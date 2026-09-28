@@ -92,3 +92,55 @@ export function NumericMoneyInput({
     />
   );
 }
+
+
+type NullableNumericMoneyInputProps = Omit<
+  React.ComponentProps<typeof Input>,
+  "type" | "value" | "onChange"
+> & {
+  value: number | null;
+  onValueChange: (value: number | null) => void;
+};
+
+export function NullableNumericMoneyInput({
+  value,
+  onValueChange,
+  onBlur,
+  onFocus,
+  ...props
+}: NullableNumericMoneyInputProps) {
+  const [draft, setDraft] = useState(() => value === null ? "" : formatMoneyInput(value));
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) setDraft(value === null ? "" : formatMoneyInput(value));
+  }, [focused, value]);
+
+  return (
+    <MoneyInput
+      {...props}
+      value={draft}
+      normalizeOnBlur={false}
+      onValueChange={(nextDraft) => {
+        setDraft(nextDraft);
+        onValueChange(nextDraft === "" ? null : parseMoneyInput(nextDraft));
+      }}
+      onFocus={(event) => {
+        setFocused(true);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        if (draft === "") {
+          setFocused(false);
+          onValueChange(null);
+        } else {
+          const normalized = formatMoneyInput(parseMoneyInput(draft));
+          setDraft(normalized);
+          setFocused(false);
+          onValueChange(parseMoneyInput(normalized));
+        }
+        onBlur?.(event);
+      }}
+    />
+  );
+}
