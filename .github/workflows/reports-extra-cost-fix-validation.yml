@@ -27,7 +27,7 @@ jobs:
             artifacts/api-server/src/lib/reports-extras.test.ts \
             artifacts/api-server/src/lib/reports-finance.test.ts \
             artifacts/girafinha/src/lib/selected-extra-cost-error.test.ts \
-            artifacts/api-server/src/lib/custom-fetch-auth.test.ts
+            artifacts/api-server/src/lib/custom-fetch-auth-contract.test.ts
 
       - name: Build API and prove PATCH route is bundled
         run: |
