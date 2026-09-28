@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { aggregateVenueExtrasReport, eligibleVenueEventIds } from "./reports-extras.ts";
+import { aggregateFinancials } from "./reports-finance.ts";
 
 const row = (name: string, quantity: number, unitPrice: number, unitCost: number | null, entityId = "event-1") => ({
   entityId,
@@ -63,4 +64,29 @@ test("several extras for one event do not duplicate the event itself", () => {
   ]);
   assert.equal(report.soldCount, 3);
   assert.equal(report.items.length, 3);
+});
+
+
+test("extras decomposition never adds revenue a second time", () => {
+  const venueFinancials = aggregateFinancials([{ revenue: 540, received: 110 }]);
+  const extras = aggregateVenueExtrasReport([
+    row("Mascote", 1, 90, 75),
+    row("Bolo", 1, 50, 38),
+  ]);
+
+  assert.equal(venueFinancials.revenue, 540);
+  assert.equal(extras.revenue, 140);
+  assert.equal(venueFinancials.revenue, 540, "extras stay a decomposition of the existing venue total");
+});
+
+test("same extra name is grouped without duplicating venue rows", () => {
+  const report = aggregateVenueExtrasReport([
+    row("Mascote", 1, 90, 75, "event-1"),
+    row("Mascote", 2, 90, 75, "event-2"),
+  ]);
+  assert.equal(report.items.length, 1);
+  assert.equal(report.items[0].count, 3);
+  assert.equal(report.items[0].revenue, 270);
+  assert.equal(report.items[0].knownCost, 225);
+  assert.equal(report.items[0].knownMargin, 45);
 });
