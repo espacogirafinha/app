@@ -5,8 +5,8 @@
   "outputDirectory": "artifacts/girafinha/dist/public",
   "rewrites": [
     {
-      "source": "^/api/workshops/(.+)$",
-      "destination": "/api/workshops/_router?__workshopPath=$1"
+      "source": "/api/workshops/:workshopPath*",
+      "destination": "/api/workshops/_router?__workshopPath=:workshopPath*"
     },
     {
       "source": "/((?!api/.*).*)",
