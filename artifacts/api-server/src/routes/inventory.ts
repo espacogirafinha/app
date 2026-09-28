@@ -133,10 +133,10 @@ function itemPayload(body: {
     Object.entries({
       itemType: body.itemType,
       name: normalized?.name ?? body.name?.trim(),
-      category: body.category === undefined ? undefined : normalized?.category ?? body.category?.trim() || null,
-      brand: body.brand === undefined ? undefined : normalized?.brand ?? body.brand?.trim() || null,
-      color: body.color === undefined ? undefined : normalized?.color ?? body.color?.trim() || null,
-      size: body.size === undefined ? undefined : normalized?.size ?? body.size?.trim() || null,
+      category: body.category === undefined ? undefined : (normalized?.category ?? body.category?.trim()) || null,
+      brand: body.brand === undefined ? undefined : (normalized?.brand ?? body.brand?.trim()) || null,
+      color: body.color === undefined ? undefined : (normalized?.color ?? body.color?.trim()) || null,
+      size: body.size === undefined ? undefined : (normalized?.size ?? body.size?.trim()) || null,
       unit: normalized?.unit ?? body.unit?.trim(),
       minimumStock:
         body.minimumStock === undefined
@@ -144,14 +144,14 @@ function itemPayload(body: {
           : body.minimumStock === null
             ? null
             : String(body.minimumStock),
-      location: body.location === undefined ? undefined : normalized?.location ?? body.location?.trim() || null,
+      location: body.location === undefined ? undefined : (normalized?.location ?? body.location?.trim()) || null,
       referenceCost:
         body.referenceCost === undefined
           ? undefined
           : body.referenceCost === null
             ? null
             : String(body.referenceCost),
-      notes: body.notes === undefined ? undefined : normalized?.notes ?? body.notes?.trim() || null,
+      notes: body.notes === undefined ? undefined : (normalized?.notes ?? body.notes?.trim()) || null,
       isActive: body.isActive,
     }).filter(([, value]) => value !== undefined),
   ) as Partial<typeof inventoryItemsTable.$inferInsert>;
