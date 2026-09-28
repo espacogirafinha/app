@@ -7,6 +7,7 @@ export const venuePacksTable = pgTable("venue_packs", {
   name: text("name").notNull(),
   description: text("description"),
   basePrice: numeric("base_price", { precision: 10, scale: 2 }).notNull().default("0"),
+  estimatedCost: numeric("estimated_cost", { precision: 10, scale: 2 }),
   defaultStartTime: text("default_start_time"),
   defaultEndTime: text("default_end_time"),
   isActive: boolean("is_active").notNull().default(true),
