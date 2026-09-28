@@ -1,0 +1,56 @@
+name: Vercel function consolidation validation
+
+on:
+  push:
+    branches:
+      - fix/consolidate-vercel-functions
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+
+      - name: Verify Vercel function count and workshop consolidation
+        run: |
+          count=$(find api -type f -name '*.mjs' | wc -l)
+          echo "Vercel function files: $count"
+          test "$count" -eq 11
+          test "$count" -le 12
+          test -f 'api/workshops/[...path].mjs'
+          test ! -f 'api/workshops/[id].mjs'
+          test ! -f 'api/workshops/[id]/participants.mjs'
+          test ! -f 'api/workshops/[id]/participants/[participantId].mjs'
+
+      - name: Relevant tests
+        run: |
+          node --experimental-strip-types --test \
+            artifacts/api-server/src/lib/auth.test.ts \
+            artifacts/api-server/src/lib/custom-fetch-auth-contract.test.ts \
+            artifacts/api-server/src/lib/selected-extra-cost.test.ts \
+            artifacts/api-server/src/lib/selected-extra-cost-update.test.ts \
+            artifacts/api-server/src/lib/selected-extra-cost-contract.test.ts \
+            artifacts/api-server/src/lib/vercel-selected-extra-route.test.ts \
+            artifacts/api-server/src/lib/reports-extras.test.ts \
+            artifacts/api-server/src/lib/reports-finance.test.ts \
+            artifacts/girafinha/src/lib/selected-extra-cost-error.test.ts
+
+      - name: Build API and prove routes remain bundled
+        run: |
+          corepack pnpm --filter @workspace/api-server build
+          grep -F '"/workshops/:id"' artifacts/api-server/dist/app.mjs
+          grep -F '"/workshops/:id/participants"' artifacts/api-server/dist/app.mjs
+          grep -F '"/workshops/:id/participants/:participantId"' artifacts/api-server/dist/app.mjs
+          grep -F '"/selected-extras/:id"' artifacts/api-server/dist/app.mjs
+
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+
+      - name: Build
+        run: corepack pnpm run build
