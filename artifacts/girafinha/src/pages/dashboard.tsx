@@ -326,7 +326,7 @@ function CompactAgendaItem({ item }: { item: DashboardV2AgendaItem }) {
         </div>
         <p className="mt-1.5 truncate font-bold text-foreground">{item.title}</p>
         {primaryService && <p className="mt-0.5 truncate text-sm text-muted-foreground">{primaryService}</p>}
-        {item.pending > 0 && <p className="mt-1 text-sm font-bold text-rose-700">Falta {formatMoney(item.pending)}</p>}
+        {item.pending > 0 && <p className="mt-1 text-sm font-bold text-rose-700">{item.financialStatusText}</p>}
       </div>
       <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
     </Link>
@@ -410,12 +410,11 @@ function DesktopAgendaItem({ item }: { item: DashboardV2AgendaItem }) {
 
       <div className="flex shrink-0 items-center gap-2">
         {item.pending > 0 ? (
-          <div className="text-right">
-            <p className="text-xs font-bold text-rose-700">Falta {formatMoney(item.pending)}</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{paymentLabel(item.paymentStatus)}</p>
+          <div className="max-w-[220px] text-right">
+            <p className="text-xs font-bold text-rose-700">{item.financialStatusText}</p>
           </div>
         ) : (
-          <Badge className={paymentBadgeClass(item.paymentStatus)}>{paymentLabel(item.paymentStatus)}</Badge>
+          <Badge className={paymentBadgeClass(item.paymentStatus)}>{item.financialStatusText}</Badge>
         )}
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </div>
@@ -481,13 +480,6 @@ function paymentBadgeClass(status: DashboardV2AgendaItem["paymentStatus"]) {
   if (status === "partial") return "rounded-md border-none bg-amber-100 text-amber-800 hover:bg-amber-100";
   if (status === "unpaid") return "rounded-md border-none bg-rose-100 text-rose-800 hover:bg-rose-100";
   return "rounded-md border-none bg-muted text-muted-foreground hover:bg-muted";
-}
-
-function paymentLabel(status: DashboardV2AgendaItem["paymentStatus"]) {
-  if (status === "paid") return "Pago";
-  if (status === "partial") return "Sinal";
-  if (status === "unpaid") return "Pendente";
-  return "Sem pagamento";
 }
 
 function formatMoney(value: number) {

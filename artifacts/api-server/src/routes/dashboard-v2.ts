@@ -1,5 +1,7 @@
 import { Router, type IRouter } from "express";
-import { db, externalEventsTable, externalEventServicesTable, venueEventsTable, workshopParticipantsTable, workshopsTable } from "@workspace/db";
+import { isNull } from "drizzle-orm";
+import { db, eventPaymentsTable, externalEventsTable, externalEventServicesTable, venueEventsTable, workshopParticipantsTable, workshopsTable } from "@workspace/db";
+import { dashboardFinancialStatusText, eventFinancialPosition, summarizeDashboardEvents, type FinancialPaymentSnapshot } from "../lib/event-finance-read-model";
 
 const router: IRouter = Router();
 
@@ -10,6 +12,7 @@ type ExternalEventRow = typeof externalEventsTable.$inferSelect;
 type ExternalEventServiceRow = typeof externalEventServicesTable.$inferSelect;
 type WorkshopRow = typeof workshopsTable.$inferSelect;
 type WorkshopParticipantRow = typeof workshopParticipantsTable.$inferSelect;
+type EventPaymentRow = typeof eventPaymentsTable.$inferSelect;
 
 type DashboardAreaType = "venue_events" | "external_events" | "workshops";
 type DashboardPaymentStatus = "unpaid" | "partial" | "paid" | "none";
@@ -27,6 +30,7 @@ type DashboardAgendaItem = {
   total: number;
   received: number;
   pending: number;
+  financialStatusText: string;
   nextAction: string;
   href: string;
   services: string[];
@@ -58,19 +62,16 @@ function isWithinNextSevenDays(date: string, today: string, endDate: string) {
   return date >= today && date <= endDate;
 }
 
-function paymentStatusFromAmounts(total: number, received: number): DashboardPaymentStatus {
-  if (total <= 0 && received <= 0) return "none";
-  if (received >= total) return "paid";
-  if (received > 0) return "partial";
-  return "unpaid";
-}
-
-function nextAction(status: string, paymentStatus: DashboardPaymentStatus, pending: number, area: DashboardAreaType) {
+function nextAction(
+  status: string,
+  paymentStatus: DashboardPaymentStatus,
+  pending: number,
+  area: DashboardAreaType,
+  financialStatusText: string,
+) {
   if (status === "cancelled") return "Cancelado";
   if (status === "completed") return "Concluido";
-  if (paymentStatus !== "paid" && pending > 0) {
-    return paymentStatus === "unpaid" ? "Cobrar sinal" : "Cobrar restante";
-  }
+  if (paymentStatus !== "paid" && pending > 0) return financialStatusText;
   if (area === "workshops") return "Ver participantes";
   if (status === "draft") return "Confirmar detalhes";
   return "Preparar evento";
@@ -85,6 +86,32 @@ function servicesByExternalEventId(services: ExternalEventServiceRow[]) {
   }, new Map());
 }
 
+function paymentsByEvent(payments: EventPaymentRow[]) {
+  const venue = new Map<string, FinancialPaymentSnapshot[]>();
+  const external = new Map<string, FinancialPaymentSnapshot[]>();
+
+  for (const payment of payments) {
+    const snapshot: FinancialPaymentSnapshot = {
+      paymentType: payment.paymentType as FinancialPaymentSnapshot["paymentType"],
+      amount: money(payment.amount),
+      deletedAt: payment.deletedAt,
+    };
+
+    if (payment.venueEventId) {
+      const rows = venue.get(payment.venueEventId) ?? [];
+      rows.push(snapshot);
+      venue.set(payment.venueEventId, rows);
+    }
+    if (payment.externalEventId) {
+      const rows = external.get(payment.externalEventId) ?? [];
+      rows.push(snapshot);
+      external.set(payment.externalEventId, rows);
+    }
+  }
+
+  return { venue, external };
+}
+
 function participantsByWorkshopId(participants: WorkshopParticipantRow[]) {
   return participants.reduce<Map<string, WorkshopParticipantRow[]>>((acc, participant) => {
     const items = acc.get(participant.workshopId) ?? [];
@@ -94,11 +121,23 @@ function participantsByWorkshopId(participants: WorkshopParticipantRow[]) {
   }, new Map());
 }
 
-function venueAgendaItem(row: VenueEventRow): DashboardAgendaItem {
+function venueAgendaItem(
+  row: VenueEventRow,
+  payments: FinancialPaymentSnapshot[],
+): DashboardAgendaItem {
   const total = money(row.totalPrice);
   const received = money(row.amountPaid);
-  const pending = Math.max(0, total - received);
-  const paymentStatus = paymentStatusFromAmounts(total, received);
+  const position = eventFinancialPosition(total, received);
+  const financialStatusText = dashboardFinancialStatusText({
+    totalPrice: total,
+    amountPaidMirror: received,
+    expectedDeposit:
+      row.expectedReservationDepositAmount === null
+        ? null
+        : money(row.expectedReservationDepositAmount),
+    payments,
+  });
+  const paymentStatus: DashboardPaymentStatus = position.paymentStatus;
 
   return {
     id: row.id,
@@ -112,18 +151,32 @@ function venueAgendaItem(row: VenueEventRow): DashboardAgendaItem {
     paymentStatus,
     total,
     received,
-    pending,
-    nextAction: nextAction(row.status, paymentStatus, pending, "venue_events"),
+    pending: position.pending,
+    financialStatusText,
+    nextAction: nextAction(row.status, paymentStatus, position.pending, "venue_events", financialStatusText),
     href: "/venue-events",
     services: [row.packName],
   };
 }
 
-function externalAgendaItem(row: ExternalEventRow, services: ExternalEventServiceRow[]): DashboardAgendaItem {
+function externalAgendaItem(
+  row: ExternalEventRow,
+  services: ExternalEventServiceRow[],
+  payments: FinancialPaymentSnapshot[],
+): DashboardAgendaItem {
   const total = money(row.totalPrice);
   const received = money(row.amountPaid);
-  const pending = Math.max(0, total - received);
-  const paymentStatus = paymentStatusFromAmounts(total, received);
+  const position = eventFinancialPosition(total, received);
+  const financialStatusText = dashboardFinancialStatusText({
+    totalPrice: total,
+    amountPaidMirror: received,
+    expectedDeposit:
+      row.expectedReservationDepositAmount === null
+        ? null
+        : money(row.expectedReservationDepositAmount),
+    payments,
+  });
+  const paymentStatus: DashboardPaymentStatus = position.paymentStatus;
 
   return {
     id: row.id,
@@ -137,8 +190,9 @@ function externalAgendaItem(row: ExternalEventRow, services: ExternalEventServic
     paymentStatus,
     total,
     received,
-    pending,
-    nextAction: nextAction(row.status, paymentStatus, pending, "external_events"),
+    pending: position.pending,
+    financialStatusText,
+    nextAction: nextAction(row.status, paymentStatus, position.pending, "external_events", financialStatusText),
     href: "/external-events",
     services: services
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
@@ -151,7 +205,17 @@ function workshopAgendaItem(row: WorkshopRow, participants: WorkshopParticipantR
   const received = activeParticipants.reduce((sum, participant) => sum + money(participant.amountPaid), 0);
   const pending = activeParticipants.reduce((sum, participant) => sum + money(participant.amountDue), 0);
   const total = received + pending;
-  const paymentStatus = paymentStatusFromAmounts(total, received);
+  const position = eventFinancialPosition(total, received);
+  const paymentStatus: DashboardPaymentStatus =
+    total <= 0 && received <= 0 ? "none" : position.paymentStatus;
+  const financialStatusText =
+    paymentStatus === "paid"
+      ? "Pago"
+      : paymentStatus === "partial"
+        ? `Pago parcialmente · Falta ${position.pending.toFixed(2).replace(".", ",")} €`
+        : paymentStatus === "unpaid"
+          ? "Pendente"
+          : "Sem pagamento";
 
   return {
     id: row.id,
@@ -165,8 +229,9 @@ function workshopAgendaItem(row: WorkshopRow, participants: WorkshopParticipantR
     paymentStatus,
     total,
     received,
-    pending,
-    nextAction: nextAction(row.status, paymentStatus, pending, "workshops"),
+    pending: position.pending,
+    financialStatusText,
+    nextAction: nextAction(row.status, paymentStatus, position.pending, "workshops", financialStatusText),
     href: "/workshops",
     services: [`${activeParticipants.length}/${row.capacity} inscritos`],
   };
@@ -175,32 +240,49 @@ function workshopAgendaItem(row: WorkshopRow, participants: WorkshopParticipantR
 function areaSummary(items: DashboardAgendaItem[], today: string, nextSevenDaysEnd: string) {
   const activeItems = items.filter((item) => isActiveStatus(item.status));
   const upcomingItems = activeItems.filter((item) => isUpcoming(item.date, today));
+  const finances = summarizeDashboardEvents(
+    activeItems.map((item) => ({ totalPrice: item.total, amountPaid: item.received })),
+  );
 
   return {
     totalCount: activeItems.length,
     upcomingCount: upcomingItems.length,
     nextSevenDaysCount: activeItems.filter((item) => isWithinNextSevenDays(item.date, today, nextSevenDaysEnd)).length,
-    received: activeItems.reduce((sum, item) => sum + item.received, 0),
-    pending: activeItems.reduce((sum, item) => sum + item.pending, 0),
+    revenue: finances.revenue,
+    received: finances.received,
+    pending: finances.pending,
+    paidCount: finances.paidCount,
+    partialCount: finances.partialCount,
+    unpaidCount: finances.unpaidCount,
   };
 }
 
 router.get("/dashboard-v2", async (_req, res): Promise<void> => {
-  const [venueEvents, externalEvents, externalServices, workshops, workshopParticipants] = await Promise.all([
+  const [venueEvents, externalEvents, externalServices, workshops, workshopParticipants, activeEventPayments] = await Promise.all([
     db.select().from(venueEventsTable),
     db.select().from(externalEventsTable),
     db.select().from(externalEventServicesTable),
     db.select().from(workshopsTable),
     db.select().from(workshopParticipantsTable),
+    db.select().from(eventPaymentsTable).where(isNull(eventPaymentsTable.deletedAt)),
   ]);
 
   const today = todayIso();
   const nextSevenDaysEnd = addDaysIso(today, 7);
   const servicesByEvent = servicesByExternalEventId(externalServices);
   const participantsByWorkshop = participantsByWorkshopId(workshopParticipants);
+  const paymentsByParent = paymentsByEvent(activeEventPayments);
 
-  const venueItems = venueEvents.map(venueAgendaItem);
-  const externalItems = externalEvents.map((event) => externalAgendaItem(event, servicesByEvent.get(event.id) ?? []));
+  const venueItems = venueEvents.map((event) =>
+    venueAgendaItem(event, paymentsByParent.venue.get(event.id) ?? []),
+  );
+  const externalItems = externalEvents.map((event) =>
+    externalAgendaItem(
+      event,
+      servicesByEvent.get(event.id) ?? [],
+      paymentsByParent.external.get(event.id) ?? [],
+    ),
+  );
   const workshopItems = workshops.map((workshop) => workshopAgendaItem(workshop, participantsByWorkshop.get(workshop.id) ?? []));
   const activeWorkshopIds = new Set(workshops.filter((workshop) => isActiveStatus(workshop.status)).map((workshop) => workshop.id));
   const allItems = [...venueItems, ...externalItems, ...workshopItems];
@@ -215,8 +297,14 @@ router.get("/dashboard-v2", async (_req, res): Promise<void> => {
     summary: {
       todayCount: activeItems.filter((item) => item.date === today).length,
       nextSevenDaysCount: activeItems.filter((item) => isWithinNextSevenDays(item.date, today, nextSevenDaysEnd)).length,
+      totalRevenue: summarizeDashboardEvents(
+        activeItems.map((item) => ({ totalPrice: item.total, amountPaid: item.received })),
+      ).revenue,
       totalReceived: activeItems.reduce((sum, item) => sum + item.received, 0),
       totalPending: activeItems.reduce((sum, item) => sum + item.pending, 0),
+      paidCount: activeItems.filter((item) => item.paymentStatus === "paid").length,
+      partialCount: activeItems.filter((item) => item.paymentStatus === "partial").length,
+      unpaidCount: activeItems.filter((item) => item.paymentStatus === "unpaid").length,
     },
     areas: {
       venueEvents: areaSummary(venueItems, today, nextSevenDaysEnd),

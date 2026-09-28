@@ -14,6 +14,7 @@ import checklistsRouter from "./checklists";
 import selectedExtrasRouter from "./selected-extras";
 import eventAttachmentsRouter from "./event-attachments";
 import googleFormsReviewRouter from "./google-forms-review";
+import eventPaymentsRouter from "./event-payments";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(checklistsRouter);
 router.use(selectedExtrasRouter);
 router.use(eventAttachmentsRouter);
 router.use(googleFormsReviewRouter);
+router.use(eventPaymentsRouter);
 
 export default router;

@@ -13,10 +13,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoneyInput } from "@/components/money-input";
 import { EventAttachmentsEditor, type EventAttachmentsHandle } from "@/components/event-attachments";
 import { Textarea } from "@/components/ui/textarea";
 import { formatMoneyInput, parseMoneyInput } from "@/lib/money";
+import { EVENT_PAYMENT_METHOD_OPTIONS, suggestVenueReservationDeposit, toDateTimeLocalInput } from "@/lib/event-payment-ui";
 import {
   calculateExtrasTotal,
   EventExtrasSelector,
@@ -34,7 +36,7 @@ import {
   useReplaceSelectedExtras,
   useUpdateVenueEvent,
 } from "@workspace/api-client-react";
-import type { CreateVenueEventBody, VenueEvent, VenuePack } from "@workspace/api-client-react";
+import type { CreateVenueEventBody, EventPaymentMethod, ReservationDepositPolicy, VenueEvent, VenuePack } from "@workspace/api-client-react";
 
 type VenueEventFormState = {
   customerName: string;
@@ -58,8 +60,13 @@ type VenueEventFormState = {
   imageAuthorization: "rosto_visivel" | "rosto_tapado" | "nao_autorizo" | "";
   termsAccepted: boolean;
   totalPrice: string;
-  amountPaid: string;
-  paymentMethod: string;
+  expectedReservationDepositAmount: string;
+  reservationDepositPolicy: ReservationDepositPolicy;
+  depositState: "pending" | "received";
+  initialDepositAmount: string;
+  initialDepositMethod: EventPaymentMethod | "";
+  initialDepositPaidAt: string;
+  initialDepositNotes: string;
   notes: string;
 };
 
@@ -110,8 +117,13 @@ const initialState: VenueEventFormState = {
   imageAuthorization: "",
   termsAccepted: false,
   totalPrice: "220",
-  amountPaid: "0",
-  paymentMethod: "",
+  expectedReservationDepositAmount: "44",
+  reservationDepositPolicy: "auto_20",
+  depositState: "pending",
+  initialDepositAmount: "44",
+  initialDepositMethod: "",
+  initialDepositPaidAt: "",
+  initialDepositNotes: "",
   notes: "",
 };
 
@@ -127,6 +139,8 @@ export function VenueEventModal({
   const [extras, setExtras] = useState<EventExtraDraft[]>([]);
   const [basePrice, setBasePrice] = useState(() => getFallbackPackPrice(event?.packName));
   const [isTotalManual, setIsTotalManual] = useState(false);
+  const [isExpectedDepositManual, setIsExpectedDepositManual] = useState(false);
+  const [isInitialDepositAmountManual, setIsInitialDepositAmountManual] = useState(false);
   const loadedExtrasEntityRef = useRef<string | null>(null);
   const attachmentsRef = useRef<EventAttachmentsHandle>(null);
   const createVenueEvent = useCreateVenueEvent();
@@ -147,8 +161,8 @@ export function VenueEventModal({
   const isEditing = Boolean(event);
 
   const totalPrice = parseMoneyInput(form.totalPrice);
-  const amountPaid = parseMoneyInput(form.amountPaid);
-  const remainingBalance = Math.max(0, totalPrice - amountPaid);
+  const expectedDeposit = parseMoneyInput(form.expectedReservationDepositAmount);
+  const expectedRemaining = Math.max(0, totalPrice - expectedDeposit);
   const extrasTotal = useMemo(() => calculateExtrasTotal(extras), [extras]);
   const isPending = createVenueEvent.isPending || updateVenueEvent.isPending || replaceSelectedExtras.isPending;
   const packOptions = useMemo(() => buildPackOptions(venuePacksQuery.data), [venuePacksQuery.data]);
@@ -162,6 +176,8 @@ export function VenueEventModal({
     setExtras([]);
     setBasePrice(nextPackPrice);
     setIsTotalManual(Boolean(event) && Math.abs(parseMoneyInput(nextForm.totalPrice) - nextPackPrice) > 0.01);
+    setIsExpectedDepositManual(event ? event.reservationDepositPolicy !== "auto_20" : false);
+    setIsInitialDepositAmountManual(false);
     loadedExtrasEntityRef.current = null;
   }, [event, open]);
 
@@ -181,6 +197,22 @@ export function VenueEventModal({
     if (!open || isTotalManual) return;
     setForm((current) => ({ ...current, totalPrice: formatMoneyInput(basePrice + extrasTotal) }));
   }, [basePrice, extrasTotal, isTotalManual, open]);
+
+  useEffect(() => {
+    if (!open || form.reservationDepositPolicy !== "auto_20" || isExpectedDepositManual) return;
+    const nextExpected = formatMoneyInput(suggestVenueReservationDeposit(totalPrice));
+    setForm((current) => ({
+      ...current,
+      expectedReservationDepositAmount: nextExpected,
+      initialDepositAmount: isInitialDepositAmountManual ? current.initialDepositAmount : nextExpected,
+    }));
+  }, [
+    form.reservationDepositPolicy,
+    isExpectedDepositManual,
+    isInitialDepositAmountManual,
+    open,
+    totalPrice,
+  ]);
 
   const activeSlot = useMemo(() => {
     if (form.startTime === "10:00" && form.endTime === "13:00") return "morning";
@@ -219,6 +251,31 @@ export function VenueEventModal({
     setIsTotalManual(false);
   };
 
+  const updateExpectedDeposit = (value: string) => {
+    setIsExpectedDepositManual(true);
+    setForm((current) => ({
+      ...current,
+      expectedReservationDepositAmount: value,
+      reservationDepositPolicy: "manual",
+      initialDepositAmount: isInitialDepositAmountManual ? current.initialDepositAmount : value,
+    }));
+  };
+
+  const updateDepositState = (state: "pending" | "received") => {
+    setForm((current) => ({
+      ...current,
+      depositState: state,
+      initialDepositAmount:
+        state === "received" && !isInitialDepositAmountManual
+          ? current.expectedReservationDepositAmount
+          : current.initialDepositAmount,
+      initialDepositPaidAt:
+        state === "received" && !current.initialDepositPaidAt
+          ? toDateTimeLocalInput()
+          : current.initialDepositPaidAt,
+    }));
+  };
+
   const handleSubmit = async (submitEvent: React.FormEvent) => {
     submitEvent.preventDefault();
 
@@ -227,8 +284,25 @@ export function VenueEventModal({
       return;
     }
 
+    if (
+      !event
+      && form.depositState === "received"
+      && (
+        parseMoneyInput(form.initialDepositAmount) <= 0
+        || !form.initialDepositMethod
+        || !form.initialDepositPaidAt
+      )
+    ) {
+      toast({
+        title: "Complete os dados do sinal recebido",
+        description: "Indique valor, método e data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const body = toRequestBody(form);
+      const body = toRequestBody(form, !event && form.depositState === "received");
       const savedEvent = event
         ? await updateVenueEvent.mutateAsync({ id: event.id, data: body })
         : await createVenueEvent.mutateAsync({ data: body });
@@ -388,30 +462,113 @@ export function VenueEventModal({
             </label>
           </FormSection>
 
-          <FormSection title="Pagamento">
+          <FormSection title="Financeiro">
             <div className="rounded-xl border border-border bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground">Valor base</p>
-              <p className="text-xl font-bold text-foreground">{basePrice.toFixed(2)} €</p>
+              <p className="text-lg font-bold text-foreground">{basePrice.toFixed(2)} €</p>
             </div>
             <div className="rounded-xl border border-border bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground">Subtotal dos extras</p>
-              <p className="text-xl font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
+              <p className="text-lg font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
             </div>
-            <Field label="Valor total">
+            <Field label="Total da festa">
               <MoneyInput value={form.totalPrice} onValueChange={updateTotalPrice} />
             </Field>
-            <Field label="Valor pago/sinal">
-              <MoneyInput value={form.amountPaid} onValueChange={(value) => patch({ amountPaid: value })} />
-            </Field>
-            <Field label="Método de pagamento">
-              <Input value={form.paymentMethod} onChange={(event) => patch({ paymentMethod: event.target.value })} placeholder="MB Way, transferência..." />
+            <Field label="Sinal de reserva">
+              <MoneyInput
+                value={form.expectedReservationDepositAmount}
+                onValueChange={updateExpectedDeposit}
+              />
+              {form.reservationDepositPolicy === "auto_20" && !isExpectedDepositManual ? (
+                <p className="text-xs text-muted-foreground">20% do total, atualizado automaticamente.</p>
+              ) : null}
+              {form.reservationDepositPolicy === "legacy_unknown" && !form.expectedReservationDepositAmount ? (
+                <p className="text-xs text-muted-foreground">Sinal esperado não registado.</p>
+              ) : null}
             </Field>
             <div className="rounded-xl border border-border bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">Valor em falta</p>
-              <p className={remainingBalance > 0 ? "text-xl font-bold text-rose-700" : "text-xl font-bold text-emerald-700"}>
-                {remainingBalance.toFixed(2)} €
-              </p>
+              <p className="text-xs text-muted-foreground">Restante previsto</p>
+              <p className="text-lg font-bold text-foreground">{expectedRemaining.toFixed(2)} €</p>
             </div>
+
+            {!isEditing ? (
+              <div className="space-y-3 md:col-span-2">
+                <Label>Sinal</Label>
+                <div className="grid gap-2 min-[430px]:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => updateDepositState("pending")}
+                    className={`rounded-xl border p-3 text-left text-sm transition-colors ${
+                      form.depositState === "pending"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <span className="font-semibold">Por receber</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">Guarda apenas o sinal esperado.</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateDepositState("received")}
+                    className={`rounded-xl border p-3 text-left text-sm transition-colors ${
+                      form.depositState === "received"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <span className="font-semibold">Já recebido</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">Regista o primeiro sinal no histórico.</span>
+                  </button>
+                </div>
+
+                {form.depositState === "received" ? (
+                  <div className="grid gap-3 rounded-xl border border-border bg-muted/20 p-3 md:grid-cols-2">
+                    <Field label="Valor recebido" required>
+                      <MoneyInput
+                        value={form.initialDepositAmount}
+                        onValueChange={(value) => {
+                          setIsInitialDepositAmountManual(true);
+                          patch({ initialDepositAmount: value });
+                        }}
+                      />
+                    </Field>
+                    <Field label="Método" required>
+                      <Select
+                        value={form.initialDepositMethod}
+                        onValueChange={(value) => patch({ initialDepositMethod: value as EventPaymentMethod })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
+                        <SelectContent>
+                          {EVENT_PAYMENT_METHOD_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label="Data" required>
+                      <Input
+                        type="datetime-local"
+                        value={form.initialDepositPaidAt}
+                        onChange={(event) => patch({ initialDepositPaidAt: event.target.value })}
+                      />
+                    </Field>
+                    <Field label="Nota">
+                      <Input
+                        value={form.initialDepositNotes}
+                        onChange={(event) => patch({ initialDepositNotes: event.target.value })}
+                        placeholder="Opcional"
+                      />
+                    </Field>
+                    {parseMoneyInput(form.initialDepositAmount) < expectedDeposit ? (
+                      <p className="text-xs text-muted-foreground md:col-span-2">
+                        Sinal ainda em falta: {(expectedDeposit - parseMoneyInput(form.initialDepositAmount)).toFixed(2)} €
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             {isTotalManual && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 md:col-span-2">
                 <p>Total final com ajuste manual.</p>
@@ -484,7 +641,12 @@ function comparePackOptions(first: PackOption, second: PackOption) {
 }
 
 function toFormState(event?: VenueEvent): VenueEventFormState {
-  if (!event) return initialState;
+  if (!event) {
+    return {
+      ...initialState,
+      initialDepositPaidAt: toDateTimeLocalInput(),
+    };
+  }
 
   return {
     customerName: event.customerName,
@@ -508,13 +670,31 @@ function toFormState(event?: VenueEvent): VenueEventFormState {
     imageAuthorization: event.imageAuthorization ?? "",
     termsAccepted: event.termsAccepted,
     totalPrice: String(event.totalPrice),
-    amountPaid: String(event.amountPaid),
-    paymentMethod: event.paymentMethod ?? "",
+    expectedReservationDepositAmount:
+      event.expectedReservationDepositAmount === null
+        ? ""
+        : String(event.expectedReservationDepositAmount),
+    reservationDepositPolicy: event.reservationDepositPolicy,
+    depositState: "pending",
+    initialDepositAmount:
+      event.expectedReservationDepositAmount === null
+        ? ""
+        : String(event.expectedReservationDepositAmount),
+    initialDepositMethod: "",
+    initialDepositPaidAt: toDateTimeLocalInput(),
+    initialDepositNotes: "",
     notes: event.notes ?? "",
   };
 }
 
-function toRequestBody(form: VenueEventFormState): CreateVenueEventBody {
+function toRequestBody(
+  form: VenueEventFormState,
+  includeInitialDeposit: boolean,
+): CreateVenueEventBody {
+  const expectedDepositValue = form.expectedReservationDepositAmount.trim()
+    ? parseMoneyInput(form.expectedReservationDepositAmount)
+    : null;
+
   return {
     customerName: form.customerName.trim(),
     phone: form.phone.trim(),
@@ -537,8 +717,16 @@ function toRequestBody(form: VenueEventFormState): CreateVenueEventBody {
     imageAuthorization: form.imageAuthorization || null,
     termsAccepted: form.termsAccepted,
     totalPrice: parseMoneyInput(form.totalPrice),
-    amountPaid: parseMoneyInput(form.amountPaid),
-    paymentMethod: emptyToNull(form.paymentMethod),
+    expectedReservationDepositAmount: expectedDepositValue,
+    reservationDepositPolicy: form.reservationDepositPolicy,
+    initialReservationDeposit: includeInitialDeposit && form.initialDepositMethod
+      ? {
+          amount: parseMoneyInput(form.initialDepositAmount),
+          paymentMethod: form.initialDepositMethod,
+          paidAt: new Date(form.initialDepositPaidAt).toISOString(),
+          notes: emptyToNull(form.initialDepositNotes),
+        }
+      : undefined,
     notes: emptyToNull(form.notes),
   };
 }

@@ -375,6 +375,168 @@ export const DeleteReservationParams = zod.object({
 });
 
 /**
+ * @summary List active payments and financial summary for an event
+ */
+export const ListEventPaymentsQueryParams = zod.object({
+  module: zod.enum(["venue_events", "external_events"]),
+  entityId: zod.coerce.string().uuid(),
+});
+
+export const listEventPaymentsResponseItemsItemAmountExclusiveMin = 0;
+
+export const ListEventPaymentsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      venueEventId: zod.string().uuid().nullable(),
+      externalEventId: zod.string().uuid().nullable(),
+      paymentType: zod.enum([
+        "reservation_deposit",
+        "payment",
+        "legacy_payment",
+      ]),
+      amount: zod
+        .number()
+        .gt(listEventPaymentsResponseItemsItemAmountExclusiveMin),
+      paymentMethod: zod.union([
+        zod.enum(["cash", "bank_transfer", "mbway"]),
+        zod.null(),
+      ]),
+      paidAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullish(),
+      source: zod.string(),
+      sourceReference: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+      deletedAt: zod.coerce.date().nullable(),
+    }),
+  ),
+  summary: zod.object({
+    totalPrice: zod.number(),
+    received: zod.number(),
+    remainingBalance: zod.number(),
+    historicalOverpayment: zod.number(),
+    paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+    expectedDeposit: zod.number().nullable(),
+    depositReceived: zod.number(),
+    depositRemaining: zod.number(),
+  }),
+});
+
+/**
+ * @summary Register a manual event payment
+ */
+export const createEventPaymentBodyAmountExclusiveMin = 0;
+
+export const CreateEventPaymentBody = zod.object({
+  module: zod.enum(["venue_events", "external_events"]),
+  entityId: zod.string().uuid(),
+  paymentType: zod.enum(["reservation_deposit", "payment"]),
+  amount: zod.number().gt(createEventPaymentBodyAmountExclusiveMin),
+  paymentMethod: zod.enum(["cash", "bank_transfer", "mbway"]),
+  paidAt: zod.coerce.date(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Update an active event payment
+ */
+export const UpdateEventPaymentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateEventPaymentBodyAmountExclusiveMin = 0;
+
+export const UpdateEventPaymentBody = zod.object({
+  paymentType: zod
+    .enum(["reservation_deposit", "payment", "legacy_payment"])
+    .optional(),
+  amount: zod.number().gt(updateEventPaymentBodyAmountExclusiveMin).optional(),
+  paymentMethod: zod
+    .union([zod.enum(["cash", "bank_transfer", "mbway"]), zod.null()])
+    .optional(),
+  paidAt: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const updateEventPaymentResponsePaymentAmountExclusiveMin = 0;
+
+export const UpdateEventPaymentResponse = zod.object({
+  payment: zod.object({
+    id: zod.string().uuid(),
+    venueEventId: zod.string().uuid().nullable(),
+    externalEventId: zod.string().uuid().nullable(),
+    paymentType: zod.enum(["reservation_deposit", "payment", "legacy_payment"]),
+    amount: zod
+      .number()
+      .gt(updateEventPaymentResponsePaymentAmountExclusiveMin),
+    paymentMethod: zod.union([
+      zod.enum(["cash", "bank_transfer", "mbway"]),
+      zod.null(),
+    ]),
+    paidAt: zod.coerce.date().nullable(),
+    notes: zod.string().nullish(),
+    source: zod.string(),
+    sourceReference: zod.string().nullable(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+    deletedAt: zod.coerce.date().nullable(),
+  }),
+  summary: zod.object({
+    totalPrice: zod.number(),
+    received: zod.number(),
+    remainingBalance: zod.number(),
+    historicalOverpayment: zod.number(),
+    paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+    expectedDeposit: zod.number().nullable(),
+    depositReceived: zod.number(),
+    depositRemaining: zod.number(),
+  }),
+});
+
+/**
+ * @summary Soft-delete an active event payment
+ */
+export const DeleteEventPaymentParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const deleteEventPaymentResponsePaymentAmountExclusiveMin = 0;
+
+export const DeleteEventPaymentResponse = zod.object({
+  payment: zod.object({
+    id: zod.string().uuid(),
+    venueEventId: zod.string().uuid().nullable(),
+    externalEventId: zod.string().uuid().nullable(),
+    paymentType: zod.enum(["reservation_deposit", "payment", "legacy_payment"]),
+    amount: zod
+      .number()
+      .gt(deleteEventPaymentResponsePaymentAmountExclusiveMin),
+    paymentMethod: zod.union([
+      zod.enum(["cash", "bank_transfer", "mbway"]),
+      zod.null(),
+    ]),
+    paidAt: zod.coerce.date().nullable(),
+    notes: zod.string().nullish(),
+    source: zod.string(),
+    sourceReference: zod.string().nullable(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+    deletedAt: zod.coerce.date().nullable(),
+  }),
+  summary: zod.object({
+    totalPrice: zod.number(),
+    received: zod.number(),
+    remainingBalance: zod.number(),
+    historicalOverpayment: zod.number(),
+    paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
+    expectedDeposit: zod.number().nullable(),
+    depositReceived: zod.number(),
+    depositRemaining: zod.number(),
+  }),
+});
+
+/**
  * @summary List venue events
  */
 export const ListVenueEventsQueryParams = zod.object({
@@ -384,6 +546,8 @@ export const ListVenueEventsQueryParams = zod.object({
   dateFrom: zod.coerce.string().optional(),
   dateTo: zod.coerce.string().optional(),
 });
+
+export const listVenueEventsResponseExpectedReservationDepositAmountMin = 0;
 
 export const ListVenueEventsResponseItem = zod.object({
   id: zod.string().uuid(),
@@ -414,6 +578,16 @@ export const ListVenueEventsResponseItem = zod.object({
     .optional(),
   termsAccepted: zod.boolean(),
   totalPrice: zod.number(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(listVenueEventsResponseExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod.enum([
+    "auto_20",
+    "manual",
+    "frozen_after_payment",
+    "legacy_unknown",
+  ]),
   amountPaid: zod.number(),
   remainingBalance: zod.number(),
   paymentMethod: zod.string().nullish(),
@@ -426,6 +600,10 @@ export const ListVenueEventsResponse = zod.array(ListVenueEventsResponseItem);
 /**
  * @summary Create a venue event
  */
+export const createVenueEventBodyExpectedReservationDepositAmountMin = 0;
+
+export const createVenueEventBodyInitialReservationDepositAmountExclusiveMin = 0;
+
 export const CreateVenueEventBody = zod.object({
   customerName: zod.string(),
   phone: zod.string(),
@@ -453,7 +631,24 @@ export const CreateVenueEventBody = zod.object({
     .optional(),
   termsAccepted: zod.boolean().optional(),
   totalPrice: zod.number(),
-  amountPaid: zod.number(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(createVenueEventBodyExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod
+    .enum(["auto_20", "manual", "frozen_after_payment", "legacy_unknown"])
+    .optional(),
+  initialReservationDeposit: zod
+    .object({
+      amount: zod
+        .number()
+        .gt(createVenueEventBodyInitialReservationDepositAmountExclusiveMin),
+      paymentMethod: zod.enum(["cash", "bank_transfer", "mbway"]),
+      paidAt: zod.coerce.date(),
+      notes: zod.string().nullish(),
+    })
+    .optional(),
+  amountPaid: zod.number().optional(),
   paymentMethod: zod.string().nullish(),
   notes: zod.string().nullish(),
 });
@@ -464,6 +659,8 @@ export const CreateVenueEventBody = zod.object({
 export const GetVenueEventParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
+
+export const getVenueEventResponseExpectedReservationDepositAmountMin = 0;
 
 export const GetVenueEventResponse = zod.object({
   id: zod.string().uuid(),
@@ -494,6 +691,16 @@ export const GetVenueEventResponse = zod.object({
     .optional(),
   termsAccepted: zod.boolean(),
   totalPrice: zod.number(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(getVenueEventResponseExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod.enum([
+    "auto_20",
+    "manual",
+    "frozen_after_payment",
+    "legacy_unknown",
+  ]),
   amountPaid: zod.number(),
   remainingBalance: zod.number(),
   paymentMethod: zod.string().nullish(),
@@ -508,6 +715,8 @@ export const GetVenueEventResponse = zod.object({
 export const UpdateVenueEventParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
+
+export const updateVenueEventBodyExpectedReservationDepositAmountMin = 0;
 
 export const UpdateVenueEventBody = zod.object({
   customerName: zod.string().optional(),
@@ -537,10 +746,19 @@ export const UpdateVenueEventBody = zod.object({
     .optional(),
   termsAccepted: zod.boolean().optional(),
   totalPrice: zod.number().optional(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(updateVenueEventBodyExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod
+    .enum(["auto_20", "manual", "frozen_after_payment", "legacy_unknown"])
+    .optional(),
   amountPaid: zod.number().optional(),
   paymentMethod: zod.string().nullish(),
   notes: zod.string().nullish(),
 });
+
+export const updateVenueEventResponseExpectedReservationDepositAmountMin = 0;
 
 export const UpdateVenueEventResponse = zod.object({
   id: zod.string().uuid(),
@@ -571,6 +789,16 @@ export const UpdateVenueEventResponse = zod.object({
     .optional(),
   termsAccepted: zod.boolean(),
   totalPrice: zod.number(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(updateVenueEventResponseExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod.enum([
+    "auto_20",
+    "manual",
+    "frozen_after_payment",
+    "legacy_unknown",
+  ]),
   amountPaid: zod.number(),
   remainingBalance: zod.number(),
   paymentMethod: zod.string().nullish(),
@@ -597,6 +825,8 @@ export const ListExternalEventsQueryParams = zod.object({
   dateTo: zod.coerce.string().optional(),
 });
 
+export const listExternalEventsResponseExpectedReservationDepositAmountMin = 0;
+
 export const listExternalEventsResponseRefundableDepositAmountMin = 0;
 
 export const ListExternalEventsResponseItem = zod.object({
@@ -619,6 +849,16 @@ export const ListExternalEventsResponseItem = zod.object({
   teardownNotes: zod.string().nullish(),
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(listExternalEventsResponseExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod.enum([
+    "auto_20",
+    "manual",
+    "frozen_after_payment",
+    "legacy_unknown",
+  ]),
   amountPaid: zod.number(),
   refundableDepositAmount: zod
     .number()
@@ -668,6 +908,10 @@ export const ListExternalEventsResponse = zod.array(
 /**
  * @summary Create an external event with services
  */
+export const createExternalEventBodyExpectedReservationDepositAmountMin = 0;
+
+export const createExternalEventBodyInitialReservationDepositAmountExclusiveMin = 0;
+
 export const createExternalEventBodyRefundableDepositAmountMin = 0;
 
 export const CreateExternalEventBody = zod.object({
@@ -689,7 +933,24 @@ export const CreateExternalEventBody = zod.object({
   teardownNotes: zod.string().nullish(),
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number(),
-  amountPaid: zod.number(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(createExternalEventBodyExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod
+    .enum(["auto_20", "manual", "frozen_after_payment", "legacy_unknown"])
+    .optional(),
+  initialReservationDeposit: zod
+    .object({
+      amount: zod
+        .number()
+        .gt(createExternalEventBodyInitialReservationDepositAmountExclusiveMin),
+      paymentMethod: zod.enum(["cash", "bank_transfer", "mbway"]),
+      paidAt: zod.coerce.date(),
+      notes: zod.string().nullish(),
+    })
+    .optional(),
+  amountPaid: zod.number().optional(),
   refundableDepositAmount: zod
     .number()
     .min(createExternalEventBodyRefundableDepositAmountMin)
@@ -733,6 +994,8 @@ export const GetExternalEventParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
 
+export const getExternalEventResponseExpectedReservationDepositAmountMin = 0;
+
 export const getExternalEventResponseRefundableDepositAmountMin = 0;
 
 export const GetExternalEventResponse = zod.object({
@@ -755,6 +1018,16 @@ export const GetExternalEventResponse = zod.object({
   teardownNotes: zod.string().nullish(),
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(getExternalEventResponseExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod.enum([
+    "auto_20",
+    "manual",
+    "frozen_after_payment",
+    "legacy_unknown",
+  ]),
   amountPaid: zod.number(),
   refundableDepositAmount: zod
     .number()
@@ -805,6 +1078,8 @@ export const UpdateExternalEventParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
 
+export const updateExternalEventBodyExpectedReservationDepositAmountMin = 0;
+
 export const updateExternalEventBodyRefundableDepositAmountMin = 0;
 
 export const UpdateExternalEventBody = zod.object({
@@ -826,6 +1101,13 @@ export const UpdateExternalEventBody = zod.object({
   teardownNotes: zod.string().nullish(),
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number().optional(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(updateExternalEventBodyExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod
+    .enum(["auto_20", "manual", "frozen_after_payment", "legacy_unknown"])
+    .optional(),
   amountPaid: zod.number().optional(),
   refundableDepositAmount: zod
     .number()
@@ -863,6 +1145,8 @@ export const UpdateExternalEventBody = zod.object({
     .optional(),
 });
 
+export const updateExternalEventResponseExpectedReservationDepositAmountMin = 0;
+
 export const updateExternalEventResponseRefundableDepositAmountMin = 0;
 
 export const UpdateExternalEventResponse = zod.object({
@@ -885,6 +1169,16 @@ export const UpdateExternalEventResponse = zod.object({
   teardownNotes: zod.string().nullish(),
   accessNotes: zod.string().nullish(),
   totalPrice: zod.number(),
+  expectedReservationDepositAmount: zod
+    .number()
+    .min(updateExternalEventResponseExpectedReservationDepositAmountMin)
+    .nullish(),
+  reservationDepositPolicy: zod.enum([
+    "auto_20",
+    "manual",
+    "frozen_after_payment",
+    "legacy_unknown",
+  ]),
   amountPaid: zod.number(),
   refundableDepositAmount: zod
     .number()
@@ -963,8 +1257,12 @@ export const ListWorkshopsResponseItem = zod.object({
   participantsCount: zod.number(),
   activeParticipantsCount: zod.number(),
   availableSeats: zod.number(),
+  totalRevenue: zod.number(),
   totalReceived: zod.number(),
   totalPending: zod.number(),
+  paidCount: zod.number(),
+  partialCount: zod.number(),
+  unpaidCount: zod.number(),
   participants: zod
     .array(
       zod.object({
@@ -1036,8 +1334,12 @@ export const GetWorkshopResponse = zod.object({
   participantsCount: zod.number(),
   activeParticipantsCount: zod.number(),
   availableSeats: zod.number(),
+  totalRevenue: zod.number(),
   totalReceived: zod.number(),
   totalPending: zod.number(),
+  paidCount: zod.number(),
+  partialCount: zod.number(),
+  unpaidCount: zod.number(),
   participants: zod
     .array(
       zod.object({
@@ -1105,8 +1407,12 @@ export const UpdateWorkshopResponse = zod.object({
   participantsCount: zod.number(),
   activeParticipantsCount: zod.number(),
   availableSeats: zod.number(),
+  totalRevenue: zod.number(),
   totalReceived: zod.number(),
   totalPending: zod.number(),
+  paidCount: zod.number(),
+  partialCount: zod.number(),
+  unpaidCount: zod.number(),
   participants: zod
     .array(
       zod.object({
@@ -1805,23 +2111,35 @@ export const GetDashboardV2Response = zod.object({
       totalCount: zod.number(),
       upcomingCount: zod.number(),
       nextSevenDaysCount: zod.number(),
+      revenue: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      paidCount: zod.number(),
+      partialCount: zod.number(),
+      unpaidCount: zod.number(),
     }),
     externalEvents: zod.object({
       totalCount: zod.number(),
       upcomingCount: zod.number(),
       nextSevenDaysCount: zod.number(),
+      revenue: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      paidCount: zod.number(),
+      partialCount: zod.number(),
+      unpaidCount: zod.number(),
     }),
     workshops: zod
       .object({
         totalCount: zod.number(),
         upcomingCount: zod.number(),
         nextSevenDaysCount: zod.number(),
+        revenue: zod.number(),
         received: zod.number(),
         pending: zod.number(),
+        paidCount: zod.number(),
+        partialCount: zod.number(),
+        unpaidCount: zod.number(),
       })
       .and(
         zod.object({
@@ -1844,6 +2162,7 @@ export const GetDashboardV2Response = zod.object({
       total: zod.number(),
       received: zod.number(),
       pending: zod.number(),
+      financialStatusText: zod.string(),
       nextAction: zod.string(),
       href: zod.string(),
       services: zod.array(zod.string()),

@@ -690,6 +690,136 @@ export interface UpdateEventExtraBody {
   internalNotes?: string | null;
 }
 
+export type EventPaymentModule =
+  (typeof EventPaymentModule)[keyof typeof EventPaymentModule];
+
+export const EventPaymentModule = {
+  venue_events: "venue_events",
+  external_events: "external_events",
+} as const;
+
+export type EventPaymentType =
+  (typeof EventPaymentType)[keyof typeof EventPaymentType];
+
+export const EventPaymentType = {
+  reservation_deposit: "reservation_deposit",
+  payment: "payment",
+  legacy_payment: "legacy_payment",
+} as const;
+
+export type ManualEventPaymentType =
+  (typeof ManualEventPaymentType)[keyof typeof ManualEventPaymentType];
+
+export const ManualEventPaymentType = {
+  reservation_deposit: "reservation_deposit",
+  payment: "payment",
+} as const;
+
+export type EventPaymentMethod =
+  (typeof EventPaymentMethod)[keyof typeof EventPaymentMethod];
+
+export const EventPaymentMethod = {
+  cash: "cash",
+  bank_transfer: "bank_transfer",
+  mbway: "mbway",
+} as const;
+
+export interface InitialReservationDeposit {
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  paymentMethod: EventPaymentMethod;
+  paidAt: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type ReservationDepositPolicy =
+  (typeof ReservationDepositPolicy)[keyof typeof ReservationDepositPolicy];
+
+export const ReservationDepositPolicy = {
+  auto_20: "auto_20",
+  manual: "manual",
+  frozen_after_payment: "frozen_after_payment",
+  legacy_unknown: "legacy_unknown",
+} as const;
+
+export interface EventPayment {
+  id: string;
+  /** @nullable */
+  venueEventId: string | null;
+  /** @nullable */
+  externalEventId: string | null;
+  paymentType: EventPaymentType;
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  paymentMethod: EventPaymentMethod | null;
+  /** @nullable */
+  paidAt: string | null;
+  /** @nullable */
+  notes?: string | null;
+  source: string;
+  /** @nullable */
+  sourceReference: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  deletedAt: string | null;
+}
+
+export type EventPaymentSummaryPaymentStatus =
+  (typeof EventPaymentSummaryPaymentStatus)[keyof typeof EventPaymentSummaryPaymentStatus];
+
+export const EventPaymentSummaryPaymentStatus = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
+} as const;
+
+export interface EventPaymentSummary {
+  totalPrice: number;
+  received: number;
+  remainingBalance: number;
+  historicalOverpayment: number;
+  paymentStatus: EventPaymentSummaryPaymentStatus;
+  /** @nullable */
+  expectedDeposit: number | null;
+  depositReceived: number;
+  depositRemaining: number;
+}
+
+export interface EventPaymentsResponse {
+  items: EventPayment[];
+  summary: EventPaymentSummary;
+}
+
+export interface EventPaymentMutationResult {
+  payment: EventPayment;
+  summary: EventPaymentSummary;
+}
+
+export interface CreateEventPaymentBody {
+  module: EventPaymentModule;
+  entityId: string;
+  paymentType: ManualEventPaymentType;
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  paymentMethod: EventPaymentMethod;
+  paidAt: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface UpdateEventPaymentBody {
+  paymentType?: EventPaymentType;
+  /** @exclusiveMinimum 0 */
+  amount?: number;
+  paymentMethod?: EventPaymentMethod | null;
+  /** @nullable */
+  paidAt?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export interface VenueEvent {
   id: string;
   customerName: string;
@@ -725,6 +855,12 @@ export interface VenueEvent {
   imageAuthorization?: VenueEventImageAuthorization | null;
   termsAccepted: boolean;
   totalPrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  expectedReservationDepositAmount?: number | null;
+  reservationDepositPolicy: ReservationDepositPolicy;
   amountPaid: number;
   remainingBalance: number;
   /** @nullable */
@@ -768,7 +904,15 @@ export interface CreateVenueEventBody {
   imageAuthorization?: VenueEventImageAuthorization | null;
   termsAccepted?: boolean;
   totalPrice: number;
-  amountPaid: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  expectedReservationDepositAmount?: number | null;
+  reservationDepositPolicy?: ReservationDepositPolicy;
+  initialReservationDeposit?: InitialReservationDeposit;
+  /** @deprecated */
+  amountPaid?: number;
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */
@@ -809,6 +953,13 @@ export interface UpdateVenueEventBody {
   imageAuthorization?: VenueEventImageAuthorization | null;
   termsAccepted?: boolean;
   totalPrice?: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  expectedReservationDepositAmount?: number | null;
+  reservationDepositPolicy?: ReservationDepositPolicy;
+  /** @deprecated */
   amountPaid?: number;
   /** @nullable */
   paymentMethod?: string | null;
@@ -870,6 +1021,12 @@ export interface ExternalEvent {
   /** @nullable */
   accessNotes?: string | null;
   totalPrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  expectedReservationDepositAmount?: number | null;
+  reservationDepositPolicy: ReservationDepositPolicy;
   amountPaid: number;
   /** @minimum 0 */
   refundableDepositAmount: number;
@@ -919,7 +1076,15 @@ export interface CreateExternalEventBody {
   /** @nullable */
   accessNotes?: string | null;
   totalPrice: number;
-  amountPaid: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  expectedReservationDepositAmount?: number | null;
+  reservationDepositPolicy?: ReservationDepositPolicy;
+  initialReservationDeposit?: InitialReservationDeposit;
+  /** @deprecated */
+  amountPaid?: number;
   /** @minimum 0 */
   refundableDepositAmount?: number;
   refundableDepositStatus?: RefundableDepositStatus;
@@ -966,6 +1131,13 @@ export interface UpdateExternalEventBody {
   /** @nullable */
   accessNotes?: string | null;
   totalPrice?: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  expectedReservationDepositAmount?: number | null;
+  reservationDepositPolicy?: ReservationDepositPolicy;
+  /** @deprecated */
   amountPaid?: number;
   /** @minimum 0 */
   refundableDepositAmount?: number;
@@ -1024,8 +1196,12 @@ export interface Workshop {
   participantsCount: number;
   activeParticipantsCount: number;
   availableSeats: number;
+  totalRevenue: number;
   totalReceived: number;
   totalPending: number;
+  paidCount: number;
+  partialCount: number;
+  unpaidCount: number;
   participants?: WorkshopParticipant[];
   createdAt: string;
   updatedAt: string;
@@ -1131,8 +1307,12 @@ export interface DashboardV2AreaSummary {
   totalCount: number;
   upcomingCount: number;
   nextSevenDaysCount: number;
+  revenue: number;
   received: number;
   pending: number;
+  paidCount: number;
+  partialCount: number;
+  unpaidCount: number;
 }
 
 export type DashboardV2WorkshopAreaSummary = DashboardV2AreaSummary & {
@@ -1179,6 +1359,7 @@ export interface DashboardV2AgendaItem {
   total: number;
   received: number;
   pending: number;
+  financialStatusText: string;
   nextAction: string;
   href: string;
   services: string[];
@@ -1596,6 +1777,11 @@ export const ListReservationsStatus = {
   partial: "partial",
   unpaid: "unpaid",
 } as const;
+
+export type ListEventPaymentsParams = {
+  module: EventPaymentModule;
+  entityId: string;
+};
 
 export type ListVenueEventsParams = {
   search?: string;

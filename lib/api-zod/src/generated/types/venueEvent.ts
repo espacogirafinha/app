@@ -5,6 +5,7 @@
  * EspaÃ§o Girafinha reservation management API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReservationDepositPolicy } from "./reservationDepositPolicy";
 import type { VenueEventImageAuthorization } from "./venueEventImageAuthorization";
 import type { VenueEventPaymentStatus } from "./venueEventPaymentStatus";
 import type { VenueEventStatus } from "./venueEventStatus";
@@ -44,6 +45,12 @@ export interface VenueEvent {
   imageAuthorization?: VenueEventImageAuthorization | null;
   termsAccepted: boolean;
   totalPrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  expectedReservationDepositAmount?: number | null;
+  reservationDepositPolicy: ReservationDepositPolicy;
   amountPaid: number;
   remainingBalance: number;
   /** @nullable */

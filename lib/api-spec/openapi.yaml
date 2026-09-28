@@ -174,6 +174,130 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /event-payments:
+    get:
+      operationId: listEventPayments
+      tags: [event-payments]
+      summary: List active payments and financial summary for an event
+      parameters:
+        - name: module
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/EventPaymentModule"
+        - name: entityId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Active payments and summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventPaymentsResponse"
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createEventPayment
+      tags: [event-payments]
+      summary: Register a manual event payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventPaymentBody"
+      responses:
+        "201":
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventPaymentMutationResult"
+        "400":
+          description: Invalid payment or payment exceeds remaining balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /event-payments/{id}:
+    patch:
+      operationId: updateEventPayment
+      tags: [event-payments]
+      summary: Update an active event payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEventPaymentBody"
+      responses:
+        "200":
+          description: Payment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventPaymentMutationResult"
+        "400":
+          description: Invalid payment or payment exceeds remaining balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteEventPayment
+      tags: [event-payments]
+      summary: Soft-delete an active event payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Payment soft-deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventPaymentMutationResult"
+        "404":
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /venue-events:
     get:
       operationId: listVenueEvents
@@ -2530,6 +2654,184 @@ components:
         internalNotes:
           type: ["string", "null"]
 
+    EventPaymentModule:
+      type: string
+      enum: [venue_events, external_events]
+
+    EventPaymentType:
+      type: string
+      enum: [reservation_deposit, payment, legacy_payment]
+
+    ManualEventPaymentType:
+      type: string
+      enum: [reservation_deposit, payment]
+
+    EventPaymentMethod:
+      type: string
+      enum: [cash, bank_transfer, mbway]
+
+    InitialReservationDeposit:
+      type: object
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        paymentMethod:
+          $ref: "#/components/schemas/EventPaymentMethod"
+        paidAt:
+          type: string
+          format: date-time
+        notes:
+          type: ["string", "null"]
+      required: [amount, paymentMethod, paidAt]
+
+    ReservationDepositPolicy:
+      type: string
+      enum: [auto_20, manual, frozen_after_payment, legacy_unknown]
+
+    EventPayment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        venueEventId:
+          type: ["string", "null"]
+          format: uuid
+        externalEventId:
+          type: ["string", "null"]
+          format: uuid
+        paymentType:
+          $ref: "#/components/schemas/EventPaymentType"
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        paymentMethod:
+          oneOf:
+            - $ref: "#/components/schemas/EventPaymentMethod"
+            - type: "null"
+        paidAt:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        source:
+          type: string
+        sourceReference:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - id
+        - venueEventId
+        - externalEventId
+        - paymentType
+        - amount
+        - paymentMethod
+        - paidAt
+        - source
+        - sourceReference
+        - createdAt
+        - updatedAt
+        - deletedAt
+
+    EventPaymentSummary:
+      type: object
+      properties:
+        totalPrice:
+          type: number
+        received:
+          type: number
+        remainingBalance:
+          type: number
+        historicalOverpayment:
+          type: number
+        paymentStatus:
+          type: string
+          enum: [unpaid, partial, paid]
+        expectedDeposit:
+          type: ["number", "null"]
+        depositReceived:
+          type: number
+        depositRemaining:
+          type: number
+      required:
+        - totalPrice
+        - received
+        - remainingBalance
+        - historicalOverpayment
+        - paymentStatus
+        - expectedDeposit
+        - depositReceived
+        - depositRemaining
+
+    EventPaymentsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventPayment"
+        summary:
+          $ref: "#/components/schemas/EventPaymentSummary"
+      required: [items, summary]
+
+    EventPaymentMutationResult:
+      type: object
+      properties:
+        payment:
+          $ref: "#/components/schemas/EventPayment"
+        summary:
+          $ref: "#/components/schemas/EventPaymentSummary"
+      required: [payment, summary]
+
+    CreateEventPaymentBody:
+      type: object
+      properties:
+        module:
+          $ref: "#/components/schemas/EventPaymentModule"
+        entityId:
+          type: string
+          format: uuid
+        paymentType:
+          $ref: "#/components/schemas/ManualEventPaymentType"
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        paymentMethod:
+          $ref: "#/components/schemas/EventPaymentMethod"
+        paidAt:
+          type: string
+          format: date-time
+        notes:
+          type: ["string", "null"]
+      required: [module, entityId, paymentType, amount, paymentMethod, paidAt]
+
+    UpdateEventPaymentBody:
+      type: object
+      properties:
+        paymentType:
+          $ref: "#/components/schemas/EventPaymentType"
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        paymentMethod:
+          oneOf:
+            - $ref: "#/components/schemas/EventPaymentMethod"
+            - type: "null"
+        paidAt:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+
     VenueEvent:
       type: object
       properties:
@@ -2582,6 +2884,11 @@ components:
           type: boolean
         totalPrice:
           type: number
+        expectedReservationDepositAmount:
+          type: ["number", "null"]
+          minimum: 0
+        reservationDepositPolicy:
+          $ref: "#/components/schemas/ReservationDepositPolicy"
         amountPaid:
           type: number
         remainingBalance:
@@ -2606,6 +2913,7 @@ components:
         - childrenCount
         - termsAccepted
         - totalPrice
+        - reservationDepositPolicy
         - amountPaid
         - remainingBalance
         - createdAt
@@ -2658,8 +2966,16 @@ components:
           type: boolean
         totalPrice:
           type: number
+        expectedReservationDepositAmount:
+          type: ["number", "null"]
+          minimum: 0
+        reservationDepositPolicy:
+          $ref: "#/components/schemas/ReservationDepositPolicy"
+        initialReservationDeposit:
+          $ref: "#/components/schemas/InitialReservationDeposit"
         amountPaid:
           type: number
+          deprecated: true
         paymentMethod:
           type: ["string", "null"]
         notes:
@@ -2671,7 +2987,6 @@ components:
         - startTime
         - packName
         - totalPrice
-        - amountPaid
 
     UpdateVenueEventBody:
       type: object
@@ -2722,8 +3037,14 @@ components:
           type: boolean
         totalPrice:
           type: number
+        expectedReservationDepositAmount:
+          type: ["number", "null"]
+          minimum: 0
+        reservationDepositPolicy:
+          $ref: "#/components/schemas/ReservationDepositPolicy"
         amountPaid:
           type: number
+          deprecated: true
         paymentMethod:
           type: ["string", "null"]
         notes:
@@ -2826,6 +3147,11 @@ components:
           type: ["string", "null"]
         totalPrice:
           type: number
+        expectedReservationDepositAmount:
+          type: ["number", "null"]
+          minimum: 0
+        reservationDepositPolicy:
+          $ref: "#/components/schemas/ReservationDepositPolicy"
         amountPaid:
           type: number
         refundableDepositAmount:
@@ -2865,6 +3191,7 @@ components:
         - paymentStatus
         - guestCount
         - totalPrice
+        - reservationDepositPolicy
         - amountPaid
         - refundableDepositAmount
         - refundableDepositStatus
@@ -2912,8 +3239,16 @@ components:
           type: ["string", "null"]
         totalPrice:
           type: number
+        expectedReservationDepositAmount:
+          type: ["number", "null"]
+          minimum: 0
+        reservationDepositPolicy:
+          $ref: "#/components/schemas/ReservationDepositPolicy"
+        initialReservationDeposit:
+          $ref: "#/components/schemas/InitialReservationDeposit"
         amountPaid:
           type: number
+          deprecated: true
         refundableDepositAmount:
           type: number
           minimum: 0
@@ -2942,7 +3277,6 @@ components:
         - eventDate
         - startTime
         - totalPrice
-        - amountPaid
         - services
 
     UpdateExternalEventBody:
@@ -2984,8 +3318,14 @@ components:
           type: ["string", "null"]
         totalPrice:
           type: number
+        expectedReservationDepositAmount:
+          type: ["number", "null"]
+          minimum: 0
+        reservationDepositPolicy:
+          $ref: "#/components/schemas/ReservationDepositPolicy"
         amountPaid:
           type: number
+          deprecated: true
         refundableDepositAmount:
           type: number
           minimum: 0
@@ -3087,10 +3427,18 @@ components:
           type: integer
         availableSeats:
           type: integer
+        totalRevenue:
+          type: number
         totalReceived:
           type: number
         totalPending:
           type: number
+        paidCount:
+          type: integer
+        partialCount:
+          type: integer
+        unpaidCount:
+          type: integer
         participants:
           type: array
           items:
@@ -3111,8 +3459,12 @@ components:
         - participantsCount
         - activeParticipantsCount
         - availableSeats
+        - totalRevenue
         - totalReceived
         - totalPending
+        - paidCount
+        - partialCount
+        - unpaidCount
         - createdAt
         - updatedAt
 
@@ -3318,16 +3670,28 @@ components:
           type: integer
         nextSevenDaysCount:
           type: integer
+        revenue:
+          type: number
         received:
           type: number
         pending:
           type: number
+        paidCount:
+          type: integer
+        partialCount:
+          type: integer
+        unpaidCount:
+          type: integer
       required:
         - totalCount
         - upcomingCount
         - nextSevenDaysCount
+        - revenue
         - received
         - pending
+        - paidCount
+        - partialCount
+        - unpaidCount
 
     DashboardV2WorkshopAreaSummary:
       allOf:
@@ -3371,6 +3735,8 @@ components:
           type: number
         pending:
           type: number
+        financialStatusText:
+          type: string
         nextAction:
           type: string
         href:
@@ -3392,6 +3758,7 @@ components:
         - total
         - received
         - pending
+        - financialStatusText
         - nextAction
         - href
         - services

@@ -7,6 +7,7 @@ import {
   workshopParticipantsTable,
   workshopsTable,
 } from "@workspace/db";
+import { eventFinancialPosition } from "../lib/event-finance-read-model";
 
 const router: IRouter = Router();
 
@@ -117,6 +118,7 @@ function participantsByWorkshopId(participants: WorkshopParticipantRow[]) {
 function venueCalendarItem(row: VenueEventRow): CalendarV2Item {
   const totalPrice = money(row.totalPrice);
   const amountPaid = money(row.amountPaid);
+  const financial = eventFinancialPosition(totalPrice, amountPaid);
 
   return {
     id: row.id,
@@ -128,10 +130,10 @@ function venueCalendarItem(row: VenueEventRow): CalendarV2Item {
     customerName: row.customerName,
     location: "Espaco Girafinha",
     servicesLabels: [row.packName],
-    paymentStatus: row.paymentStatus,
-    amountPaid,
-    totalPrice,
-    pendingAmount: Math.max(0, totalPrice - amountPaid),
+    paymentStatus: financial.paymentStatus,
+    amountPaid: financial.received,
+    totalPrice: financial.revenue,
+    pendingAmount: financial.pending,
     capacity: null,
     activeParticipantsCount: null,
     availableSeats: null,
@@ -145,6 +147,7 @@ function venueCalendarItem(row: VenueEventRow): CalendarV2Item {
 function externalCalendarItem(row: ExternalEventRow, services: ExternalEventServiceRow[]): CalendarV2Item {
   const totalPrice = money(row.totalPrice);
   const amountPaid = money(row.amountPaid);
+  const financial = eventFinancialPosition(totalPrice, amountPaid);
 
   return {
     id: row.id,
@@ -158,10 +161,10 @@ function externalCalendarItem(row: ExternalEventRow, services: ExternalEventServ
     servicesLabels: services
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((service) => service.serviceLabel),
-    paymentStatus: row.paymentStatus,
-    amountPaid,
-    totalPrice,
-    pendingAmount: Math.max(0, totalPrice - amountPaid),
+    paymentStatus: financial.paymentStatus,
+    amountPaid: financial.received,
+    totalPrice: financial.revenue,
+    pendingAmount: financial.pending,
     capacity: null,
     activeParticipantsCount: null,
     availableSeats: null,

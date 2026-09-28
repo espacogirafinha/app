@@ -26,6 +26,7 @@ import type {
   CreateChecklistTemplateItemBody,
   CreateEventAttachmentBody,
   CreateEventExtraBody,
+  CreateEventPaymentBody,
   CreateExternalEventBody,
   CreateExternalServiceBody,
   CreateMessageTemplateBody,
@@ -42,6 +43,8 @@ import type {
   EventChecklist,
   EventChecklistItem,
   EventExtra,
+  EventPaymentMutationResult,
+  EventPaymentsResponse,
   ExternalEvent,
   ExternalServiceCatalog,
   GetCalendarReservationsParams,
@@ -54,6 +57,7 @@ import type {
   ListChecklistTemplateItemsParams,
   ListChecklistsParams,
   ListEventAttachmentsParams,
+  ListEventPaymentsParams,
   ListExternalEventsParams,
   ListReservationsParams,
   ListSelectedExtrasParams,
@@ -69,6 +73,7 @@ import type {
   TaskSummary,
   UpdateChecklistItemBody,
   UpdateEventExtraBody,
+  UpdateEventPaymentBody,
   UpdateExternalEventBody,
   UpdateExternalServiceBody,
   UpdateReservationBody,
@@ -607,6 +612,360 @@ export const useDeleteReservation = <
   TContext
 > => {
   return useMutation(getDeleteReservationMutationOptions(options));
+};
+
+/**
+ * @summary List active payments and financial summary for an event
+ */
+export const getListEventPaymentsUrl = (params: ListEventPaymentsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/event-payments?${stringifiedParams}`
+    : `/api/event-payments`;
+};
+
+export const listEventPayments = async (
+  params: ListEventPaymentsParams,
+  options?: RequestInit,
+): Promise<EventPaymentsResponse> => {
+  return customFetch<EventPaymentsResponse>(getListEventPaymentsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEventPaymentsQueryKey = (
+  params?: ListEventPaymentsParams,
+) => {
+  return [`/api/event-payments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListEventPaymentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEventPayments>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params: ListEventPaymentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEventPayments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListEventPaymentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listEventPayments>>
+  > = ({ signal }) => listEventPayments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEventPayments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEventPaymentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEventPayments>>
+>;
+export type ListEventPaymentsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List active payments and financial summary for an event
+ */
+
+export function useListEventPayments<
+  TData = Awaited<ReturnType<typeof listEventPayments>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params: ListEventPaymentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEventPayments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEventPaymentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register a manual event payment
+ */
+export const getCreateEventPaymentUrl = () => {
+  return `/api/event-payments`;
+};
+
+export const createEventPayment = async (
+  createEventPaymentBody: CreateEventPaymentBody,
+  options?: RequestInit,
+): Promise<EventPaymentMutationResult> => {
+  return customFetch<EventPaymentMutationResult>(getCreateEventPaymentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createEventPaymentBody),
+  });
+};
+
+export const getCreateEventPaymentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEventPayment>>,
+    TError,
+    { data: BodyType<CreateEventPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createEventPayment>>,
+  TError,
+  { data: BodyType<CreateEventPaymentBody> },
+  TContext
+> => {
+  const mutationKey = ["createEventPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createEventPayment>>,
+    { data: BodyType<CreateEventPaymentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createEventPayment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateEventPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createEventPayment>>
+>;
+export type CreateEventPaymentMutationBody = BodyType<CreateEventPaymentBody>;
+export type CreateEventPaymentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Register a manual event payment
+ */
+export const useCreateEventPayment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEventPayment>>,
+    TError,
+    { data: BodyType<CreateEventPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createEventPayment>>,
+  TError,
+  { data: BodyType<CreateEventPaymentBody> },
+  TContext
+> => {
+  return useMutation(getCreateEventPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Update an active event payment
+ */
+export const getUpdateEventPaymentUrl = (id: string) => {
+  return `/api/event-payments/${id}`;
+};
+
+export const updateEventPayment = async (
+  id: string,
+  updateEventPaymentBody: UpdateEventPaymentBody,
+  options?: RequestInit,
+): Promise<EventPaymentMutationResult> => {
+  return customFetch<EventPaymentMutationResult>(getUpdateEventPaymentUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateEventPaymentBody),
+  });
+};
+
+export const getUpdateEventPaymentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEventPayment>>,
+    TError,
+    { id: string; data: BodyType<UpdateEventPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateEventPayment>>,
+  TError,
+  { id: string; data: BodyType<UpdateEventPaymentBody> },
+  TContext
+> => {
+  const mutationKey = ["updateEventPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateEventPayment>>,
+    { id: string; data: BodyType<UpdateEventPaymentBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateEventPayment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateEventPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateEventPayment>>
+>;
+export type UpdateEventPaymentMutationBody = BodyType<UpdateEventPaymentBody>;
+export type UpdateEventPaymentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update an active event payment
+ */
+export const useUpdateEventPayment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEventPayment>>,
+    TError,
+    { id: string; data: BodyType<UpdateEventPaymentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateEventPayment>>,
+  TError,
+  { id: string; data: BodyType<UpdateEventPaymentBody> },
+  TContext
+> => {
+  return useMutation(getUpdateEventPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Soft-delete an active event payment
+ */
+export const getDeleteEventPaymentUrl = (id: string) => {
+  return `/api/event-payments/${id}`;
+};
+
+export const deleteEventPayment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<EventPaymentMutationResult> => {
+  return customFetch<EventPaymentMutationResult>(getDeleteEventPaymentUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteEventPaymentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteEventPayment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteEventPayment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteEventPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteEventPayment>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteEventPayment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteEventPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteEventPayment>>
+>;
+
+export type DeleteEventPaymentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Soft-delete an active event payment
+ */
+export const useDeleteEventPayment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteEventPayment>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteEventPayment>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteEventPaymentMutationOptions(options));
 };
 
 /**

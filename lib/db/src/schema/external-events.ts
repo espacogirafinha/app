@@ -22,6 +22,8 @@ export const externalEventsTable = pgTable("external_events", {
   teardownNotes: text("teardown_notes"),
   accessNotes: text("access_notes"),
   totalPrice: numeric("total_price", { precision: 10, scale: 2 }).notNull().default("0"),
+  expectedReservationDepositAmount: numeric("expected_reservation_deposit_amount", { precision: 10, scale: 2 }),
+  reservationDepositPolicy: text("reservation_deposit_policy").notNull().default("manual"),
   amountPaid: numeric("amount_paid", { precision: 10, scale: 2 }).notNull().default("0"),
   refundableDepositAmount: numeric("refundable_deposit_amount", { precision: 10, scale: 2 }).notNull().default("0"),
   refundableDepositStatus: text("refundable_deposit_status").notNull().default("not_required"),

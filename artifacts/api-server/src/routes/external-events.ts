@@ -10,14 +10,10 @@ import {
   UpdateExternalEventParams,
 } from "@workspace/api-zod";
 import { refundableDepositCreateValues, refundableDepositUpdateValues } from "../lib/refundable-deposits";
+import { createEventPaymentInTransaction, getActiveReceivedAmount, synchronizeEventPaymentSummary, type DbTransaction } from "../lib/event-payments";
+import { createEventWithOptionalInitialDeposit, initialReservationDepositPaymentInput } from "../lib/event-payment-creation";
 
 const router: IRouter = Router();
-
-function computePaymentStatus(totalPrice: number, amountPaid: number): "unpaid" | "partial" | "paid" {
-  if (amountPaid >= totalPrice) return "paid";
-  if (amountPaid > 0) return "partial";
-  return "unpaid";
-}
 
 function compactObject<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>;
@@ -54,6 +50,8 @@ function formatExternalEvent(row: ExternalEventRow, services: ExternalEventServi
     teardownNotes: row.teardownNotes,
     accessNotes: row.accessNotes,
     totalPrice,
+    expectedReservationDepositAmount: row.expectedReservationDepositAmount === null ? null : money(row.expectedReservationDepositAmount),
+    reservationDepositPolicy: row.reservationDepositPolicy,
     amountPaid,
     refundableDepositAmount: money(row.refundableDepositAmount),
     refundableDepositStatus: row.refundableDepositStatus,
@@ -147,8 +145,11 @@ router.post("/external-events", async (req, res): Promise<void> => {
   const {
     services,
     totalPrice,
-    amountPaid,
-    paymentStatus: _paymentStatus,
+    amountPaid: _legacyAmountPaid,
+    paymentStatus: _legacyPaymentStatus,
+    expectedReservationDepositAmount,
+    reservationDepositPolicy,
+    initialReservationDeposit,
     refundableDepositAmount,
     refundableDepositStatus,
     refundableDepositReceivedAt,
@@ -156,47 +157,80 @@ router.post("/external-events", async (req, res): Promise<void> => {
     refundableDepositNotes,
     ...body
   } = parsed.data;
-  const paymentStatus = computePaymentStatus(totalPrice, amountPaid);
+  const depositPolicy = reservationDepositPolicy ?? "manual";
 
-  const row = await db.transaction(async (tx) => {
-    const [created] = await tx
-      .insert(externalEventsTable)
-      .values(compactObject({
-        ...body,
-        status: body.status ?? "draft",
-        paymentStatus,
-        guestCount: body.guestCount ?? 0,
-        totalPrice: String(totalPrice),
-        amountPaid: String(amountPaid),
-        ...refundableDepositCreateValues({
-          refundableDepositAmount,
-          refundableDepositStatus,
-          refundableDepositReceivedAt,
-          refundableDepositReturnedAt,
-          refundableDepositNotes,
-        }),
-      }) as typeof externalEventsTable.$inferInsert)
-      .returning();
+  try {
+    const row = await createEventWithOptionalInitialDeposit<DbTransaction, typeof externalEventsTable.$inferSelect>(
+      (work) => db.transaction(work),
+      async (tx) => {
+        const [created] = await tx
+          .insert(externalEventsTable)
+          .values(compactObject({
+            ...body,
+            status: body.status ?? "draft",
+            paymentStatus: "unpaid",
+            guestCount: body.guestCount ?? 0,
+            totalPrice: String(totalPrice),
+            expectedReservationDepositAmount:
+              expectedReservationDepositAmount === undefined || expectedReservationDepositAmount === null
+                ? null
+                : String(expectedReservationDepositAmount),
+            reservationDepositPolicy: depositPolicy,
+            amountPaid: "0",
+            ...refundableDepositCreateValues({
+              refundableDepositAmount,
+              refundableDepositStatus,
+              refundableDepositReceivedAt,
+              refundableDepositReturnedAt,
+              refundableDepositNotes,
+            }),
+          }) as typeof externalEventsTable.$inferInsert)
+          .returning();
 
-    if (services.length > 0) {
-      await tx.insert(externalEventServicesTable).values(
-        services.map((service, index) => compactObject({
-          externalEventId: created.id,
-          serviceType: service.serviceType,
-          serviceLabel: service.serviceLabel,
-          price: String(service.price ?? 0),
-          status: service.status ?? "planned",
-          notes: service.notes,
-          sortOrder: service.sortOrder ?? index + 1,
-        }) as typeof externalEventServicesTable.$inferInsert),
-      );
+        if (services.length > 0) {
+          await tx.insert(externalEventServicesTable).values(
+            services.map((service, index) => compactObject({
+              externalEventId: created.id,
+              serviceType: service.serviceType,
+              serviceLabel: service.serviceLabel,
+              price: String(service.price ?? 0),
+              status: service.status ?? "planned",
+              notes: service.notes,
+              sortOrder: service.sortOrder ?? index + 1,
+            }) as typeof externalEventServicesTable.$inferInsert),
+          );
+        }
+
+        return created;
+      },
+      initialReservationDeposit
+        ? async (tx, created) => {
+            const paymentInput = initialReservationDepositPaymentInput(
+              "external_events",
+              created.id,
+              initialReservationDeposit,
+            );
+            if (paymentInput) {
+              await createEventPaymentInTransaction(tx, paymentInput);
+            }
+          }
+        : undefined,
+    );
+
+    const [fresh] = await db
+      .select()
+      .from(externalEventsTable)
+      .where(eq(externalEventsTable.id, row.id));
+
+    const servicesByEventId = await getServicesByEventIds([row.id]);
+    res.status(201).json(formatExternalEvent(fresh ?? row, servicesByEventId.get(row.id) ?? []));
+  } catch (error) {
+    if (error instanceof Error && "status" in error && typeof (error as { status?: unknown }).status === "number") {
+      res.status((error as { status: number }).status).json({ error: error.message });
+      return;
     }
-
-    return created;
-  });
-
-  const servicesByEventId = await getServicesByEventIds([row.id]);
-  res.status(201).json(formatExternalEvent(row, servicesByEventId.get(row.id) ?? []));
+    throw error;
+  }
 });
 
 router.get("/external-events/:id", async (req, res): Promise<void> => {
@@ -233,17 +267,40 @@ router.patch("/external-events/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const row = await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [current] = await tx
       .select()
       .from(externalEventsTable)
-      .where(eq(externalEventsTable.id, params.data.id));
+      .where(eq(externalEventsTable.id, params.data.id))
+      .for("update");
 
-    if (!current) return null;
+    if (!current) return { status: 404 as const, error: "External event not found" };
+
+    if (
+      parsed.data.amountPaid !== undefined
+      && Math.abs(parsed.data.amountPaid - money(current.amountPaid)) > 0.001
+    ) {
+      return { status: 400 as const, error: "amountPaid is read-only; use /event-payments" };
+    }
+    if (
+      parsed.data.paymentStatus !== undefined
+      && parsed.data.paymentStatus !== current.paymentStatus
+    ) {
+      return { status: 400 as const, error: "paymentStatus is derived from event payments" };
+    }
+
+    const received = await getActiveReceivedAmount(tx, "external_events", params.data.id);
+    const nextTotal = parsed.data.totalPrice ?? money(current.totalPrice);
+    if (nextTotal + 0.001 < received) {
+      return { status: 400 as const, error: "totalPrice cannot be lower than the amount already received" };
+    }
 
     const {
       services,
+      amountPaid: _amountPaid,
       paymentStatus: _paymentStatus,
+      expectedReservationDepositAmount,
+      reservationDepositPolicy,
       refundableDepositAmount,
       refundableDepositStatus,
       refundableDepositReceivedAt,
@@ -251,8 +308,6 @@ router.patch("/external-events/:id", async (req, res): Promise<void> => {
       refundableDepositNotes,
       ...body
     } = parsed.data;
-    const total = body.totalPrice ?? money(current.totalPrice);
-    const paid = body.amountPaid ?? money(current.amountPaid);
     const updateData: Record<string, unknown> = compactObject({
       ...body,
       ...refundableDepositUpdateValues({
@@ -263,17 +318,22 @@ router.patch("/external-events/:id", async (req, res): Promise<void> => {
         refundableDepositNotes,
       }),
     });
+
     if (body.totalPrice !== undefined) updateData.totalPrice = String(body.totalPrice);
-    if (body.amountPaid !== undefined) updateData.amountPaid = String(body.amountPaid);
-    if (body.totalPrice !== undefined || body.amountPaid !== undefined || parsed.data.paymentStatus !== undefined) {
-      updateData.paymentStatus = computePaymentStatus(total, paid);
+    if (expectedReservationDepositAmount !== undefined) {
+      updateData.expectedReservationDepositAmount =
+        expectedReservationDepositAmount === null ? null : String(expectedReservationDepositAmount);
+    }
+    if (reservationDepositPolicy !== undefined) {
+      updateData.reservationDepositPolicy = reservationDepositPolicy;
+    } else if (expectedReservationDepositAmount !== undefined) {
+      updateData.reservationDepositPolicy = "manual";
     }
 
-    const [updated] = await tx
+    await tx
       .update(externalEventsTable)
       .set(updateData)
-      .where(eq(externalEventsTable.id, params.data.id))
-      .returning();
+      .where(eq(externalEventsTable.id, params.data.id));
 
     if (services) {
       await tx
@@ -295,16 +355,22 @@ router.patch("/external-events/:id", async (req, res): Promise<void> => {
       }
     }
 
-    return updated;
+    await synchronizeEventPaymentSummary(tx, "external_events", params.data.id);
+    const [row] = await tx
+      .select()
+      .from(externalEventsTable)
+      .where(eq(externalEventsTable.id, params.data.id));
+
+    return { status: 200 as const, row };
   });
 
-  if (!row) {
-    res.status(404).json({ error: "External event not found" });
+  if (result.status !== 200) {
+    res.status(result.status).json({ error: result.error });
     return;
   }
 
-  const servicesByEventId = await getServicesByEventIds([row.id]);
-  res.json(formatExternalEvent(row, servicesByEventId.get(row.id) ?? []));
+  const servicesByEventId = await getServicesByEventIds([result.row.id]);
+  res.json(formatExternalEvent(result.row, servicesByEventId.get(result.row.id) ?? []));
 });
 
 router.delete("/external-events/:id", async (req, res): Promise<void> => {

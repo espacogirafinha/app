@@ -18,6 +18,7 @@ import { EventAttachmentsEditor, type EventAttachmentsHandle } from "@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatMoneyInput, parseMoneyInput } from "@/lib/money";
+import { EVENT_PAYMENT_METHOD_OPTIONS, toDateTimeLocalInput } from "@/lib/event-payment-ui";
 import {
   calculateExtrasTotal,
   EventExtrasSelector,
@@ -46,7 +47,7 @@ import {
   useReplaceSelectedExtras,
   useUpdateExternalEvent,
 } from "@workspace/api-client-react";
-import type { CreateExternalEventBody, ExternalEvent, ExternalEventServiceType, ExternalServiceCatalog, RefundableDepositStatus } from "@workspace/api-client-react";
+import type { CreateExternalEventBody, EventPaymentMethod, ExternalEvent, ExternalEventServiceType, ExternalServiceCatalog, RefundableDepositStatus, ReservationDepositPolicy } from "@workspace/api-client-react";
 
 type ExternalEventFormState = {
   customerName: string;
@@ -66,13 +67,18 @@ type ExternalEventFormState = {
   teardownNotes: string;
   accessNotes: string;
   totalPrice: string;
-  amountPaid: string;
+  expectedReservationDepositAmount: string;
+  reservationDepositPolicy: ReservationDepositPolicy;
+  depositState: "pending" | "received";
+  initialDepositAmount: string;
+  initialDepositMethod: EventPaymentMethod | "";
+  initialDepositPaidAt: string;
+  initialDepositNotes: string;
   refundableDepositAmount: string;
   refundableDepositStatus: RefundableDepositStatus;
   refundableDepositReceivedAt: string | null;
   refundableDepositReturnedAt: string | null;
   refundableDepositNotes: string;
-  paymentMethod: string;
   notes: string;
 };
 
@@ -94,13 +100,18 @@ const initialState: ExternalEventFormState = {
   teardownNotes: "",
   accessNotes: "",
   totalPrice: "0",
-  amountPaid: "0",
+  expectedReservationDepositAmount: "",
+  reservationDepositPolicy: "manual",
+  depositState: "pending",
+  initialDepositAmount: "",
+  initialDepositMethod: "",
+  initialDepositPaidAt: "",
+  initialDepositNotes: "",
   refundableDepositAmount: "0",
   refundableDepositStatus: "not_required",
   refundableDepositReceivedAt: null,
   refundableDepositReturnedAt: null,
   refundableDepositNotes: "",
-  paymentMethod: "",
   notes: "",
 };
 
@@ -116,6 +127,7 @@ export function ExternalEventModal({
   const [services, setServices] = useState<ExternalServiceDraft[]>(() => toServiceDrafts(event));
   const [extras, setExtras] = useState<EventExtraDraft[]>([]);
   const [isTotalManual, setIsTotalManual] = useState(false);
+  const [isInitialDepositAmountManual, setIsInitialDepositAmountManual] = useState(false);
   const loadedExtrasEntityRef = useRef<string | null>(null);
   const attachmentsRef = useRef<EventAttachmentsHandle>(null);
   const createExternalEvent = useCreateExternalEvent();
@@ -146,6 +158,7 @@ export function ExternalEventModal({
     setServices(nextServices);
     setExtras([]);
     setIsTotalManual(Boolean(event) && Math.abs(initialTotal - initialSubtotal) > 0.01);
+    setIsInitialDepositAmountManual(false);
     loadedExtrasEntityRef.current = null;
   }, [event, open]);
 
@@ -153,8 +166,8 @@ export function ExternalEventModal({
   const extrasTotal = useMemo(() => calculateExtrasTotal(extras), [extras]);
   const automaticTotal = servicesTotal + extrasTotal;
   const totalPrice = parseMoneyInput(form.totalPrice);
-  const amountPaid = parseMoneyInput(form.amountPaid);
-  const remainingBalance = Math.max(0, totalPrice - amountPaid);
+  const expectedDeposit = parseMoneyInput(form.expectedReservationDepositAmount);
+  const expectedRemaining = Math.max(0, totalPrice - expectedDeposit);
   const isPending = createExternalEvent.isPending || updateExternalEvent.isPending || replaceSelectedExtras.isPending;
   const serviceOptions = useMemo(() => buildServiceOptions(externalServicesQuery.data), [externalServicesQuery.data]);
 
@@ -183,6 +196,30 @@ export function ExternalEventModal({
   const recalculateTotal = () => {
     patch({ totalPrice: formatMoneyInput(automaticTotal) });
     setIsTotalManual(false);
+  };
+
+  const updateExpectedDeposit = (value: string) => {
+    setForm((current) => ({
+      ...current,
+      expectedReservationDepositAmount: value,
+      reservationDepositPolicy: "manual",
+      initialDepositAmount: isInitialDepositAmountManual ? current.initialDepositAmount : value,
+    }));
+  };
+
+  const updateDepositState = (state: "pending" | "received") => {
+    setForm((current) => ({
+      ...current,
+      depositState: state,
+      initialDepositAmount:
+        state === "received" && !isInitialDepositAmountManual
+          ? current.expectedReservationDepositAmount
+          : current.initialDepositAmount,
+      initialDepositPaidAt:
+        state === "received" && !current.initialDepositPaidAt
+          ? toDateTimeLocalInput()
+          : current.initialDepositPaidAt,
+    }));
   };
 
   const updateRefundableDepositStatus = (status: RefundableDepositStatus) => {
@@ -225,8 +262,25 @@ export function ExternalEventModal({
       return;
     }
 
+    if (
+      !event
+      && form.depositState === "received"
+      && (
+        parseMoneyInput(form.initialDepositAmount) <= 0
+        || !form.initialDepositMethod
+        || !form.initialDepositPaidAt
+      )
+    ) {
+      toast({
+        title: "Complete os dados do sinal recebido",
+        description: "Indique valor, método e data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const body = toRequestBody(form, services);
+      const body = toRequestBody(form, services, !event && form.depositState === "received");
       const savedEvent = event
         ? await updateExternalEvent.mutateAsync({ id: event.id, data: body })
         : await createExternalEvent.mutateAsync({ data: body });
@@ -349,30 +403,112 @@ export function ExternalEventModal({
             </Field>
           </FormSection>
 
-          <FormSection title="Pagamento">
+          <FormSection title="Financeiro">
             <div className="rounded-xl border border-border bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground">Subtotal dos serviços</p>
-              <p className="text-xl font-bold text-foreground">{servicesTotal.toFixed(2)} €</p>
+              <p className="text-lg font-bold text-foreground">{servicesTotal.toFixed(2)} €</p>
             </div>
             <div className="rounded-xl border border-border bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground">Subtotal dos extras</p>
-              <p className="text-xl font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
+              <p className="text-lg font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
             </div>
-            <Field label="Valor total">
+            <Field label="Total do serviço">
               <MoneyInput value={form.totalPrice} onValueChange={updateTotalPrice} />
             </Field>
-            <Field label="Valor pago/sinal">
-              <MoneyInput value={form.amountPaid} onValueChange={(value) => patch({ amountPaid: value })} />
-            </Field>
-            <Field label="Método de pagamento">
-              <Input value={form.paymentMethod} onChange={(event) => patch({ paymentMethod: event.target.value })} placeholder="MB Way, transferência..." />
+            <Field label="Sinal esperado">
+              <MoneyInput
+                value={form.expectedReservationDepositAmount}
+                onValueChange={updateExpectedDeposit}
+              />
+              {form.reservationDepositPolicy === "legacy_unknown" && !form.expectedReservationDepositAmount ? (
+                <p className="text-xs text-muted-foreground">Sinal esperado não registado.</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Valor manual. Nos Serviços Externos não é aplicada percentagem automática.</p>
+              )}
             </Field>
             <div className="rounded-xl border border-border bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">Valor em falta</p>
-              <p className={remainingBalance > 0 ? "text-xl font-bold text-rose-700" : "text-xl font-bold text-emerald-700"}>
-                {remainingBalance.toFixed(2)} €
-              </p>
+              <p className="text-xs text-muted-foreground">Restante previsto após o sinal</p>
+              <p className="text-lg font-bold text-foreground">{expectedRemaining.toFixed(2)} €</p>
             </div>
+
+            {!isEditing ? (
+              <div className="space-y-3 md:col-span-2">
+                <Label>Sinal</Label>
+                <div className="grid gap-2 min-[430px]:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => updateDepositState("pending")}
+                    className={`rounded-xl border p-3 text-left text-sm transition-colors ${
+                      form.depositState === "pending"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <span className="font-semibold">Por receber</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">Não cria movimento financeiro.</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateDepositState("received")}
+                    className={`rounded-xl border p-3 text-left text-sm transition-colors ${
+                      form.depositState === "received"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <span className="font-semibold">Já recebido</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">Regista um sinal no histórico.</span>
+                  </button>
+                </div>
+
+                {form.depositState === "received" ? (
+                  <div className="grid gap-3 rounded-xl border border-border bg-muted/20 p-3 md:grid-cols-2">
+                    <Field label="Valor recebido" required>
+                      <MoneyInput
+                        value={form.initialDepositAmount}
+                        onValueChange={(value) => {
+                          setIsInitialDepositAmountManual(true);
+                          patch({ initialDepositAmount: value });
+                        }}
+                      />
+                    </Field>
+                    <Field label="Método" required>
+                      <Select
+                        value={form.initialDepositMethod}
+                        onValueChange={(value) => patch({ initialDepositMethod: value as EventPaymentMethod })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
+                        <SelectContent>
+                          {EVENT_PAYMENT_METHOD_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label="Data" required>
+                      <Input
+                        type="datetime-local"
+                        value={form.initialDepositPaidAt}
+                        onChange={(event) => patch({ initialDepositPaidAt: event.target.value })}
+                      />
+                    </Field>
+                    <Field label="Nota">
+                      <Input
+                        value={form.initialDepositNotes}
+                        onChange={(event) => patch({ initialDepositNotes: event.target.value })}
+                        placeholder="Opcional"
+                      />
+                    </Field>
+                    {expectedDeposit > 0 && parseMoneyInput(form.initialDepositAmount) < expectedDeposit ? (
+                      <p className="text-xs text-muted-foreground md:col-span-2">
+                        Sinal ainda em falta: {(expectedDeposit - parseMoneyInput(form.initialDepositAmount)).toFixed(2)} €
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             {isTotalManual && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 md:col-span-2">
                 Total final com ajuste manual. Use "Recalcular serviços + extras" para voltar ao total automático.
@@ -503,7 +639,12 @@ function compareServiceOptions(first: ExternalServiceOption, second: ExternalSer
 }
 
 function toFormState(event?: ExternalEvent): ExternalEventFormState {
-  if (!event) return initialState;
+  if (!event) {
+    return {
+      ...initialState,
+      initialDepositPaidAt: toDateTimeLocalInput(),
+    };
+  }
 
   return {
     customerName: event.customerName,
@@ -523,13 +664,24 @@ function toFormState(event?: ExternalEvent): ExternalEventFormState {
     teardownNotes: event.teardownNotes ?? "",
     accessNotes: event.accessNotes ?? "",
     totalPrice: String(event.totalPrice),
-    amountPaid: String(event.amountPaid),
+    expectedReservationDepositAmount:
+      event.expectedReservationDepositAmount === null
+        ? ""
+        : String(event.expectedReservationDepositAmount),
+    reservationDepositPolicy: event.reservationDepositPolicy,
+    depositState: "pending",
+    initialDepositAmount:
+      event.expectedReservationDepositAmount === null
+        ? ""
+        : String(event.expectedReservationDepositAmount),
+    initialDepositMethod: "",
+    initialDepositPaidAt: toDateTimeLocalInput(),
+    initialDepositNotes: "",
     refundableDepositAmount: String(event.refundableDepositAmount ?? 0),
     refundableDepositStatus: event.refundableDepositStatus ?? "not_required",
     refundableDepositReceivedAt: event.refundableDepositReceivedAt ?? null,
     refundableDepositReturnedAt: event.refundableDepositReturnedAt ?? null,
     refundableDepositNotes: event.refundableDepositNotes ?? "",
-    paymentMethod: event.paymentMethod ?? "",
     notes: event.notes ?? "",
   };
 }
@@ -546,7 +698,15 @@ function toServiceDrafts(event?: ExternalEvent): ExternalServiceDraft[] {
   }));
 }
 
-function toRequestBody(form: ExternalEventFormState, services: ExternalServiceDraft[]): CreateExternalEventBody {
+function toRequestBody(
+  form: ExternalEventFormState,
+  services: ExternalServiceDraft[],
+  includeInitialDeposit: boolean,
+): CreateExternalEventBody {
+  const expectedDepositValue = form.expectedReservationDepositAmount.trim()
+    ? parseMoneyInput(form.expectedReservationDepositAmount)
+    : null;
+
   return {
     customerName: form.customerName.trim(),
     phone: form.phone.trim(),
@@ -565,13 +725,33 @@ function toRequestBody(form: ExternalEventFormState, services: ExternalServiceDr
     teardownNotes: emptyToNull(form.teardownNotes),
     accessNotes: emptyToNull(form.accessNotes),
     totalPrice: parseMoneyInput(form.totalPrice),
-    amountPaid: parseMoneyInput(form.amountPaid),
-    refundableDepositAmount: form.refundableDepositStatus === "not_required" ? 0 : parseMoneyInput(form.refundableDepositAmount),
+    expectedReservationDepositAmount: expectedDepositValue,
+    reservationDepositPolicy: form.reservationDepositPolicy,
+    initialReservationDeposit: includeInitialDeposit && form.initialDepositMethod
+      ? {
+          amount: parseMoneyInput(form.initialDepositAmount),
+          paymentMethod: form.initialDepositMethod,
+          paidAt: new Date(form.initialDepositPaidAt).toISOString(),
+          notes: emptyToNull(form.initialDepositNotes),
+        }
+      : undefined,
+    refundableDepositAmount:
+      form.refundableDepositStatus === "not_required"
+        ? 0
+        : parseMoneyInput(form.refundableDepositAmount),
     refundableDepositStatus: form.refundableDepositStatus,
-    refundableDepositReceivedAt: form.refundableDepositStatus === "not_required" ? null : form.refundableDepositReceivedAt,
-    refundableDepositReturnedAt: form.refundableDepositStatus === "not_required" ? null : form.refundableDepositReturnedAt,
-    refundableDepositNotes: form.refundableDepositStatus === "not_required" ? null : emptyToNull(form.refundableDepositNotes),
-    paymentMethod: emptyToNull(form.paymentMethod),
+    refundableDepositReceivedAt:
+      form.refundableDepositStatus === "not_required"
+        ? null
+        : form.refundableDepositReceivedAt,
+    refundableDepositReturnedAt:
+      form.refundableDepositStatus === "not_required"
+        ? null
+        : form.refundableDepositReturnedAt,
+    refundableDepositNotes:
+      form.refundableDepositStatus === "not_required"
+        ? null
+        : emptyToNull(form.refundableDepositNotes),
     notes: emptyToNull(form.notes),
     services: services.map(({ localId: _localId, ...service }, index) => ({
       ...service,

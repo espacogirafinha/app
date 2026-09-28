@@ -10,6 +10,10 @@ export interface DashboardV2AreaSummary {
   totalCount: number;
   upcomingCount: number;
   nextSevenDaysCount: number;
+  revenue: number;
   received: number;
   pending: number;
+  paidCount: number;
+  partialCount: number;
+  unpaidCount: number;
 }
