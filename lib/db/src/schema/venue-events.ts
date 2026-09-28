@@ -15,6 +15,7 @@ export const venueEventsTable = pgTable("venue_events", {
   paymentStatus: text("payment_status").notNull().default("unpaid"),
   source: text("source"),
   packName: text("pack_name").notNull(),
+  packEstimatedCost: numeric("pack_estimated_cost", { precision: 10, scale: 2 }),
   birthdayChildName: text("birthday_child_name"),
   birthdayChildAge: integer("birthday_child_age"),
   childrenCount: integer("children_count").default(0),
