@@ -1,0 +1,22 @@
+name: Extras UI flow review
+
+on:
+  push:
+    branches:
+      - feat/extras-costs-margins-reports
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Real venue modal extras flow
+        run: corepack pnpm exec playwright test --config=playwright.extras.config.ts
+      - name: Typecheck
+        run: corepack pnpm run typecheck
