@@ -5,13 +5,33 @@ export type ExtraReportEvent = {
 };
 
 export type ExtraReportRow = {
+  id: string;
   entityId: string;
+  eventDate: string;
+  customerName: string;
+  birthdayChildName: string | null;
   extraName: string;
   category: string | null;
   quantity: number;
+  unitPrice: number;
   totalPrice: number;
   unitCost: number | null;
   totalCost: number | null;
+};
+
+export type ExtraOccurrence = {
+  id: string;
+  entityId: string;
+  eventDate: string;
+  customerName: string;
+  birthdayChildName: string | null;
+  extraName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  unitCost: number | null;
+  totalCost: number | null;
+  margin: number | null;
 };
 
 export type ExtraBreakdown = {
@@ -22,6 +42,7 @@ export type ExtraBreakdown = {
   knownCost: number;
   knownMargin: number;
   unknownCostCount: number;
+  occurrences: ExtraOccurrence[];
 };
 
 const round = (value: number) => Math.round(value * 100) / 100;
@@ -53,6 +74,20 @@ export function aggregateVenueExtrasReport(rows: ExtraReportRow[]) {
     const rowKnownCost = hasKnownCost ? round(Math.max(0, row.totalCost ?? 0)) : 0;
     const rowKnownMargin = hasKnownCost ? round(rowRevenue - rowKnownCost) : 0;
     const unknownUnits = hasKnownCost ? 0 : quantity;
+    const occurrence: ExtraOccurrence = {
+      id: row.id,
+      entityId: row.entityId,
+      eventDate: row.eventDate,
+      customerName: row.customerName,
+      birthdayChildName: row.birthdayChildName,
+      extraName: row.extraName,
+      quantity,
+      unitPrice: round(Math.max(0, row.unitPrice || 0)),
+      totalPrice: rowRevenue,
+      unitCost: row.unitCost,
+      totalCost: hasKnownCost ? rowKnownCost : null,
+      margin: hasKnownCost ? rowKnownMargin : null,
+    };
 
     soldCount += quantity;
     revenue = round(revenue + rowRevenue);
@@ -68,6 +103,7 @@ export function aggregateVenueExtrasReport(rows: ExtraReportRow[]) {
       knownCost: 0,
       knownMargin: 0,
       unknownCostCount: 0,
+      occurrences: [],
     };
 
     current.count += quantity;
@@ -75,9 +111,21 @@ export function aggregateVenueExtrasReport(rows: ExtraReportRow[]) {
     current.knownCost = round(current.knownCost + rowKnownCost);
     current.knownMargin = round(current.knownMargin + rowKnownMargin);
     current.unknownCostCount += unknownUnits;
+    current.occurrences.push(occurrence);
     if (!current.category && row.category) current.category = row.category;
     byName.set(row.extraName, current);
   }
+
+  const items = [...byName.values()]
+    .map((item) => ({
+      ...item,
+      occurrences: item.occurrences.sort((a, b) => {
+        const aUnknown = a.unitCost === null ? 0 : 1;
+        const bUnknown = b.unitCost === null ? 0 : 1;
+        return aUnknown - bUnknown || b.eventDate.localeCompare(a.eventDate) || a.customerName.localeCompare(b.customerName);
+      }),
+    }))
+    .sort((a, b) => b.revenue - a.revenue || b.count - a.count || a.label.localeCompare(b.label));
 
   return {
     soldCount,
@@ -85,6 +133,6 @@ export function aggregateVenueExtrasReport(rows: ExtraReportRow[]) {
     knownCost,
     knownMargin,
     unknownCostCount,
-    items: [...byName.values()].sort((a, b) => b.revenue - a.revenue || b.count - a.count || a.label.localeCompare(b.label)),
+    items,
   };
 }
