@@ -1,7 +1,13 @@
 import { Router, type IRouter } from "express";
 import { and, asc, eq } from "drizzle-orm";
 import { db, eventSelectedExtrasTable } from "@workspace/db";
-import { ListSelectedExtrasQueryParams, ReplaceSelectedExtrasBody } from "@workspace/api-zod";
+import {
+  ListSelectedExtrasQueryParams,
+  ReplaceSelectedExtrasBody,
+  UpdateSelectedExtraCostBody,
+  UpdateSelectedExtraCostParams,
+} from "@workspace/api-zod";
+import { selectedExtraCostPatch } from "../lib/selected-extra-cost";
 
 const router: IRouter = Router();
 
@@ -60,6 +66,44 @@ router.get("/selected-extras", async (req, res): Promise<void> => {
     .orderBy(asc(eventSelectedExtrasTable.sortOrder), asc(eventSelectedExtrasTable.extraName));
 
   res.json(rows.map(formatSelectedExtra));
+});
+
+router.patch("/selected-extras/:id", async (req, res): Promise<void> => {
+  const params = UpdateSelectedExtraCostParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const body = UpdateSelectedExtraCostBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(eventSelectedExtrasTable)
+    .where(eq(eventSelectedExtrasTable.id, params.data.id))
+    .limit(1);
+
+  if (!existing) {
+    res.status(404).json({ error: "Selected extra not found" });
+    return;
+  }
+
+  const patch = selectedExtraCostPatch(existing.quantity, body.data.unitCost);
+  const [updated] = await db
+    .update(eventSelectedExtrasTable)
+    .set({
+      unitCost: patch.unitCost === null ? null : String(patch.unitCost),
+      totalCost: patch.totalCost === null ? null : String(patch.totalCost),
+      updatedAt: new Date(),
+    })
+    .where(eq(eventSelectedExtrasTable.id, params.data.id))
+    .returning();
+
+  res.json(formatSelectedExtra(updated));
 });
 
 router.post("/selected-extras", async (req, res): Promise<void> => {

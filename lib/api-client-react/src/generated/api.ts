@@ -77,6 +77,7 @@ import type {
   UpdateExternalEventBody,
   UpdateExternalServiceBody,
   UpdateReservationBody,
+  UpdateSelectedExtraCostBody,
   UpdateTaskBody,
   UpdateVenueEventBody,
   UpdateVenuePackBody,
@@ -3029,6 +3030,94 @@ export const useReplaceSelectedExtras = <
   TContext
 > => {
   return useMutation(getReplaceSelectedExtrasMutationOptions(options));
+};
+
+/**
+ * @summary Update supplier cost for one selected extra snapshot
+ */
+export const getUpdateSelectedExtraCostUrl = (id: string) => {
+  return `/api/selected-extras/${id}`;
+};
+
+export const updateSelectedExtraCost = async (
+  id: string,
+  updateSelectedExtraCostBody: UpdateSelectedExtraCostBody,
+  options?: RequestInit,
+): Promise<SelectedExtra> => {
+  return customFetch<SelectedExtra>(getUpdateSelectedExtraCostUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateSelectedExtraCostBody),
+  });
+};
+
+export const getUpdateSelectedExtraCostMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSelectedExtraCost>>,
+    TError,
+    { id: string; data: BodyType<UpdateSelectedExtraCostBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSelectedExtraCost>>,
+  TError,
+  { id: string; data: BodyType<UpdateSelectedExtraCostBody> },
+  TContext
+> => {
+  const mutationKey = ["updateSelectedExtraCost"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSelectedExtraCost>>,
+    { id: string; data: BodyType<UpdateSelectedExtraCostBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateSelectedExtraCost(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSelectedExtraCostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSelectedExtraCost>>
+>;
+export type UpdateSelectedExtraCostMutationBody =
+  BodyType<UpdateSelectedExtraCostBody>;
+export type UpdateSelectedExtraCostMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update supplier cost for one selected extra snapshot
+ */
+export const useUpdateSelectedExtraCost = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSelectedExtraCost>>,
+    TError,
+    { id: string; data: BodyType<UpdateSelectedExtraCostBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSelectedExtraCost>>,
+  TError,
+  { id: string; data: BodyType<UpdateSelectedExtraCostBody> },
+  TContext
+> => {
+  return useMutation(getUpdateSelectedExtraCostMutationOptions(options));
 };
 
 /**

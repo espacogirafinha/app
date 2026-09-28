@@ -951,6 +951,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /selected-extras/{id}:
+    patch:
+      operationId: updateSelectedExtraCost
+      tags: [selected-extras]
+      summary: Update supplier cost for one selected extra snapshot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSelectedExtraCostBody"
+      responses:
+        "200":
+          description: Updated selected extra
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SelectedExtra"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Selected extra not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /settings/venue-packs:
     get:
       operationId: listVenuePacks
@@ -2535,6 +2573,14 @@ components:
             $ref: "#/components/schemas/SelectedExtraInput"
       required: [module, entityId, items]
 
+    UpdateSelectedExtraCostBody:
+      type: object
+      properties:
+        unitCost:
+          type: ["number", "null"]
+          minimum: 0
+      required: [unitCost]
+
     SelectedExtra:
       type: object
       properties:
@@ -4083,6 +4129,38 @@ components:
         - averageChildren
         - sources
 
+    ReportsV2ExtraOccurrence:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entityId:
+          type: string
+          format: uuid
+        eventDate:
+          type: string
+          format: date
+        customerName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        extraName:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        totalPrice:
+          type: number
+        unitCost:
+          type: ["number", "null"]
+        totalCost:
+          type: ["number", "null"]
+        margin:
+          type: ["number", "null"]
+      required: [id, entityId, eventDate, customerName, birthdayChildName, extraName, quantity, unitPrice, totalPrice, unitCost, totalCost, margin]
+
     ReportsV2ExtraBreakdown:
       type: object
       properties:
@@ -4100,7 +4178,11 @@ components:
           type: number
         unknownCostCount:
           type: integer
-      required: [label, category, count, revenue, knownCost, knownMargin, unknownCostCount]
+        occurrences:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2ExtraOccurrence"
+      required: [label, category, count, revenue, knownCost, knownMargin, unknownCostCount, occurrences]
 
     ReportsV2Extras:
       type: object

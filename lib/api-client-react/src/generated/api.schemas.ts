@@ -636,6 +636,14 @@ export interface ReplaceSelectedExtrasBody {
   items: SelectedExtraInput[];
 }
 
+export interface UpdateSelectedExtraCostBody {
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  unitCost: number | null;
+}
+
 export interface SelectedExtra {
   id: string;
   module: SelectedExtraModule;
@@ -1527,6 +1535,25 @@ export interface ReportsV2VenueEvents {
   sources: ReportsV2RevenueStat[];
 }
 
+export interface ReportsV2ExtraOccurrence {
+  id: string;
+  entityId: string;
+  eventDate: string;
+  customerName: string;
+  /** @nullable */
+  birthdayChildName: string | null;
+  extraName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  /** @nullable */
+  unitCost: number | null;
+  /** @nullable */
+  totalCost: number | null;
+  /** @nullable */
+  margin: number | null;
+}
+
 export interface ReportsV2ExtraBreakdown {
   label: string;
   /** @nullable */
@@ -1536,6 +1563,7 @@ export interface ReportsV2ExtraBreakdown {
   knownCost: number;
   knownMargin: number;
   unknownCostCount: number;
+  occurrences: ReportsV2ExtraOccurrence[];
 }
 
 export interface ReportsV2Extras {

@@ -1751,6 +1751,37 @@ export const ReplaceSelectedExtrasResponse = zod.array(
 );
 
 /**
+ * @summary Update supplier cost for one selected extra snapshot
+ */
+export const UpdateSelectedExtraCostParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateSelectedExtraCostBodyUnitCostMin = 0;
+
+export const UpdateSelectedExtraCostBody = zod.object({
+  unitCost: zod.number().min(updateSelectedExtraCostBodyUnitCostMin).nullable(),
+});
+
+export const UpdateSelectedExtraCostResponse = zod.object({
+  id: zod.string().uuid(),
+  module: zod.enum(["venue_events", "external_events"]),
+  entityId: zod.string().uuid(),
+  extraId: zod.string().uuid().nullish(),
+  extraName: zod.string(),
+  category: zod.string().nullish(),
+  unitPrice: zod.number(),
+  unitCost: zod.number().nullable(),
+  quantity: zod.number(),
+  totalPrice: zod.number(),
+  totalCost: zod.number().nullable(),
+  notes: zod.string().nullish(),
+  sortOrder: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
  * @summary List venue packs
  */
 export const listVenuePacksResponseBasePriceMin = 0;
@@ -2400,6 +2431,22 @@ export const GetReportsV2Response = zod.object({
         knownCost: zod.number(),
         knownMargin: zod.number(),
         unknownCostCount: zod.number(),
+        occurrences: zod.array(
+          zod.object({
+            id: zod.string().uuid(),
+            entityId: zod.string().uuid(),
+            eventDate: zod.coerce.date(),
+            customerName: zod.string(),
+            birthdayChildName: zod.string().nullable(),
+            extraName: zod.string(),
+            quantity: zod.number(),
+            unitPrice: zod.number(),
+            totalPrice: zod.number(),
+            unitCost: zod.number().nullable(),
+            totalCost: zod.number().nullable(),
+            margin: zod.number().nullable(),
+          }),
+        ),
       }),
     ),
   }),
