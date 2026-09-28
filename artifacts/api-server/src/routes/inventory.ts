@@ -112,7 +112,7 @@ function itemPayload(body: {
   referenceCost?: number | null;
   notes?: string | null;
   isActive?: boolean;
-}) {
+}): Partial<typeof inventoryItemsTable.$inferInsert> {
   return Object.fromEntries(
     Object.entries({
       itemType: body.itemType,
@@ -138,7 +138,7 @@ function itemPayload(body: {
       notes: body.notes === undefined ? undefined : body.notes?.trim() || null,
       isActive: body.isActive,
     }).filter(([, value]) => value !== undefined),
-  );
+  ) as Partial<typeof inventoryItemsTable.$inferInsert>;
 }
 
 router.get("/inventory-items", async (req, res): Promise<void> => {
@@ -223,7 +223,20 @@ router.post("/inventory-items", async (req, res): Promise<void> => {
   const created = await db.transaction(async (tx) => {
     const [item] = await tx
       .insert(inventoryItemsTable)
-      .values(itemPayload(body) as typeof inventoryItemsTable.$inferInsert)
+      .values({
+        itemType: body.itemType,
+        name: body.name.trim(),
+        category: body.category?.trim() || null,
+        brand: body.brand?.trim() || null,
+        color: body.color?.trim() || null,
+        size: body.size?.trim() || null,
+        unit: body.unit.trim(),
+        minimumStock: body.minimumStock === null || body.minimumStock === undefined ? null : String(body.minimumStock),
+        location: body.location?.trim() || null,
+        referenceCost: body.referenceCost === null || body.referenceCost === undefined ? null : String(body.referenceCost),
+        notes: body.notes?.trim() || null,
+        isActive: body.isActive ?? true,
+      })
       .returning();
 
     if (initialStock > 0) {
@@ -273,11 +286,13 @@ router.get("/inventory-items/:id", async (req, res): Promise<void> => {
 
 router.patch("/inventory-items/:id", async (req, res): Promise<void> => {
   const params = UpdateInventoryItemParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
   const parsed = UpdateInventoryItemBody.safeParse(req.body);
-  if (!params.success || !parsed.success) {
-    res.status(400).json({
-      error: !params.success ? params.error.message : parsed.error.message,
-    });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
 
@@ -329,11 +344,13 @@ router.get("/inventory-items/:id/movements", async (req, res): Promise<void> => 
 
 router.post("/inventory-items/:id/movements", async (req, res): Promise<void> => {
   const params = ListInventoryMovementsParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
   const parsed = CreateInventoryMovementBody.safeParse(req.body);
-  if (!params.success || !parsed.success) {
-    res.status(400).json({
-      error: !params.success ? params.error.message : parsed.error.message,
-    });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
 
@@ -402,11 +419,13 @@ router.post("/inventory-items/:id/movements", async (req, res): Promise<void> =>
 
 router.post("/inventory-items/:id/adjust-stock", async (req, res): Promise<void> => {
   const params = GetInventoryItemParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
   const parsed = AdjustInventoryStockBody.safeParse(req.body);
-  if (!params.success || !parsed.success) {
-    res.status(400).json({
-      error: !params.success ? params.error.message : parsed.error.message,
-    });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
 
