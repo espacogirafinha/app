@@ -102,6 +102,8 @@ export * from "./reportsV2";
 export * from "./reportsV2Areas";
 export * from "./reportsV2AreaSummary";
 export * from "./reportsV2ExternalEvents";
+export * from "./reportsV2ExtraBreakdown";
+export * from "./reportsV2Extras";
 export * from "./reportsV2PaymentStatusCounts";
 export * from "./reportsV2RevenueStat";
 export * from "./reportsV2Summary";

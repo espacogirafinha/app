@@ -1694,7 +1694,11 @@ export const ListSelectedExtrasResponse = zod.array(
 
 export const replaceSelectedExtrasBodyItemsItemUnitPriceMin = 0;
 
+export const replaceSelectedExtrasBodyItemsItemUnitCostMin = 0;
+
 export const replaceSelectedExtrasBodyItemsItemTotalPriceMin = 0;
+
+export const replaceSelectedExtrasBodyItemsItemTotalCostMin = 0;
 
 export const ReplaceSelectedExtrasBody = zod.object({
   module: zod.enum(["venue_events", "external_events"]),
@@ -1707,12 +1711,18 @@ export const ReplaceSelectedExtrasBody = zod.object({
       unitPrice: zod
         .number()
         .min(replaceSelectedExtrasBodyItemsItemUnitPriceMin),
-      unitCost: zod.number().min(0).nullish(),
+      unitCost: zod
+        .number()
+        .min(replaceSelectedExtrasBodyItemsItemUnitCostMin)
+        .nullish(),
       quantity: zod.number().min(1),
       totalPrice: zod
         .number()
         .min(replaceSelectedExtrasBodyItemsItemTotalPriceMin),
-      totalCost: zod.number().min(0).nullish(),
+      totalCost: zod
+        .number()
+        .min(replaceSelectedExtrasBodyItemsItemTotalCostMin)
+        .nullish(),
       notes: zod.string().nullish(),
       sortOrder: zod.number().optional(),
     }),
@@ -1924,12 +1934,14 @@ export const UpdateExternalServiceResponse = zod.object({
  */
 export const listEventExtrasResponseBasePriceMin = 0;
 
+export const listEventExtrasResponseBaseCostMin = 0;
+
 export const ListEventExtrasResponseItem = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   category: zod.string().nullish(),
   basePrice: zod.number().min(listEventExtrasResponseBasePriceMin),
-  baseCost: zod.number().min(0).nullable(),
+  baseCost: zod.number().min(listEventExtrasResponseBaseCostMin).nullable(),
   appliesTo: zod.enum(["all", "venue_events", "external_events", "workshops"]),
   isActive: zod.boolean(),
   sortOrder: zod.number(),
@@ -1946,12 +1958,14 @@ export const ListEventExtrasResponse = zod.array(ListEventExtrasResponseItem);
 
 export const createEventExtraBodyBasePriceMin = 0;
 
+export const createEventExtraBodyBaseCostMin = 0;
+
 export const CreateEventExtraBody = zod.object({
   id: zod.string().uuid().optional(),
   name: zod.string().min(1),
   category: zod.string().nullish(),
   basePrice: zod.number().min(createEventExtraBodyBasePriceMin),
-  baseCost: zod.number().min(0).nullish(),
+  baseCost: zod.number().min(createEventExtraBodyBaseCostMin).nullish(),
   appliesTo: zod
     .enum(["all", "venue_events", "external_events", "workshops"])
     .optional(),
@@ -1962,12 +1976,14 @@ export const CreateEventExtraBody = zod.object({
 
 export const createEventExtraResponseBasePriceMin = 0;
 
+export const createEventExtraResponseBaseCostMin = 0;
+
 export const CreateEventExtraResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   category: zod.string().nullish(),
   basePrice: zod.number().min(createEventExtraResponseBasePriceMin),
-  baseCost: zod.number().min(0).nullable(),
+  baseCost: zod.number().min(createEventExtraResponseBaseCostMin).nullable(),
   appliesTo: zod.enum(["all", "venue_events", "external_events", "workshops"]),
   isActive: zod.boolean(),
   sortOrder: zod.number(),
@@ -1985,11 +2001,13 @@ export const UpdateEventExtraParams = zod.object({
 
 export const updateEventExtraBodyBasePriceMin = 0;
 
+export const updateEventExtraBodyBaseCostMin = 0;
+
 export const UpdateEventExtraBody = zod.object({
   name: zod.string().min(1).optional(),
   category: zod.string().nullish(),
   basePrice: zod.number().min(updateEventExtraBodyBasePriceMin).optional(),
-  baseCost: zod.number().min(0).nullish(),
+  baseCost: zod.number().min(updateEventExtraBodyBaseCostMin).nullish(),
   appliesTo: zod
     .enum(["all", "venue_events", "external_events", "workshops"])
     .optional(),
@@ -2000,12 +2018,14 @@ export const UpdateEventExtraBody = zod.object({
 
 export const updateEventExtraResponseBasePriceMin = 0;
 
+export const updateEventExtraResponseBaseCostMin = 0;
+
 export const UpdateEventExtraResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   category: zod.string().nullish(),
   basePrice: zod.number().min(updateEventExtraResponseBasePriceMin),
-  baseCost: zod.number().min(0).nullable(),
+  baseCost: zod.number().min(updateEventExtraResponseBaseCostMin).nullable(),
   appliesTo: zod.enum(["all", "venue_events", "external_events", "workshops"]),
   isActive: zod.boolean(),
   sortOrder: zod.number(),
@@ -2365,22 +2385,26 @@ export const GetReportsV2Response = zod.object({
       }),
     ),
   }),
-  extras: zod.object({
-    soldCount: zod.number(),
-    revenue: zod.number(),
-    knownCost: zod.number(),
-    knownMargin: zod.number(),
-    unknownCostCount: zod.number(),
-    items: zod.array(zod.object({
-      label: zod.string(),
-      category: zod.string().nullable(),
-      count: zod.number(),
+  extras: zod
+    .object({
+      soldCount: zod.number(),
       revenue: zod.number(),
       knownCost: zod.number(),
       knownMargin: zod.number(),
       unknownCostCount: zod.number(),
-    })),
-  }),
+      items: zod.array(
+        zod.object({
+          label: zod.string(),
+          category: zod.string().nullable(),
+          count: zod.number(),
+          revenue: zod.number(),
+          knownCost: zod.number(),
+          knownMargin: zod.number(),
+          unknownCostCount: zod.number(),
+        }),
+      ),
+    })
+    .optional(),
   externalEvents: zod.object({
     eventCount: zod.number(),
     revenue: zod.number(),

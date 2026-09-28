@@ -15,10 +15,20 @@ export interface SelectedExtraInput {
   category?: string | null;
   /** @minimum 0 */
   unitPrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  unitCost?: number | null;
   /** @minimum 1 */
   quantity: number;
   /** @minimum 0 */
   totalPrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  totalCost?: number | null;
   /** @nullable */
   notes?: string | null;
   sortOrder?: number;

@@ -611,13 +611,19 @@ export interface SelectedExtraInput {
   category?: string | null;
   /** @minimum 0 */
   unitPrice: number;
-  /** @nullable */
+  /**
+   * @minimum 0
+   * @nullable
+   */
   unitCost?: number | null;
   /** @minimum 1 */
   quantity: number;
   /** @minimum 0 */
   totalPrice: number;
-  /** @nullable */
+  /**
+   * @minimum 0
+   * @nullable
+   */
   totalCost?: number | null;
   /** @nullable */
   notes?: string | null;
@@ -660,7 +666,10 @@ export interface EventExtra {
   category?: string | null;
   /** @minimum 0 */
   basePrice: number;
-  /** @nullable */
+  /**
+   * @minimum 0
+   * @nullable
+   */
   baseCost: number | null;
   appliesTo: EventExtraAppliesTo;
   isActive: boolean;
@@ -679,7 +688,10 @@ export interface CreateEventExtraBody {
   category?: string | null;
   /** @minimum 0 */
   basePrice: number;
-  /** @nullable */
+  /**
+   * @minimum 0
+   * @nullable
+   */
   baseCost?: number | null;
   appliesTo?: EventExtraAppliesTo;
   isActive?: boolean;
@@ -695,7 +707,10 @@ export interface UpdateEventExtraBody {
   category?: string | null;
   /** @minimum 0 */
   basePrice?: number;
-  /** @nullable */
+  /**
+   * @minimum 0
+   * @nullable
+   */
   baseCost?: number | null;
   appliesTo?: EventExtraAppliesTo;
   isActive?: boolean;
@@ -1566,7 +1581,7 @@ export interface ReportsV2 {
   summary: ReportsV2Summary;
   areas: ReportsV2Areas;
   venueEvents: ReportsV2VenueEvents;
-  extras: ReportsV2Extras;
+  extras?: ReportsV2Extras;
   externalEvents: ReportsV2ExternalEvents;
   workshops: ReportsV2Workshops;
 }

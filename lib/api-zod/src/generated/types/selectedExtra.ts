@@ -17,8 +17,12 @@ export interface SelectedExtra {
   /** @nullable */
   category?: string | null;
   unitPrice: number;
+  /** @nullable */
+  unitCost: number | null;
   quantity: number;
   totalPrice: number;
+  /** @nullable */
+  totalCost: number | null;
   /** @nullable */
   notes?: string | null;
   sortOrder: number;
