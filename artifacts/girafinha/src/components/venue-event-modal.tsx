@@ -184,15 +184,28 @@ export function VenueEventModal({
   const packOptions = useMemo(() => buildPackOptions(venuePacksQuery.data), [venuePacksQuery.data]);
 
   useEffect(() => {
-    if (!open || event || initializedNewPackCostRef.current || packOptions.length === 0) return;
+    if (
+      !open
+      || event
+      || initializedNewPackCostRef.current
+      || venuePacksQuery.isLoading
+      || packOptions.length === 0
+    ) return;
+
     const selectedPack = packOptions.find((pack) => pack.name === form.packName);
     if (!selectedPack) return;
+
+    if (form.packEstimatedCost.trim() !== "") {
+      initializedNewPackCostRef.current = true;
+      return;
+    }
+
     initializedNewPackCostRef.current = true;
     setForm((current) => ({
       ...current,
       packEstimatedCost: selectedPack.estimatedCost === null ? "" : formatMoneyInput(selectedPack.estimatedCost),
     }));
-  }, [event, form.packName, open, packOptions]);
+  }, [event, form.packEstimatedCost, form.packName, open, packOptions, venuePacksQuery.isLoading]);
 
   useEffect(() => {
     if (!open) return;
