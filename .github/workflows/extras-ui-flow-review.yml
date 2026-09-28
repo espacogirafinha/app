@@ -7,6 +7,7 @@ on:
 
 jobs:
   review:
+    timeout-minutes: 6
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +17,25 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Start isolated local app
+        run: |
+          PORT=4173 VITE_SUPABASE_URL=http://127.0.0.1:9999 VITE_SUPABASE_ANON_KEY=test-anon-key \
+            corepack pnpm --filter @workspace/girafinha dev > /tmp/extras-vite.log 2>&1 &
+          echo $! > /tmp/extras-vite.pid
+          for i in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:4173/extras-flow-test.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/extras-vite.log
+          exit 1
       - name: Real venue modal extras flow
         run: corepack pnpm exec playwright test --config=playwright.extras.config.ts
       - name: Typecheck
         run: corepack pnpm run typecheck
+      - name: Stop isolated local app
+        if: always()
+        run: |
+          if [ -f /tmp/extras-vite.pid ]; then kill $(cat /tmp/extras-vite.pid) || true; fi
+          cat /tmp/extras-vite.log || true
