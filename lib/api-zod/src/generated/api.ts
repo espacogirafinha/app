@@ -3070,3 +3070,279 @@ export const UpdateChecklistItemResponse = zod.object({
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
+
+/**
+ * @summary List inventory items with derived current stock
+ */
+export const listInventoryItemsQueryActivityDefault = `active`;
+
+export const ListInventoryItemsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  itemType: zod.enum(["consumable", "material"]).optional(),
+  category: zod.coerce.string().optional(),
+  activity: zod
+    .enum(["active", "inactive", "all"])
+    .default(listInventoryItemsQueryActivityDefault),
+  stockStatus: zod.enum(["low", "out", "to_restock"]).optional(),
+});
+
+export const listInventoryItemsResponseMinimumStockMin = 0;
+
+export const listInventoryItemsResponseReferenceCostMin = 0;
+
+export const listInventoryItemsResponseMissingToMinimumMin = 0;
+
+export const ListInventoryItemsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  itemType: zod.enum(["consumable", "material"]),
+  name: zod.string(),
+  category: zod.string().nullish(),
+  brand: zod.string().nullish(),
+  color: zod.string().nullish(),
+  size: zod.string().nullish(),
+  unit: zod.string(),
+  minimumStock: zod
+    .number()
+    .min(listInventoryItemsResponseMinimumStockMin)
+    .nullish(),
+  location: zod.string().nullish(),
+  referenceCost: zod
+    .number()
+    .min(listInventoryItemsResponseReferenceCostMin)
+    .nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  currentStock: zod.number(),
+  stockState: zod.enum(["ok", "low", "out"]),
+  missingToMinimum: zod
+    .number()
+    .min(listInventoryItemsResponseMissingToMinimumMin),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListInventoryItemsResponse = zod.array(
+  ListInventoryItemsResponseItem,
+);
+
+/**
+ * @summary Create an inventory item and optional initial-stock movement
+ */
+
+export const createInventoryItemBodyMinimumStockMin = 0;
+
+export const createInventoryItemBodyReferenceCostMin = 0;
+
+export const createInventoryItemBodyIsActiveDefault = true;
+export const createInventoryItemBodyInitialStockDefault = 0;
+export const createInventoryItemBodyInitialStockMin = 0;
+
+export const CreateInventoryItemBody = zod.object({
+  itemType: zod.enum(["consumable", "material"]),
+  name: zod.string().min(1),
+  category: zod.string().nullish(),
+  brand: zod.string().nullish(),
+  color: zod.string().nullish(),
+  size: zod.string().nullish(),
+  unit: zod.string().min(1),
+  minimumStock: zod
+    .number()
+    .min(createInventoryItemBodyMinimumStockMin)
+    .nullish(),
+  location: zod.string().nullish(),
+  referenceCost: zod
+    .number()
+    .min(createInventoryItemBodyReferenceCostMin)
+    .nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean().default(createInventoryItemBodyIsActiveDefault),
+  initialStock: zod
+    .number()
+    .min(createInventoryItemBodyInitialStockMin)
+    .default(createInventoryItemBodyInitialStockDefault),
+});
+
+/**
+ * @summary Get compact inventory attention summary
+ */
+export const GetInventorySummaryResponse = zod.object({
+  activeItems: zod.number(),
+  lowStock: zod.number(),
+  outOfStock: zod.number(),
+  toRestock: zod.number(),
+});
+
+/**
+ * @summary Get one inventory item with derived current stock
+ */
+export const GetInventoryItemParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const getInventoryItemResponseMinimumStockMin = 0;
+
+export const getInventoryItemResponseReferenceCostMin = 0;
+
+export const getInventoryItemResponseMissingToMinimumMin = 0;
+
+export const GetInventoryItemResponse = zod.object({
+  id: zod.string().uuid(),
+  itemType: zod.enum(["consumable", "material"]),
+  name: zod.string(),
+  category: zod.string().nullish(),
+  brand: zod.string().nullish(),
+  color: zod.string().nullish(),
+  size: zod.string().nullish(),
+  unit: zod.string(),
+  minimumStock: zod
+    .number()
+    .min(getInventoryItemResponseMinimumStockMin)
+    .nullish(),
+  location: zod.string().nullish(),
+  referenceCost: zod
+    .number()
+    .min(getInventoryItemResponseReferenceCostMin)
+    .nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  currentStock: zod.number(),
+  stockState: zod.enum(["ok", "low", "out"]),
+  missingToMinimum: zod
+    .number()
+    .min(getInventoryItemResponseMissingToMinimumMin),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update inventory item metadata without overwriting stock
+ */
+export const UpdateInventoryItemParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateInventoryItemBodyMinimumStockMin = 0;
+
+export const updateInventoryItemBodyReferenceCostMin = 0;
+
+export const UpdateInventoryItemBody = zod.object({
+  itemType: zod.enum(["consumable", "material"]).optional(),
+  name: zod.string().min(1).optional(),
+  category: zod.string().nullish(),
+  brand: zod.string().nullish(),
+  color: zod.string().nullish(),
+  size: zod.string().nullish(),
+  unit: zod.string().min(1).optional(),
+  minimumStock: zod
+    .number()
+    .min(updateInventoryItemBodyMinimumStockMin)
+    .nullish(),
+  location: zod.string().nullish(),
+  referenceCost: zod
+    .number()
+    .min(updateInventoryItemBodyReferenceCostMin)
+    .nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const updateInventoryItemResponseMinimumStockMin = 0;
+
+export const updateInventoryItemResponseReferenceCostMin = 0;
+
+export const updateInventoryItemResponseMissingToMinimumMin = 0;
+
+export const UpdateInventoryItemResponse = zod.object({
+  id: zod.string().uuid(),
+  itemType: zod.enum(["consumable", "material"]),
+  name: zod.string(),
+  category: zod.string().nullish(),
+  brand: zod.string().nullish(),
+  color: zod.string().nullish(),
+  size: zod.string().nullish(),
+  unit: zod.string(),
+  minimumStock: zod
+    .number()
+    .min(updateInventoryItemResponseMinimumStockMin)
+    .nullish(),
+  location: zod.string().nullish(),
+  referenceCost: zod
+    .number()
+    .min(updateInventoryItemResponseReferenceCostMin)
+    .nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean(),
+  currentStock: zod.number(),
+  stockState: zod.enum(["ok", "low", "out"]),
+  missingToMinimum: zod
+    .number()
+    .min(updateInventoryItemResponseMissingToMinimumMin),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List inventory movements newest first
+ */
+export const ListInventoryMovementsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListInventoryMovementsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  itemId: zod.string().uuid(),
+  quantityDelta: zod.number(),
+  reason: zod.enum([
+    "initial_stock",
+    "purchase",
+    "usage",
+    "correction",
+    "damaged",
+    "lost",
+    "return",
+  ]),
+  note: zod.string().nullish(),
+  occurredAt: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
+});
+export const ListInventoryMovementsResponse = zod.array(
+  ListInventoryMovementsResponseItem,
+);
+
+/**
+ * @summary Add stock entry or exit
+ */
+export const CreateInventoryMovementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const createInventoryMovementBodyQuantityExclusiveMin = 0;
+
+export const CreateInventoryMovementBody = zod.object({
+  direction: zod.enum(["in", "out"]),
+  quantity: zod.number().gt(createInventoryMovementBodyQuantityExclusiveMin),
+  reason: zod.enum([
+    "purchase",
+    "usage",
+    "correction",
+    "damaged",
+    "lost",
+    "return",
+  ]),
+  note: zod.string().nullish(),
+  occurredAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Reconcile inventory to a counted real stock using a correction movement
+ */
+export const AdjustInventoryStockParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const adjustInventoryStockBodyStockMin = 0;
+
+export const AdjustInventoryStockBody = zod.object({
+  stock: zod.number().min(adjustInventoryStockBodyStockMin),
+  note: zod.string().nullish(),
+  occurredAt: zod.coerce.date().optional(),
+});

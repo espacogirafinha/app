@@ -1811,6 +1811,200 @@ export interface UpdateChecklistItemBody {
   completedAt?: string | null;
 }
 
+export type InventoryItemType =
+  (typeof InventoryItemType)[keyof typeof InventoryItemType];
+
+export const InventoryItemType = {
+  consumable: "consumable",
+  material: "material",
+} as const;
+
+export type InventoryMovementReason =
+  (typeof InventoryMovementReason)[keyof typeof InventoryMovementReason];
+
+export const InventoryMovementReason = {
+  initial_stock: "initial_stock",
+  purchase: "purchase",
+  usage: "usage",
+  correction: "correction",
+  damaged: "damaged",
+  lost: "lost",
+  return: "return",
+} as const;
+
+export type InventoryStockState =
+  (typeof InventoryStockState)[keyof typeof InventoryStockState];
+
+export const InventoryStockState = {
+  ok: "ok",
+  low: "low",
+  out: "out",
+} as const;
+
+export interface InventoryItem {
+  id: string;
+  itemType: InventoryItemType;
+  name: string;
+  /** @nullable */
+  category?: string | null;
+  /** @nullable */
+  brand?: string | null;
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  size?: string | null;
+  unit: string;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  minimumStock?: number | null;
+  /** @nullable */
+  location?: string | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  referenceCost?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  isActive: boolean;
+  currentStock: number;
+  stockState: InventoryStockState;
+  /** @minimum 0 */
+  missingToMinimum: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InventoryMovement {
+  id: string;
+  itemId: string;
+  quantityDelta: number;
+  reason: InventoryMovementReason;
+  /** @nullable */
+  note?: string | null;
+  occurredAt: string;
+  createdAt: string;
+}
+
+export interface InventorySummary {
+  activeItems: number;
+  lowStock: number;
+  outOfStock: number;
+  toRestock: number;
+}
+
+export interface CreateInventoryItemBody {
+  itemType: InventoryItemType;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  category?: string | null;
+  /** @nullable */
+  brand?: string | null;
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  size?: string | null;
+  /** @minLength 1 */
+  unit: string;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  minimumStock?: number | null;
+  /** @nullable */
+  location?: string | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  referenceCost?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  isActive?: boolean;
+  /** @minimum 0 */
+  initialStock?: number;
+}
+
+export interface UpdateInventoryItemBody {
+  itemType?: InventoryItemType;
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  category?: string | null;
+  /** @nullable */
+  brand?: string | null;
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  size?: string | null;
+  /** @minLength 1 */
+  unit?: string;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  minimumStock?: number | null;
+  /** @nullable */
+  location?: string | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  referenceCost?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  isActive?: boolean;
+}
+
+export type CreateInventoryMovementBodyDirection =
+  (typeof CreateInventoryMovementBodyDirection)[keyof typeof CreateInventoryMovementBodyDirection];
+
+export const CreateInventoryMovementBodyDirection = {
+  in: "in",
+  out: "out",
+} as const;
+
+export type CreateInventoryMovementBodyReason =
+  (typeof CreateInventoryMovementBodyReason)[keyof typeof CreateInventoryMovementBodyReason];
+
+export const CreateInventoryMovementBodyReason = {
+  purchase: "purchase",
+  usage: "usage",
+  correction: "correction",
+  damaged: "damaged",
+  lost: "lost",
+  return: "return",
+} as const;
+
+export interface CreateInventoryMovementBody {
+  direction: CreateInventoryMovementBodyDirection;
+  /** @exclusiveMinimum 0 */
+  quantity: number;
+  reason: CreateInventoryMovementBodyReason;
+  /** @nullable */
+  note?: string | null;
+  occurredAt?: string;
+}
+
+export interface AdjustInventoryStockBody {
+  /** @minimum 0 */
+  stock: number;
+  /** @nullable */
+  note?: string | null;
+  occurredAt?: string;
+}
+
+export interface InventoryMovementResult {
+  movement: InventoryMovement;
+  currentStock: number;
+  stockState: InventoryStockState;
+  /** @minimum 0 */
+  missingToMinimum: number;
+}
+
 export type ListReservationsParams = {
   search?: string;
   status?: ListReservationsStatus;
@@ -1917,3 +2111,29 @@ export type ListChecklistsParams = {
 export type ListChecklistItemsParams = {
   checklistId?: string;
 };
+
+export type ListInventoryItemsParams = {
+  search?: string;
+  itemType?: InventoryItemType;
+  category?: string;
+  activity?: ListInventoryItemsActivity;
+  stockStatus?: ListInventoryItemsStockStatus;
+};
+
+export type ListInventoryItemsActivity =
+  (typeof ListInventoryItemsActivity)[keyof typeof ListInventoryItemsActivity];
+
+export const ListInventoryItemsActivity = {
+  active: "active",
+  inactive: "inactive",
+  all: "all",
+} as const;
+
+export type ListInventoryItemsStockStatus =
+  (typeof ListInventoryItemsStockStatus)[keyof typeof ListInventoryItemsStockStatus];
+
+export const ListInventoryItemsStockStatus = {
+  low: "low",
+  out: "out",
+  to_restock: "to_restock",
+} as const;
