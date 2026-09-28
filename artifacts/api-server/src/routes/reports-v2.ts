@@ -4,6 +4,9 @@ import {
   externalEventsTable,
   externalEventServicesTable,
   eventSelectedExtrasTable,
+  eventPaymentsTable,
+  expenseCategoriesTable,
+  expensesTable,
   venueEventsTable,
   workshopParticipantsTable,
   workshopsTable,
@@ -16,6 +19,13 @@ import {
 } from "../lib/reports-finance";
 import { eventFinancialPosition, isEventDateInRange } from "../lib/event-finance-read-model";
 import { aggregateVenueExtrasReport, eligibleVenueEventIds } from "../lib/reports-extras";
+import {
+  managementResult,
+  summarizeCashFlow,
+  summarizeExpenses,
+  summarizeVenueProfitability,
+} from "../lib/reports-profitability";
+import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 const ACTIVE_PARTICIPANT_STATUSES = new Set(["registered", "confirmed", "attended"]);
@@ -217,13 +227,34 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
     return;
   }
 
-  const [venueEventsRows, externalEventsRows, externalServicesRows, workshopsRows, workshopParticipantsRows, selectedExtrasRows] = await Promise.all([
+  const [
+    venueEventsRows,
+    externalEventsRows,
+    externalServicesRows,
+    workshopsRows,
+    workshopParticipantsRows,
+    selectedExtrasRows,
+    expenseRows,
+    paymentRows,
+  ] = await Promise.all([
     db.select().from(venueEventsTable),
     db.select().from(externalEventsTable),
     db.select().from(externalEventServicesTable),
     db.select().from(workshopsTable),
     db.select().from(workshopParticipantsTable),
     db.select().from(eventSelectedExtrasTable),
+    db
+      .select({
+        expenseDate: expensesTable.expenseDate,
+        amount: expensesTable.amount,
+        expenseType: expensesTable.expenseType,
+        supplier: expensesTable.supplier,
+        categoryName: expenseCategoriesTable.name,
+        deletedAt: expensesTable.deletedAt,
+      })
+      .from(expensesTable)
+      .innerJoin(expenseCategoriesTable, eq(expensesTable.categoryId, expenseCategoriesTable.id)),
+    db.select().from(eventPaymentsTable),
   ]);
 
   const venueEvents = venueEventsRows.filter(
@@ -284,6 +315,45 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
   const heldDeposits = venueArea.heldDeposits + externalArea.heldDeposits + workshopArea.heldDeposits;
   const retainedDeposits = venueArea.retainedDeposits + externalArea.retainedDeposits + workshopArea.retainedDeposits;
 
+  const venueProfitability = summarizeVenueProfitability(
+    venueEvents.map((event) => ({
+      id: event.id,
+      totalPrice: money(event.totalPrice),
+      packEstimatedCost: event.packEstimatedCost === null ? null : money(event.packEstimatedCost),
+    })),
+    selectedExtrasRows
+      .filter((extra) => extra.module === "venue_events" && venueEventIds.has(extra.entityId))
+      .map((extra) => ({
+        entityId: extra.entityId,
+        totalCost: extra.totalCost === null ? null : money(extra.totalCost),
+      })),
+  );
+
+  const expensesInRange = expenseRows
+    .filter((expense) => (
+      expense.deletedAt === null
+      && expense.expenseDate >= startDate
+      && expense.expenseDate <= endDate
+    ))
+    .map((expense) => ({
+      amount: money(expense.amount),
+      expenseType: expense.expenseType as "operational" | "investment",
+      categoryName: expense.categoryName,
+      supplier: expense.supplier,
+    }));
+  const expenseSummary = summarizeExpenses(expensesInRange);
+  const management = managementResult(totals.revenue, expenseSummary.operational, expenseSummary.investments);
+  const cashFlow = summarizeCashFlow(
+    paymentRows.map((payment) => ({
+      amount: money(payment.amount),
+      paidAt: payment.paidAt,
+      deletedAt: payment.deletedAt,
+    })),
+    expenseSummary.totalOutflows,
+    startDate,
+    endDate,
+  );
+
   res.json({
     summary: {
       startDate,
@@ -299,6 +369,12 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
     areas: { venueEvents: venueArea, externalEvents: externalArea, workshops: workshopArea },
     venueEvents: venue,
     extras: venueExtras,
+    financial: {
+      venueProfitability,
+      expenses: expenseSummary,
+      management,
+      cashFlow,
+    },
     externalEvents: external,
     workshops,
   });
