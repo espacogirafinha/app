@@ -15,7 +15,7 @@ function roundQuantity(value: number) {
 
 export function calculateCurrentStock(deltas: Array<number | string>) {
   return roundQuantity(
-    deltas.reduce((sum, delta) => sum + Number(delta), 0),
+    deltas.reduce<number>((sum, delta) => sum + Number(delta), 0),
   );
 }
 
