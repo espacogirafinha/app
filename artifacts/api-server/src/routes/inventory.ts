@@ -215,6 +215,10 @@ router.post("/inventory-items", async (req, res): Promise<void> => {
   }
 
   const { initialStock = 0, ...body } = parsed.data;
+  if (!body.name.trim() || !body.unit.trim()) {
+    res.status(400).json({ error: "name and unit cannot be blank" });
+    return;
+  }
 
   const created = await db.transaction(async (tx) => {
     const [item] = await tx
@@ -274,6 +278,14 @@ router.patch("/inventory-items/:id", async (req, res): Promise<void> => {
     res.status(400).json({
       error: !params.success ? params.error.message : parsed.error.message,
     });
+    return;
+  }
+
+  if (
+    (parsed.data.name !== undefined && !parsed.data.name.trim())
+    || (parsed.data.unit !== undefined && !parsed.data.unit.trim())
+  ) {
+    res.status(400).json({ error: "name and unit cannot be blank" });
     return;
   }
 
