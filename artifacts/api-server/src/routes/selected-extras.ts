@@ -7,7 +7,7 @@ import {
   UpdateSelectedExtraCostBody,
   UpdateSelectedExtraCostParams,
 } from "@workspace/api-zod";
-import { selectedExtraCostPatch } from "../lib/selected-extra-cost";
+import { updateSelectedExtraCostSnapshot } from "../lib/selected-extra-cost-update";
 
 const router: IRouter = Router();
 
@@ -81,27 +81,35 @@ router.patch("/selected-extras/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [existing] = await db
-    .select()
-    .from(eventSelectedExtrasTable)
-    .where(eq(eventSelectedExtrasTable.id, params.data.id))
-    .limit(1);
+  const updated = await updateSelectedExtraCostSnapshot(
+    params.data.id,
+    body.data.unitCost,
+    async (id) => {
+      const [existing] = await db
+        .select()
+        .from(eventSelectedExtrasTable)
+        .where(eq(eventSelectedExtrasTable.id, id))
+        .limit(1);
+      return existing ?? null;
+    },
+    async (id, values) => {
+      const [row] = await db
+        .update(eventSelectedExtrasTable)
+        .set({
+          unitCost: values.unitCost === null ? null : String(values.unitCost),
+          totalCost: values.totalCost === null ? null : String(values.totalCost),
+          updatedAt: new Date(),
+        })
+        .where(eq(eventSelectedExtrasTable.id, id))
+        .returning();
+      return row;
+    },
+  );
 
-  if (!existing) {
+  if (!updated) {
     res.status(404).json({ error: "Selected extra not found" });
     return;
   }
-
-  const patch = selectedExtraCostPatch(existing.quantity, body.data.unitCost);
-  const [updated] = await db
-    .update(eventSelectedExtrasTable)
-    .set({
-      unitCost: patch.unitCost === null ? null : String(patch.unitCost),
-      totalCost: patch.totalCost === null ? null : String(patch.totalCost),
-      updatedAt: new Date(),
-    })
-    .where(eq(eventSelectedExtrasTable.id, params.data.id))
-    .returning();
 
   res.json(formatSelectedExtra(updated));
 });
