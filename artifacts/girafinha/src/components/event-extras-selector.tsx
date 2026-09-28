@@ -243,7 +243,15 @@ export function EventExtrasSelector({
   );
 }
 
-export function EventExtrasDetails({ module, entityId }: { module: SelectedExtraModule; entityId: string }) {
+export function EventExtrasDetails({
+  module,
+  entityId,
+  supplierCostsEnabled = false,
+}: {
+  module: SelectedExtraModule;
+  entityId: string;
+  supplierCostsEnabled?: boolean;
+}) {
   const { data: extras, isLoading } = useListSelectedExtras({ module, entityId });
 
   if (isLoading || !extras?.length) return null;
@@ -265,11 +273,13 @@ export function EventExtrasDetails({ module, entityId }: { module: SelectedExtra
               {extra.quantity} × {extra.unitPrice.toFixed(2)} €
               {extra.extraId === null ? " · Extra personalizado" : extra.category ? ` · ${extra.category}` : ""}
             </p>
-            <p className="mt-1 text-muted-foreground">
-              Fornecedor: {extra.totalCost === null || extra.totalCost === undefined ? "por apurar" : `${extra.totalCost.toFixed(2)} €`}
-              {" · "}
-              Margem: {extra.totalCost === null || extra.totalCost === undefined ? "por apurar" : `${(extra.totalPrice - extra.totalCost).toFixed(2)} €`}
-            </p>
+            {supplierCostsEnabled ? (
+              <p className="mt-1 text-muted-foreground">
+                Fornecedor: {extra.totalCost === null || extra.totalCost === undefined ? "por apurar" : `${extra.totalCost.toFixed(2)} €`}
+                {" · "}
+                Margem: {extra.totalCost === null || extra.totalCost === undefined ? "por apurar" : `${(extra.totalPrice - extra.totalCost).toFixed(2)} €`}
+              </p>
+            ) : null}
             {extra.notes && <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{extra.notes}</p>}
           </div>
         ))}
