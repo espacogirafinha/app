@@ -3,12 +3,15 @@ import test from "node:test";
 import {
   adjustmentDelta,
   calculateCurrentStock,
+  filterInventoryItems,
   inventoryStockState,
   inventorySummary,
   matchesInventorySearch,
   missingToMinimum,
   nextStockAfterDelta,
+  normalizeInventoryMetadata,
   signedMovementDelta,
+  sortInventoryMovementsNewestFirst,
 } from "./inventory-stock.ts";
 
 test("stock inicial 48, entrada 24, saída 10 e ajuste para 58", () => {
@@ -54,4 +57,94 @@ test("search finds name, colour and brand text", () => {
   assert.equal(matchesInventorySearch(["Balão Sempertex", "Rosa Pastel"], "rosa"), true);
   assert.equal(matchesInventorySearch(["Painel redondo", "Girafinha"], "água"), false);
   assert.equal(matchesInventorySearch(["Sempertex"], "SEMPertex"), true);
+});
+
+
+test("inactive items stay hidden from the normal view but remain filterable", () => {
+  const items = [
+    {
+      id: "1",
+      itemType: "consumable" as const,
+      name: "Água",
+      category: "Bebidas",
+      brand: null,
+      color: null,
+      size: null,
+      location: "Armazém",
+      notes: null,
+      isActive: true,
+      currentStock: 48,
+      minimumStock: 30,
+      stockState: "ok" as const,
+    },
+    {
+      id: "2",
+      itemType: "material" as const,
+      name: "Painel antigo",
+      category: "Painéis",
+      brand: null,
+      color: null,
+      size: "1,80 m",
+      location: "Girafinha",
+      notes: null,
+      isActive: false,
+      currentStock: 2,
+      minimumStock: null,
+      stockState: "ok" as const,
+    },
+  ];
+
+  assert.deepEqual(filterInventoryItems(items, {}).map((item) => item.id), ["1"]);
+  assert.deepEqual(
+    filterInventoryItems(items, { activity: "inactive" }).map((item) => item.id),
+    ["2"],
+  );
+});
+
+test("search rosa finds colour and materials keep optional metadata", () => {
+  const material = normalizeInventoryMetadata({
+    name: "Balão Sempertex ",
+    category: " Balões ",
+    brand: " Sempertex ",
+    color: " Rosa Pastel ",
+    size: ' 12" ',
+    unit: " unidade ",
+    location: " Armazém ",
+    notes: " caixa aberta ",
+  });
+
+  assert.deepEqual(material, {
+    name: "Balão Sempertex",
+    category: "Balões",
+    brand: "Sempertex",
+    color: "Rosa Pastel",
+    size: '12"',
+    unit: "unidade",
+    location: "Armazém",
+    notes: "caixa aberta",
+  });
+
+  const matches = filterInventoryItems([
+    {
+      id: "b",
+      itemType: "material" as const,
+      ...material,
+      isActive: true,
+      currentStock: 134,
+      minimumStock: 100,
+      stockState: "ok" as const,
+    },
+  ], { search: "rosa" });
+
+  assert.equal(matches.length, 1);
+});
+
+test("movement history is newest first", () => {
+  const sorted = sortInventoryMovementsNewestFirst([
+    { id: "old", occurredAt: "2026-09-20T10:00:00Z", createdAt: "2026-09-20T10:00:00Z" },
+    { id: "new", occurredAt: "2026-09-28T10:00:00Z", createdAt: "2026-09-28T10:00:00Z" },
+    { id: "middle", occurredAt: "2026-09-27T10:00:00Z", createdAt: "2026-09-27T10:00:00Z" },
+  ]);
+
+  assert.deepEqual(sorted.map((movement) => movement.id), ["new", "middle", "old"]);
 });
