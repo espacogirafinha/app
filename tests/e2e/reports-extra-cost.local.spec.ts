@@ -210,10 +210,14 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
   await expect(detail.getByText("15.00 €", { exact: true })).toBeVisible();
   await expect(detail.getByText("Custo por apurar")).toHaveCount(0);
 
-  await page.keyboard.press("Escape");
+  await detail.getByRole("button", { name: "Close" }).click();
+  await expect(detail).toBeHidden();
   await expect(page.getByText(/ainda com custo por apurar/)).toHaveCount(0);
-  await expect(card).toContainText("55.00 €");
-  await expect(card).toContainText("45.00 €");
+
+  const refreshedCard = page.getByRole("button", { name: "Ver ocorrências de Pinturas faciais" });
+  await expect(refreshedCard).toBeVisible();
+  await expect(refreshedCard).toContainText("55.00 €");
+  await expect(refreshedCard).toContainText("45.00 €");
 
   expect((patchBody as Record<string, unknown>).totalPrice).toBeUndefined();
   expect((patchBody as Record<string, unknown>).totalCost).toBeUndefined();
