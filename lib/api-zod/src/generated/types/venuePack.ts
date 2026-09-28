@@ -13,6 +13,11 @@ export interface VenuePack {
   description?: string | null;
   /** @minimum 0 */
   basePrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  estimatedCost: number | null;
   /** @nullable */
   defaultStartTime?: string | null;
   /** @nullable */

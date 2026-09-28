@@ -463,6 +463,11 @@ export interface VenuePack {
   description?: string | null;
   /** @minimum 0 */
   basePrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  estimatedCost: number | null;
   /** @nullable */
   defaultStartTime?: string | null;
   /** @nullable */
@@ -1489,6 +1494,135 @@ export interface CalendarV2 {
   items: CalendarV2Item[];
 }
 
+export type ExpenseType = (typeof ExpenseType)[keyof typeof ExpenseType];
+
+export const ExpenseType = {
+  operational: "operational",
+  investment: "investment",
+} as const;
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExpenseCategoryBody {
+  /** @minLength 1 */
+  name: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export interface UpdateExpenseCategoryBody {
+  /** @minLength 1 */
+  name?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export interface Expense {
+  id: string;
+  expenseDate: string;
+  description: string;
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  categoryId: string;
+  categoryName: string;
+  expenseType: ExpenseType;
+  /** @nullable */
+  supplier: string | null;
+  /** @nullable */
+  notes: string | null;
+  /** @nullable */
+  venueEventId: string | null;
+  /** @nullable */
+  venueEventLabel: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExpenseBody {
+  expenseDate: string;
+  /** @minLength 1 */
+  description: string;
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  categoryId: string;
+  expenseType: ExpenseType;
+  /** @nullable */
+  supplier?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  venueEventId?: string | null;
+}
+
+export interface UpdateExpenseBody {
+  expenseDate?: string;
+  /** @minLength 1 */
+  description?: string;
+  /** @exclusiveMinimum 0 */
+  amount?: number;
+  categoryId?: string;
+  expenseType?: ExpenseType;
+  /** @nullable */
+  supplier?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  venueEventId?: string | null;
+}
+
+export interface ReportsV2ExpenseBreakdown {
+  label: string;
+  count: number;
+  total: number;
+}
+
+export interface ReportsV2VenueProfitability {
+  revenue: number;
+  knownPackCosts: number;
+  knownExtraCosts: number;
+  estimatedMarginKnownCosts: number;
+  unknownPackCostCount: number;
+  unknownExtraCostCount: number;
+}
+
+export interface ReportsV2ExpenseSummary {
+  operational: number;
+  investments: number;
+  totalOutflows: number;
+  byCategory: ReportsV2ExpenseBreakdown[];
+  topSuppliers: ReportsV2ExpenseBreakdown[];
+}
+
+export interface ReportsV2ManagementResult {
+  eventRevenue: number;
+  operationalExpenses: number;
+  result: number;
+  investments: number;
+  resultAfterInvestments: number;
+}
+
+export interface ReportsV2CashFlow {
+  received: number;
+  expensesPaid: number;
+  net: number;
+  undatedPaymentCount: number;
+  workshopsExcluded: boolean;
+}
+
+export interface ReportsV2Financial {
+  venueProfitability: ReportsV2VenueProfitability;
+  expenses: ReportsV2ExpenseSummary;
+  management: ReportsV2ManagementResult;
+  cashFlow: ReportsV2CashFlow;
+}
+
 export interface ReportsV2Summary {
   startDate: string;
   endDate: string;
@@ -1610,6 +1744,7 @@ export interface ReportsV2 {
   areas: ReportsV2Areas;
   venueEvents: ReportsV2VenueEvents;
   extras: ReportsV2Extras;
+  financial?: ReportsV2Financial;
   externalEvents: ReportsV2ExternalEvents;
   workshops: ReportsV2Workshops;
 }
@@ -1892,6 +2027,14 @@ export type ListEventAttachmentsParams = {
 export type ListSelectedExtrasParams = {
   module: SelectedExtraModule;
   entityId: string;
+};
+
+export type ListExpensesParams = {
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  categoryId?: string;
+  expenseType?: ExpenseType;
 };
 
 export type GetCalendarV2Params = {
