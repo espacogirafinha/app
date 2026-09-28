@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -155,6 +155,13 @@ function CategoryDialog({
   const [sortOrder, setSortOrder] = useState("0");
   const [isActive, setIsActive] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!open) return;
+    setName(category?.name ?? "");
+    setSortOrder(String(category?.sortOrder ?? 0));
+    setIsActive(category?.isActive ?? true);
+  }, [category, open]);
 
   const initialize = (nextOpen: boolean) => {
     if (nextOpen) {
