@@ -3,6 +3,7 @@ import {
   db,
   externalEventsTable,
   externalEventServicesTable,
+  eventSelectedExtrasTable,
   venueEventsTable,
   workshopParticipantsTable,
   workshopsTable,
@@ -14,6 +15,7 @@ import {
   type FinancialLine,
 } from "../lib/reports-finance";
 import { eventFinancialPosition, isEventDateInRange } from "../lib/event-finance-read-model";
+import { aggregateVenueExtrasReport, eligibleVenueEventIds } from "../lib/reports-extras";
 
 const router: IRouter = Router();
 const ACTIVE_PARTICIPANT_STATUSES = new Set(["registered", "confirmed", "attended"]);
@@ -215,12 +217,13 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
     return;
   }
 
-  const [venueEventsRows, externalEventsRows, externalServicesRows, workshopsRows, workshopParticipantsRows] = await Promise.all([
+  const [venueEventsRows, externalEventsRows, externalServicesRows, workshopsRows, workshopParticipantsRows, selectedExtrasRows] = await Promise.all([
     db.select().from(venueEventsTable),
     db.select().from(externalEventsTable),
     db.select().from(externalEventServicesTable),
     db.select().from(workshopsTable),
     db.select().from(workshopParticipantsTable),
+    db.select().from(eventSelectedExtrasTable),
   ]);
 
   const venueEvents = venueEventsRows.filter(
@@ -240,6 +243,24 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
   );
 
   const venue = venueReport(venueEvents);
+  const venueEventIds = eligibleVenueEventIds(
+    venueEventsRows.map((event) => ({ id: event.id, eventDate: event.eventDate, status: event.status })),
+    startDate,
+    endDate,
+  );
+  const venueExtras = aggregateVenueExtrasReport(
+    selectedExtrasRows
+      .filter((extra) => extra.module === "venue_events" && venueEventIds.has(extra.entityId))
+      .map((extra) => ({
+        entityId: extra.entityId,
+        extraName: extra.extraName,
+        category: extra.category,
+        quantity: extra.quantity,
+        totalPrice: money(extra.totalPrice),
+        unitCost: extra.unitCost === null ? null : money(extra.unitCost),
+        totalCost: extra.totalCost === null ? null : money(extra.totalCost),
+      })),
+  );
   const external = externalReport(externalEvents, externalServices);
   const workshops = workshopsReport(workshopRowsInRange, workshopParticipants);
   const venueArea = areaSummary(venue.partyCount, venue);
@@ -267,6 +288,7 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
     },
     areas: { venueEvents: venueArea, externalEvents: externalArea, workshops: workshopArea },
     venueEvents: venue,
+    extras: venueExtras,
     externalEvents: external,
     workshops,
   });

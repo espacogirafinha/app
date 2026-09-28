@@ -15,6 +15,11 @@ export interface CreateEventExtraBody {
   category?: string | null;
   /** @minimum 0 */
   basePrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  baseCost?: number | null;
   appliesTo?: EventExtraAppliesTo;
   isActive?: boolean;
   sortOrder?: number;

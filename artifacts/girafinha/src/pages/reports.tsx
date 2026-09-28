@@ -99,6 +99,18 @@ export default function ReportsPage() {
         ...(area.heldDeposits > 0 ? [[area.name, "Cauções em posse", area.heldDeposits]] : []),
         ...(area.retainedDeposits > 0 ? [[area.name, "Cauções retidas", area.retainedDeposits]] : []),
       ]),
+      ["Extras", "Vendidos", report.extras.soldCount],
+      ["Extras", "Faturado (incluído na receita das Festas)", report.extras.revenue],
+      ["Extras", "Custos conhecidos", report.extras.knownCost],
+      ["Extras", "Margem conhecida", report.extras.knownMargin],
+      ["Extras", "Unidades com custo por apurar", report.extras.unknownCostCount],
+      ...report.extras.items.map((item) => [
+        `Extra: ${item.label}`,
+        `${item.count} vendido(s); custo por apurar: ${item.unknownCostCount}`,
+        item.revenue,
+        item.knownCost,
+        item.knownMargin,
+      ]),
     ];
     downloadCsv(rows.map((row) => row.map(csv).join(",")).join("\n"), `relatorio_${period.startDate}_${period.endDate}.csv`);
   };
@@ -192,6 +204,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="hidden md:block"><AreaDetails report={report} /></div>
+          <ExtrasReportSection extras={report.extras} />
         </>
       )}
     </div>
@@ -376,6 +389,58 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
           <PaymentStatusCard title="Por pagar" value={report.workshops.participantsByPaymentStatus.unpaid} tone="pink" />
         </div>
       </DetailCard>
+    </section>
+  );
+}
+
+function ExtrasReportSection({ extras }: { extras: ReportsV2["extras"] }) {
+  return (
+    <section className="space-y-3" aria-label="Extras">
+      <div>
+        <h2 className="text-base font-semibold">Extras</h2>
+        <p className="text-xs text-muted-foreground">Decomposição da receita já incluída nas Festas no Espaço. Não é somada novamente à receita global.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <SmallMetric label="Extras vendidos" value={String(extras.soldCount)} />
+        <SmallMetric label="Faturado em extras" value={euro(extras.revenue)} />
+        <SmallMetric label="Custos conhecidos" value={euro(extras.knownCost)} />
+        <SmallMetric label="Margem conhecida" value={euro(extras.knownMargin)} />
+      </div>
+
+      {extras.unknownCostCount > 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          {extras.unknownCostCount} extra{extras.unknownCostCount === 1 ? "" : "s"} ainda com custo por apurar. A margem total ainda não está completamente apurada.
+        </div>
+      ) : null}
+
+      {extras.items.length === 0 ? (
+        <EmptyState text="Sem extras vendidos neste período." />
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {extras.items.map((item) => (
+            <Card key={item.label} className="border-border/70 shadow-sm">
+              <CardContent className="space-y-2 p-3 md:p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="break-words font-semibold">{item.label}</p>
+                    {item.category ? <p className="text-xs text-muted-foreground">{item.category}</p> : null}
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">{item.count} vendido{item.count === 1 ? "" : "s"}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div><p className="text-muted-foreground">Faturado</p><p className="font-bold">{euro(item.revenue)}</p></div>
+                  <div><p className="text-muted-foreground">Fornecedor</p><p className="font-bold">{euro(item.knownCost)}</p></div>
+                  <div><p className="text-muted-foreground">Margem conhecida</p><p className="font-bold">{euro(item.knownMargin)}</p></div>
+                </div>
+                {item.unknownCostCount > 0 ? (
+                  <p className="text-xs font-medium text-amber-700">{item.unknownCostCount} com custo por apurar</p>
+                ) : null}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

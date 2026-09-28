@@ -31,6 +31,10 @@ function money(value: unknown) {
   return Number.parseFloat(String(value ?? 0));
 }
 
+function moneyOrNull(value: unknown) {
+  return value === null || value === undefined ? null : Number.parseFloat(String(value));
+}
+
 function iso(value: Date | null | undefined) {
   return value?.toISOString() ?? new Date().toISOString();
 }
@@ -90,6 +94,7 @@ function formatEventExtra(row: EventExtraRow) {
     name: row.name,
     category: row.category,
     basePrice: money(row.basePrice),
+    baseCost: moneyOrNull(row.baseCost),
     appliesTo: row.appliesTo,
     isActive: row.isActive,
     sortOrder: row.sortOrder,
@@ -324,12 +329,13 @@ router.post("/settings/event-extras", requireSettingsAdmin, async (req, res): Pr
 
   const id = bodyId(req.body);
   const body = parsed.data;
-  const { basePrice, ...payload } = body;
+  const { basePrice, baseCost, ...payload } = body;
 
   if (id) {
     const updateData = compactObject({
       ...payload,
       basePrice: String(basePrice),
+      baseCost: baseCost === undefined ? undefined : baseCost === null ? null : String(baseCost),
     }) as Partial<typeof eventExtrasTable.$inferInsert>;
 
     const [row] = await db
@@ -352,6 +358,7 @@ router.post("/settings/event-extras", requireSettingsAdmin, async (req, res): Pr
     .values(compactObject({
       ...payload,
       basePrice: String(basePrice),
+      baseCost: baseCost === undefined || baseCost === null ? null : String(baseCost),
       appliesTo: body.appliesTo ?? "all",
       isActive: body.isActive ?? true,
       sortOrder: body.sortOrder ?? 0,
@@ -374,10 +381,11 @@ router.patch("/settings/event-extras/:id", requireSettingsAdmin, async (req, res
     return;
   }
 
-  const { basePrice, ...body } = parsed.data;
+  const { basePrice, baseCost, ...body } = parsed.data;
   const updateData = compactObject({
     ...body,
     basePrice: basePrice === undefined ? undefined : String(basePrice),
+    baseCost: baseCost === undefined ? undefined : baseCost === null ? null : String(baseCost),
   }) as Partial<typeof eventExtrasTable.$inferInsert>;
 
   const [row] = await db

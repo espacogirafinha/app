@@ -611,10 +611,20 @@ export interface SelectedExtraInput {
   category?: string | null;
   /** @minimum 0 */
   unitPrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  unitCost?: number | null;
   /** @minimum 1 */
   quantity: number;
   /** @minimum 0 */
   totalPrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  totalCost?: number | null;
   /** @nullable */
   notes?: string | null;
   sortOrder?: number;
@@ -636,8 +646,12 @@ export interface SelectedExtra {
   /** @nullable */
   category?: string | null;
   unitPrice: number;
+  /** @nullable */
+  unitCost: number | null;
   quantity: number;
   totalPrice: number;
+  /** @nullable */
+  totalCost: number | null;
   /** @nullable */
   notes?: string | null;
   sortOrder: number;
@@ -652,6 +666,11 @@ export interface EventExtra {
   category?: string | null;
   /** @minimum 0 */
   basePrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  baseCost: number | null;
   appliesTo: EventExtraAppliesTo;
   isActive: boolean;
   sortOrder: number;
@@ -669,6 +688,11 @@ export interface CreateEventExtraBody {
   category?: string | null;
   /** @minimum 0 */
   basePrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  baseCost?: number | null;
   appliesTo?: EventExtraAppliesTo;
   isActive?: boolean;
   sortOrder?: number;
@@ -683,6 +707,11 @@ export interface UpdateEventExtraBody {
   category?: string | null;
   /** @minimum 0 */
   basePrice?: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  baseCost?: number | null;
   appliesTo?: EventExtraAppliesTo;
   isActive?: boolean;
   sortOrder?: number;
@@ -1498,6 +1527,26 @@ export interface ReportsV2VenueEvents {
   sources: ReportsV2RevenueStat[];
 }
 
+export interface ReportsV2ExtraBreakdown {
+  label: string;
+  /** @nullable */
+  category: string | null;
+  count: number;
+  revenue: number;
+  knownCost: number;
+  knownMargin: number;
+  unknownCostCount: number;
+}
+
+export interface ReportsV2Extras {
+  soldCount: number;
+  revenue: number;
+  knownCost: number;
+  knownMargin: number;
+  unknownCostCount: number;
+  items: ReportsV2ExtraBreakdown[];
+}
+
 export interface ReportsV2ExternalEvents {
   eventCount: number;
   revenue: number;
@@ -1532,6 +1581,7 @@ export interface ReportsV2 {
   summary: ReportsV2Summary;
   areas: ReportsV2Areas;
   venueEvents: ReportsV2VenueEvents;
+  extras: ReportsV2Extras;
   externalEvents: ReportsV2ExternalEvents;
   workshops: ReportsV2Workshops;
 }

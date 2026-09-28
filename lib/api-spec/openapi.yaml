@@ -2503,11 +2503,17 @@ components:
         unitPrice:
           type: number
           minimum: 0
+        unitCost:
+          type: ["number", "null"]
+          minimum: 0
         quantity:
           type: integer
           minimum: 1
         totalPrice:
           type: number
+          minimum: 0
+        totalCost:
+          type: ["number", "null"]
           minimum: 0
         notes:
           type: ["string", "null"]
@@ -2549,10 +2555,14 @@ components:
           type: ["string", "null"]
         unitPrice:
           type: number
+        unitCost:
+          type: ["number", "null"]
         quantity:
           type: integer
         totalPrice:
           type: number
+        totalCost:
+          type: ["number", "null"]
         notes:
           type: ["string", "null"]
         sortOrder:
@@ -2567,8 +2577,10 @@ components:
         - entityId
         - extraName
         - unitPrice
+        - unitCost
         - quantity
         - totalPrice
+        - totalCost
         - sortOrder
         - createdAt
         - updatedAt
@@ -2586,6 +2598,9 @@ components:
         basePrice:
           type: number
           minimum: 0
+        baseCost:
+          type: ["number", "null"]
+          minimum: 0
         appliesTo:
           $ref: "#/components/schemas/EventExtraAppliesTo"
         isActive:
@@ -2602,6 +2617,7 @@ components:
         - id
         - name
         - basePrice
+        - baseCost
         - appliesTo
         - isActive
         - sortOrder
@@ -2621,6 +2637,9 @@ components:
           type: ["string", "null"]
         basePrice:
           type: number
+          minimum: 0
+        baseCost:
+          type: ["number", "null"]
           minimum: 0
         appliesTo:
           $ref: "#/components/schemas/EventExtraAppliesTo"
@@ -2644,6 +2663,9 @@ components:
           type: ["string", "null"]
         basePrice:
           type: number
+          minimum: 0
+        baseCost:
+          type: ["number", "null"]
           minimum: 0
         appliesTo:
           $ref: "#/components/schemas/EventExtraAppliesTo"
@@ -3658,6 +3680,7 @@ components:
           $ref: "#/components/schemas/DashboardV2WorkshopAreaSummary"
       required:
         - venueEvents
+        - extras
         - externalEvents
         - workshops
 
@@ -3922,6 +3945,8 @@ components:
           $ref: "#/components/schemas/ReportsV2Areas"
         venueEvents:
           $ref: "#/components/schemas/ReportsV2VenueEvents"
+        extras:
+          $ref: "#/components/schemas/ReportsV2Extras"
         externalEvents:
           $ref: "#/components/schemas/ReportsV2ExternalEvents"
         workshops:
@@ -3930,6 +3955,7 @@ components:
         - summary
         - areas
         - venueEvents
+        - extras
         - externalEvents
         - workshops
 
@@ -4056,6 +4082,44 @@ components:
         - revenueByPack
         - averageChildren
         - sources
+
+    ReportsV2ExtraBreakdown:
+      type: object
+      properties:
+        label:
+          type: string
+        category:
+          type: ["string", "null"]
+        count:
+          type: integer
+        revenue:
+          type: number
+        knownCost:
+          type: number
+        knownMargin:
+          type: number
+        unknownCostCount:
+          type: integer
+      required: [label, category, count, revenue, knownCost, knownMargin, unknownCostCount]
+
+    ReportsV2Extras:
+      type: object
+      properties:
+        soldCount:
+          type: integer
+        revenue:
+          type: number
+        knownCost:
+          type: number
+        knownMargin:
+          type: number
+        unknownCostCount:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2ExtraBreakdown"
+      required: [soldCount, revenue, knownCost, knownMargin, unknownCostCount, items]
 
     ReportsV2ExternalEvents:
       type: object

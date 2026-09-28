@@ -434,7 +434,7 @@ export function VenueEventModal({
             </Field>
           </FormSection>
 
-          <EventExtrasSelector module="venue_events" extras={extras} onChange={setExtras} />
+          <EventExtrasSelector module="venue_events" extras={extras} onChange={setExtras} supplierCostsEnabled />
 
           <EventAttachmentsEditor ref={attachmentsRef} entityType="venue_event" entityId={event?.id} />
 

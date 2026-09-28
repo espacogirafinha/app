@@ -34,6 +34,7 @@ export const eventExtrasTable = pgTable("event_extras", {
   name: text("name").notNull(),
   category: text("category"),
   basePrice: numeric("base_price", { precision: 10, scale: 2 }).notNull().default("0"),
+  baseCost: numeric("base_cost", { precision: 10, scale: 2 }),
   appliesTo: text("applies_to").notNull().default("all"),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
