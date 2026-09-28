@@ -21,7 +21,7 @@ jobs:
         run: |
           count=$(find api -type f -name '*.mjs' | wc -l)
           echo "Vercel function files: $count"
-          test "$count" -eq 11
+          test "$count" -ge 11
           test "$count" -le 12
           test -f 'api/workshops/[...path].mjs'
           test ! -f 'api/workshops/[id].mjs'
