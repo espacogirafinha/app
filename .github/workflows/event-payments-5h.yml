@@ -1,0 +1,39 @@
+name: Event payments 5H checks
+
+on:
+  push:
+    branches:
+      - feat/event-payments
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/event-payments
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Payment ledger tests
+        run: |
+          node --experimental-strip-types --test artifacts/api-server/src/lib/event-payment-rules.test.ts
+          node --experimental-strip-types --test artifacts/api-server/src/lib/event-payment-creation.test.ts
+      - name: Google Forms tests
+        run: |
+          node --experimental-strip-types --test artifacts/api-server/src/integrations/google-forms.test.ts
+          node --experimental-strip-types --test artifacts/api-server/src/integrations/google-forms-review.test.ts
+      - name: Dashboard financial tests
+        run: node --experimental-strip-types --test artifacts/api-server/src/lib/dashboard-finance.test.ts
+      - name: Calendar financial tests
+        run: node --experimental-strip-types --test artifacts/api-server/src/lib/calendar-finance.test.ts
+      - name: Reports financial tests
+        run: node --experimental-strip-types --test artifacts/api-server/src/lib/reports-finance.test.ts
+      - name: Write-freeze tests
+        run: node --experimental-strip-types --test artifacts/api-server/src/lib/payment-cutover-write-freeze.test.ts
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+      - name: Build
+        run: corepack pnpm run build
