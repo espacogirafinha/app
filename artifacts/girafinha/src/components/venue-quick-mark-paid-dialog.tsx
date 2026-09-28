@@ -44,7 +44,6 @@ export function VenueQuickMarkPaidDialog({
   const [open, setOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<EventPaymentMethod | "">("");
   const [notes, setNotes] = useState("");
-  const [paidAt, setPaidAt] = useState("");
 
   const params = { module: "venue_events" as const, entityId: eventId };
   const canPay = canQuickMarkVenuePaid(remainingBalance);
@@ -61,7 +60,6 @@ export function VenueQuickMarkPaidDialog({
       if (!canPay) return;
       setPaymentMethod("");
       setNotes("");
-      setPaidAt(new Date().toISOString());
     }
     setOpen(nextOpen);
   };
@@ -77,7 +75,7 @@ export function VenueQuickMarkPaidDialog({
         entityId: eventId,
         remainingBalance,
         paymentMethod,
-        paidAt: paidAt || new Date().toISOString(),
+        paidAt: new Date().toISOString(),
         notes,
       });
 
