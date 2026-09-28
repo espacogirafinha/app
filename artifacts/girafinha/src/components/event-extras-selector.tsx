@@ -81,8 +81,8 @@ export function EventExtrasSelector({
       extras.map((extra) => {
         if (extra.localId !== localId) return extra;
         const next = { ...extra, ...patch };
-        const line = calculateExtraLine(next);
-        return { ...next, ...line, margin: undefined } as EventExtraDraft;
+        const { margin: _margin, ...line } = calculateExtraLine(next);
+        return { ...next, ...line };
       }),
     );
   };
@@ -133,7 +133,11 @@ export function EventExtrasSelector({
             <div key={extra.localId} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-primary">{extra.custom ? "Extra personalizado" : "Extra do catálogo · valores desta Festa"}</p>
+                  {supplierCostsEnabled ? (
+                    <p className="text-xs font-medium text-primary">{extra.custom ? "Extra personalizado" : "Extra do catálogo · valores desta Festa"}</p>
+                  ) : extra.custom ? (
+                    <p className="text-xs font-medium text-primary">Extra personalizado</p>
+                  ) : null}
                 </div>
                 <Button
                   type="button"
