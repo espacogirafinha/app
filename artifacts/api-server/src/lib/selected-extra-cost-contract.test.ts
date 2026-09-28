@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   UpdateSelectedExtraCostBody,
   UpdateSelectedExtraCostParams,
-} from "@workspace/api-zod";
+} from "../../../../lib/api-zod/src/generated/api.ts";
 
 test("PATCH contract accepts 20, zero, and null", () => {
   assert.equal(UpdateSelectedExtraCostBody.safeParse({ unitCost: 20 }).success, true);
