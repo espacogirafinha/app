@@ -2385,26 +2385,24 @@ export const GetReportsV2Response = zod.object({
       }),
     ),
   }),
-  extras: zod
-    .object({
-      soldCount: zod.number(),
-      revenue: zod.number(),
-      knownCost: zod.number(),
-      knownMargin: zod.number(),
-      unknownCostCount: zod.number(),
-      items: zod.array(
-        zod.object({
-          label: zod.string(),
-          category: zod.string().nullable(),
-          count: zod.number(),
-          revenue: zod.number(),
-          knownCost: zod.number(),
-          knownMargin: zod.number(),
-          unknownCostCount: zod.number(),
-        }),
-      ),
-    })
-    .optional(),
+  extras: zod.object({
+    soldCount: zod.number(),
+    revenue: zod.number(),
+    knownCost: zod.number(),
+    knownMargin: zod.number(),
+    unknownCostCount: zod.number(),
+    items: zod.array(
+      zod.object({
+        label: zod.string(),
+        category: zod.string().nullable(),
+        count: zod.number(),
+        revenue: zod.number(),
+        knownCost: zod.number(),
+        knownMargin: zod.number(),
+        unknownCostCount: zod.number(),
+      }),
+    ),
+  }),
   externalEvents: zod.object({
     eventCount: zod.number(),
     revenue: zod.number(),

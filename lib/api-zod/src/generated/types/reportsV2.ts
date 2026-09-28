@@ -16,7 +16,7 @@ export interface ReportsV2 {
   summary: ReportsV2Summary;
   areas: ReportsV2Areas;
   venueEvents: ReportsV2VenueEvents;
-  extras?: ReportsV2Extras;
+  extras: ReportsV2Extras;
   externalEvents: ReportsV2ExternalEvents;
   workshops: ReportsV2Workshops;
 }
