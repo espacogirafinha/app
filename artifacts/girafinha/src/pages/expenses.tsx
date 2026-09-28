@@ -37,7 +37,7 @@ import {
   type ExpenseType,
 } from "@workspace/api-client-react";
 
-type DateMode = "month" | "custom";
+type DateMode = "month" | "year" | "custom";
 
 type ExpenseForm = {
   expenseDate: string;
@@ -70,6 +70,13 @@ function monthRange(month: string) {
   };
 }
 
+function yearRange(year: number) {
+  return {
+    startDate: `${year}-01-01`,
+    endDate: `${year}-12-31`,
+  };
+}
+
 function emptyForm(): ExpenseForm {
   return {
     expenseDate: today(),
@@ -90,6 +97,7 @@ function euro(value: number) {
 export default function ExpensesPage() {
   const [dateMode, setDateMode] = useState<DateMode>("month");
   const [month, setMonth] = useState(currentMonth());
+  const [year, setYear] = useState(new Date().getFullYear());
   const [customStart, setCustomStart] = useState(() => monthRange(currentMonth()).startDate);
   const [customEnd, setCustomEnd] = useState(() => monthRange(currentMonth()).endDate);
   const [search, setSearch] = useState("");
@@ -101,7 +109,9 @@ export default function ExpensesPage() {
 
   const range = dateMode === "month"
     ? monthRange(month)
-    : { startDate: customStart, endDate: customEnd };
+    : dateMode === "year"
+      ? yearRange(year)
+      : { startDate: customStart, endDate: customEnd };
 
   const params = {
     startDate: range.startDate,
@@ -162,6 +172,7 @@ export default function ExpensesPage() {
         <CardContent className="space-y-3 p-3 md:p-4">
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" variant={dateMode === "month" ? "default" : "outline"} onClick={() => setDateMode("month")}>Mês</Button>
+            <Button type="button" size="sm" variant={dateMode === "year" ? "default" : "outline"} onClick={() => setDateMode("year")}>Ano</Button>
             <Button type="button" size="sm" variant={dateMode === "custom" ? "default" : "outline"} onClick={() => setDateMode("custom")}>Intervalo</Button>
           </div>
 
@@ -170,6 +181,11 @@ export default function ExpensesPage() {
               <div className="space-y-2">
                 <Label>Mês e ano</Label>
                 <Input type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+              </div>
+            ) : dateMode === "year" ? (
+              <div className="space-y-2">
+                <Label>Ano</Label>
+                <Input type="number" min="2020" max="2100" value={year} onChange={(event) => setYear(Number(event.target.value) || new Date().getFullYear())} />
               </div>
             ) : (
               <>
