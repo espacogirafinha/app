@@ -1,4 +1,4 @@
-import { selectedExtraCostPatch } from "./selected-extra-cost";
+import { selectedExtraCostPatch } from "./selected-extra-cost.ts";
 
 export type SelectedExtraCostRecord = {
   id: string;
