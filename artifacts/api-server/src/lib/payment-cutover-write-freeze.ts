@@ -25,6 +25,7 @@ export function isPaymentCutoverProtectedMutation(
     && (
       pathname === "/api/venue-events"
       || pathname === "/api/external-events"
+      || pathname === "/api/event-payments"
       || pathname === "/api/integrations/google-forms/venue-event"
     )
   ) {
@@ -36,6 +37,7 @@ export function isPaymentCutoverProtectedMutation(
     && (
       /^\/api\/venue-events\/[^/]+$/.test(pathname)
       || /^\/api\/external-events\/[^/]+$/.test(pathname)
+      || /^\/api\/event-payments\/[^/]+$/.test(pathname)
     )
   ) {
     return true;
