@@ -1787,6 +1787,260 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /inventory-items:
+    get:
+      operationId: listInventoryItems
+      tags: [inventory]
+      summary: List inventory items with derived current stock
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: itemType
+          in: query
+          schema:
+            $ref: "#/components/schemas/InventoryItemType"
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: activity
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, all]
+            default: active
+        - name: stockStatus
+          in: query
+          schema:
+            type: string
+            enum: [low, out, to_restock]
+      responses:
+        "200":
+          description: Inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+        "400":
+          description: Invalid filters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createInventoryItem
+      tags: [inventory]
+      summary: Create an inventory item and optional initial-stock movement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInventoryItemBody"
+      responses:
+        "201":
+          description: Inventory item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /inventory-summary:
+    get:
+      operationId: getInventorySummary
+      tags: [inventory]
+      summary: Get compact inventory attention summary
+      responses:
+        "200":
+          description: Inventory summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventorySummary"
+
+  /inventory-items/{id}:
+    get:
+      operationId: getInventoryItem
+      tags: [inventory]
+      summary: Get one inventory item with derived current stock
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateInventoryItem
+      tags: [inventory]
+      summary: Update inventory item metadata without overwriting stock
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInventoryItemBody"
+      responses:
+        "200":
+          description: Inventory item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /inventory-items/{id}/movements:
+    get:
+      operationId: listInventoryMovements
+      tags: [inventory]
+      summary: List inventory movements newest first
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Inventory movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryMovement"
+
+    post:
+      operationId: createInventoryMovement
+      tags: [inventory]
+      summary: Add stock entry or exit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInventoryMovementBody"
+      responses:
+        "201":
+          description: Inventory movement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryMovementResult"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Movement would cause negative stock
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /inventory-items/{id}/adjust-stock:
+    post:
+      operationId: adjustInventoryStock
+      tags: [inventory]
+      summary: Reconcile inventory to a counted real stock using a correction movement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustInventoryStockBody"
+      responses:
+        "201":
+          description: Correction movement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryMovementResult"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Stock already matches the counted value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -4654,3 +4908,227 @@ components:
           type: integer
         completedAt:
           type: ["string", "null"]
+
+    InventoryItemType:
+      type: string
+      enum: [consumable, material]
+
+    InventoryMovementReason:
+      type: string
+      enum: [initial_stock, purchase, usage, correction, damaged, lost, return]
+
+    InventoryStockState:
+      type: string
+      enum: [ok, low, out]
+
+    InventoryItem:
+      type: object
+      required:
+        [
+          id,
+          itemType,
+          name,
+          unit,
+          isActive,
+          currentStock,
+          stockState,
+          missingToMinimum,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        itemType:
+          $ref: "#/components/schemas/InventoryItemType"
+        name:
+          type: string
+        category:
+          type: ["string", "null"]
+        brand:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        unit:
+          type: string
+        minimumStock:
+          type: ["number", "null"]
+          minimum: 0
+        location:
+          type: ["string", "null"]
+        referenceCost:
+          type: ["number", "null"]
+          minimum: 0
+        notes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        currentStock:
+          type: number
+        stockState:
+          $ref: "#/components/schemas/InventoryStockState"
+        missingToMinimum:
+          type: number
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InventoryMovement:
+      type: object
+      required: [id, itemId, quantityDelta, reason, occurredAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+          format: uuid
+        quantityDelta:
+          type: number
+        reason:
+          $ref: "#/components/schemas/InventoryMovementReason"
+        note:
+          type: ["string", "null"]
+        occurredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    InventorySummary:
+      type: object
+      required: [activeItems, lowStock, outOfStock, toRestock]
+      properties:
+        activeItems:
+          type: integer
+        lowStock:
+          type: integer
+        outOfStock:
+          type: integer
+        toRestock:
+          type: integer
+
+    CreateInventoryItemBody:
+      type: object
+      required: [itemType, name, unit]
+      properties:
+        itemType:
+          $ref: "#/components/schemas/InventoryItemType"
+        name:
+          type: string
+          minLength: 1
+        category:
+          type: ["string", "null"]
+        brand:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        unit:
+          type: string
+          minLength: 1
+        minimumStock:
+          type: ["number", "null"]
+          minimum: 0
+        location:
+          type: ["string", "null"]
+        referenceCost:
+          type: ["number", "null"]
+          minimum: 0
+        notes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+          default: true
+        initialStock:
+          type: number
+          minimum: 0
+          default: 0
+
+    UpdateInventoryItemBody:
+      type: object
+      properties:
+        itemType:
+          $ref: "#/components/schemas/InventoryItemType"
+        name:
+          type: string
+          minLength: 1
+        category:
+          type: ["string", "null"]
+        brand:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        unit:
+          type: string
+          minLength: 1
+        minimumStock:
+          type: ["number", "null"]
+          minimum: 0
+        location:
+          type: ["string", "null"]
+        referenceCost:
+          type: ["number", "null"]
+          minimum: 0
+        notes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+
+    CreateInventoryMovementBody:
+      type: object
+      required: [direction, quantity, reason]
+      properties:
+        direction:
+          type: string
+          enum: [in, out]
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+        reason:
+          type: string
+          enum: [purchase, usage, correction, damaged, lost, return]
+        note:
+          type: ["string", "null"]
+        occurredAt:
+          type: string
+          format: date-time
+
+    AdjustInventoryStockBody:
+      type: object
+      required: [stock]
+      properties:
+        stock:
+          type: number
+          minimum: 0
+        note:
+          type: ["string", "null"]
+        occurredAt:
+          type: string
+          format: date-time
+
+    InventoryMovementResult:
+      type: object
+      required: [movement, currentStock, stockState, missingToMinimum]
+      properties:
+        movement:
+          $ref: "#/components/schemas/InventoryMovement"
+        currentStock:
+          type: number
+        stockState:
+          $ref: "#/components/schemas/InventoryStockState"
+        missingToMinimum:
+          type: number
+          minimum: 0
+
