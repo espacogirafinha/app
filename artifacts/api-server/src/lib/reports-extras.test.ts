@@ -3,11 +3,23 @@ import test from "node:test";
 import { aggregateVenueExtrasReport, eligibleVenueEventIds } from "./reports-extras.ts";
 import { aggregateFinancials } from "./reports-finance.ts";
 
-const row = (name: string, quantity: number, unitPrice: number, unitCost: number | null, entityId = "event-1") => ({
+const row = (
+  name: string,
+  quantity: number,
+  unitPrice: number,
+  unitCost: number | null,
+  entityId = "event-1",
+  id = `${entityId}-${name}`,
+) => ({
+  id,
   entityId,
+  eventDate: entityId === "event-2" ? "2026-09-20" : "2026-09-15",
+  customerName: entityId === "event-2" ? "Cliente B" : "Cliente A",
+  birthdayChildName: entityId === "event-2" ? null : "Criança A",
   extraName: name,
   category: null,
   quantity,
+  unitPrice,
   totalPrice: quantity * unitPrice,
   unitCost,
   totalCost: unitCost === null ? null : quantity * unitCost,
@@ -89,4 +101,31 @@ test("same extra name is grouped without duplicating venue rows", () => {
   assert.equal(report.items[0].revenue, 270);
   assert.equal(report.items[0].knownCost, 225);
   assert.equal(report.items[0].knownMargin, 45);
+});
+
+
+test("unknown-cost occurrences are listed first", () => {
+  const report = aggregateVenueExtrasReport([
+    row("Pinturas", 1, 50, 35, "event-2", "known"),
+    row("Pinturas", 1, 50, null, "event-1", "unknown"),
+  ]);
+
+  assert.deepEqual(report.items[0].occurrences.map((item) => item.id), ["unknown", "known"]);
+  assert.equal(report.items[0].occurrences[0].margin, null);
+  assert.equal(report.items[0].occurrences[1].margin, 15);
+});
+
+test("same extra can have different supplier costs per occurrence", () => {
+  const report = aggregateVenueExtrasReport([
+    row("Pinturas", 1, 50, 35, "event-1", "first"),
+    row("Pinturas", 1, 50, 20, "event-2", "second"),
+  ]);
+
+  assert.equal(report.items.length, 1);
+  assert.equal(report.items[0].knownCost, 55);
+  assert.equal(report.items[0].knownMargin, 45);
+  assert.deepEqual(
+    report.items[0].occurrences.map((item) => [item.id, item.unitCost]),
+    [["second", 20], ["first", 35]],
+  );
 });
