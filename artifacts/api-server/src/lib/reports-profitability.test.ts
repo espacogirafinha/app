@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  expensesForPeriod,
   managementResult,
   summarizeCashFlow,
   summarizeExpenses,
@@ -82,4 +83,20 @@ test("cash flow uses paid_at, ignores undated payments and includes investments 
     undatedPaymentCount: 1,
     workshopsExcluded: true,
   });
+});
+
+
+test("expenses enter reports by expense_date and annulled rows stay out", () => {
+  const rows = expensesForPeriod([
+    { expenseDate: "2026-09-05", deletedAt: null, amount: 50, expenseType: "operational", categoryName: "Limpeza", supplier: null },
+    { expenseDate: "2026-08-31", deletedAt: null, amount: 60, expenseType: "operational", categoryName: "Limpeza", supplier: null },
+    { expenseDate: "2026-09-10", deletedAt: "2026-09-20T10:00:00.000Z", amount: 70, expenseType: "operational", categoryName: "Limpeza", supplier: null },
+    { expenseDate: "2026-09-15", deletedAt: null, amount: 220, expenseType: "investment", categoryName: "Equipamento / Mobiliário", supplier: "Loja" },
+  ], "2026-09-01", "2026-09-30");
+
+  assert.equal(rows.length, 2);
+  const summary = summarizeExpenses(rows);
+  assert.equal(summary.operational, 50);
+  assert.equal(summary.investments, 220);
+  assert.equal(summary.totalOutflows, 270);
 });
