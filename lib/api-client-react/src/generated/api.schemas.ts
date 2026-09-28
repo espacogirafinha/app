@@ -488,6 +488,11 @@ export interface CreateVenuePackBody {
   description?: string | null;
   /** @minimum 0 */
   basePrice: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  estimatedCost?: number | null;
   /** @nullable */
   defaultStartTime?: string | null;
   /** @nullable */
@@ -505,6 +510,11 @@ export interface UpdateVenuePackBody {
   description?: string | null;
   /** @minimum 0 */
   basePrice?: number;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  estimatedCost?: number | null;
   /** @nullable */
   defaultStartTime?: string | null;
   /** @nullable */
@@ -879,6 +889,11 @@ export interface VenueEvent {
   /** @nullable */
   source?: string | null;
   packName: string;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  packEstimatedCost: number | null;
   /** @nullable */
   birthdayChildName?: string | null;
   /** @nullable */
@@ -928,6 +943,11 @@ export interface CreateVenueEventBody {
   /** @nullable */
   source?: string | null;
   packName: string;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  packEstimatedCost?: number | null;
   /** @nullable */
   birthdayChildName?: string | null;
   /** @nullable */
@@ -977,6 +997,11 @@ export interface UpdateVenueEventBody {
   /** @nullable */
   source?: string | null;
   packName?: string;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  packEstimatedCost?: number | null;
   /** @nullable */
   birthdayChildName?: string | null;
   /** @nullable */
@@ -1744,7 +1769,7 @@ export interface ReportsV2 {
   areas: ReportsV2Areas;
   venueEvents: ReportsV2VenueEvents;
   extras: ReportsV2Extras;
-  financial?: ReportsV2Financial;
+  financial: ReportsV2Financial;
   externalEvents: ReportsV2ExternalEvents;
   workshops: ReportsV2Workshops;
 }
