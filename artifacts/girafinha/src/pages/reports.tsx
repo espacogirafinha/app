@@ -549,7 +549,11 @@ function ExtrasReportSection({
 
           <div className="space-y-3">
             {selectedItem?.occurrences.map((occurrence) => (
-              <div key={occurrence.id} className="rounded-xl border border-border p-3">
+              <div
+                key={occurrence.id}
+                data-testid={`extra-occurrence-${occurrence.id}`}
+                className="rounded-xl border border-border p-3"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-semibold">{occurrence.birthdayChildName || occurrence.customerName}</p>
