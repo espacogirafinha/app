@@ -1,0 +1,27 @@
+name: Extras costs margins validation
+
+on:
+  push:
+    branches:
+      - feat/extras-costs-margins-reports
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Regenerate API clients
+        run: |
+          corepack pnpm --filter @workspace/api-spec codegen
+          git status --short
+      - name: Relevant tests
+        run: node --experimental-strip-types --test artifacts/girafinha/src/components/event-extras-selector.test.ts artifacts/api-server/src/lib/reports-extras.test.ts artifacts/api-server/src/lib/reports-finance.test.ts
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+      - name: Build
+        run: corepack pnpm run build
