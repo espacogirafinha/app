@@ -5,6 +5,7 @@ import router from "./routes";
 import healthRouter from "./routes/health";
 import { logger } from "./lib/logger";
 import { requireAuth } from "./lib/auth";
+import { paymentCutoverWriteFreeze } from "./lib/payment-cutover-write-freeze";
 import googleFormsRouter from "./integrations/google-forms-route";
 
 const app: Express = express();
@@ -31,6 +32,7 @@ app.use(
   }),
 );
 app.use(cors({ credentials: true }));
+app.use(paymentCutoverWriteFreeze);
 app.use("/api/integrations/google-forms/venue-event", express.raw({ type: "application/json", limit: "64kb" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
