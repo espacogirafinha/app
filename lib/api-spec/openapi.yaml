@@ -3955,6 +3955,7 @@ components:
         - summary
         - areas
         - venueEvents
+        - extras
         - externalEvents
         - workshops
 
