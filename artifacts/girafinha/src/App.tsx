@@ -18,6 +18,7 @@ const ReportsPage = lazy(() => import("@/pages/reports"));
 const WorkshopsPage = lazy(() => import("@/pages/workshops"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const GoogleFormsReviewPage = lazy(() => import("@/pages/google-forms-review"));
+const InventoryPage = lazy(() => import("@/pages/inventory"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ function AuthedRoutes() {
           <Route path="/calendar" component={CalendarPage} />
           <Route path="/workshops" component={WorkshopsPage} />
           <Route path="/reports" component={ReportsPage} />
+          <Route path="/inventory" component={InventoryPage} />
           <Route path="/settings" component={SettingsPage} />
           <Route component={NotFound} />
         </Switch>
