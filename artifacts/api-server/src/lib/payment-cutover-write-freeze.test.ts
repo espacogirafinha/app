@@ -81,6 +81,9 @@ for (const [method, path, label] of [
   ["POST", "/api/external-events", "criar Serviço"],
   ["PATCH", "/api/external-events/external-1", "editar Serviço"],
   ["DELETE", "/api/external-events/external-1", "apagar Serviço"],
+  ["POST", "/api/event-payments", "registar pagamento"],
+  ["PATCH", "/api/event-payments/payment-1", "editar pagamento"],
+  ["DELETE", "/api/event-payments/payment-1", "remover pagamento"],
   [
     "POST",
     "/api/integrations/google-forms/venue-event",
@@ -135,4 +138,14 @@ test("unrelated writes remain available", async () => {
     "true",
   );
   assert.equal(result.nextCalled, true);
+});
+
+test("GET de event-payments continua disponível durante o freeze", async () => {
+  const result = await runMiddleware(
+    "GET",
+    "/api/event-payments?module=venue_events&entityId=venue-1",
+    "true",
+  );
+  assert.equal(result.nextCalled, true);
+  assert.equal(result.status, 200);
 });
