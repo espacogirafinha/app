@@ -133,13 +133,13 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
         ...report,
         extras: {
           ...report.extras,
-          knownCost: 55,
-          knownMargin: 45,
+          knownCost: 40,
+          knownMargin: 60,
           unknownCostCount: 0,
           items: [{
             ...report.extras.items[0],
-            knownCost: 55,
-            knownMargin: 45,
+            knownCost: 40,
+            knownMargin: 60,
             unknownCostCount: 0,
             occurrences: [
               {
@@ -198,16 +198,17 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
 
   const editor = page.getByRole("dialog").filter({ hasText: "Altera apenas o custo deste extra nesta Festa." });
   await expect(editor).toBeVisible();
-  await editor.getByLabel("Pago ao fornecedor").fill("35");
-  await expect(editor.getByText("15.00 €", { exact: true })).toBeVisible();
+  await editor.getByLabel("Pago ao fornecedor").fill("20");
+  await expect(editor.getByText("30.00 €", { exact: true })).toBeVisible();
   await editor.getByRole("button", { name: "Guardar", exact: true }).click();
 
-  await expect.poll(() => patchBody).toEqual({ unitCost: 35 });
+  await expect.poll(() => patchBody).toEqual({ unitCost: 20 });
   await expect.poll(() => reportsFetches).toBeGreaterThan(1);
   await expect(editor).toBeHidden();
 
-  await expect(detail.getByText("35.00 €", { exact: true })).toBeVisible();
-  await expect(detail.getByText("15.00 €", { exact: true })).toBeVisible();
+  const updatedOccurrence = detail.getByTestId(`extra-occurrence-${unknownId}`);
+  await expect(updatedOccurrence).toContainText("20.00 €");
+  await expect(updatedOccurrence).toContainText("30.00 €");
   await expect(detail.getByText("Custo por apurar")).toHaveCount(0);
 
   await detail.getByRole("button", { name: "Close" }).click();
@@ -216,8 +217,18 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
 
   const refreshedCard = page.getByRole("button", { name: "Ver ocorrências de Pinturas faciais" });
   await expect(refreshedCard).toBeVisible();
-  await expect(refreshedCard).toContainText("55.00 €");
-  await expect(refreshedCard).toContainText("45.00 €");
+  await expect(refreshedCard).toContainText("40.00 €");
+  await expect(refreshedCard).toContainText("60.00 €");
+
+  await page.reload();
+  const cardAfterReload = page.getByRole("button", { name: "Ver ocorrências de Pinturas faciais" });
+  await expect(cardAfterReload).toBeVisible();
+  await cardAfterReload.click();
+  const detailAfterReload = page.getByRole("dialog").filter({ hasText: "Ocorrências individuais no período" });
+  const persistedOccurrence = detailAfterReload.getByTestId(`extra-occurrence-${unknownId}`);
+  await expect(persistedOccurrence).toContainText("20.00 €");
+  await expect(persistedOccurrence).toContainText("30.00 €");
+  await expect(persistedOccurrence.getByText("Custo por apurar")).toHaveCount(0);
 
   expect((patchBody as Record<string, unknown>).totalPrice).toBeUndefined();
   expect((patchBody as Record<string, unknown>).totalCost).toBeUndefined();
@@ -226,3 +237,59 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
   expect(report.summary.totalReceived).toBe(100);
   expect(report.extras.items[0].occurrences.map((item) => item.unitCost)).toEqual([35, 20]);
 });
+
+
+for (const scenario of [
+  {
+    status: 401,
+    title: "Sessão expirada",
+    description: "Volta a iniciar sessão e tenta guardar novamente.",
+  },
+  {
+    status: 404,
+    title: "Extra não encontrado",
+    description: "Atualiza os Relatórios e tenta novamente.",
+  },
+]) {
+  test(`Reports: PATCH ${scenario.status} mostra erro útil e não faz refetch`, async ({ page }) => {
+    const report = baseReport();
+    let reportsFetches = 0;
+
+    await page.route("**/api/**", async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+
+      if (url.pathname === "/api/reports-v2" && request.method() === "GET") {
+        reportsFetches += 1;
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(report),
+        });
+      }
+
+      if (url.pathname === `/api/selected-extras/${unknownId}` && request.method() === "PATCH") {
+        return route.fulfill({
+          status: scenario.status,
+          contentType: "application/json",
+          body: JSON.stringify({ error: scenario.status === 401 ? "Unauthorized" : "Selected extra not found" }),
+        });
+      }
+
+      return route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
+    });
+
+    await page.goto("/reports-extra-cost-test.html");
+    await page.getByRole("button", { name: "Ver ocorrências de Pinturas faciais" }).click();
+    const detail = page.getByRole("dialog").filter({ hasText: "Ocorrências individuais no período" });
+    await detail.getByRole("button", { name: "Adicionar custo" }).click();
+    const editor = page.getByRole("dialog").filter({ hasText: "Altera apenas o custo deste extra nesta Festa." });
+    await editor.getByLabel("Pago ao fornecedor").fill("20");
+    await editor.getByRole("button", { name: "Guardar", exact: true }).click();
+
+    await expect(page.getByText(scenario.title, { exact: true })).toBeVisible();
+    await expect(page.getByText(scenario.description, { exact: true })).toBeVisible();
+    await expect(editor).toBeVisible();
+    expect(reportsFetches).toBe(1);
+  });
+}
