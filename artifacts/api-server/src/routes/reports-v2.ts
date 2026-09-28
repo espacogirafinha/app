@@ -20,6 +20,7 @@ import {
 import { eventFinancialPosition, isEventDateInRange } from "../lib/event-finance-read-model";
 import { aggregateVenueExtrasReport, eligibleVenueEventIds } from "../lib/reports-extras";
 import {
+  expensesForPeriod,
   managementResult,
   summarizeCashFlow,
   summarizeExpenses,
@@ -329,18 +330,18 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
       })),
   );
 
-  const expensesInRange = expenseRows
-    .filter((expense) => (
-      expense.deletedAt === null
-      && expense.expenseDate >= startDate
-      && expense.expenseDate <= endDate
-    ))
-    .map((expense) => ({
+  const expensesInRange = expensesForPeriod(
+    expenseRows.map((expense) => ({
+      expenseDate: expense.expenseDate,
+      deletedAt: expense.deletedAt,
       amount: money(expense.amount),
       expenseType: expense.expenseType as "operational" | "investment",
       categoryName: expense.categoryName,
       supplier: expense.supplier,
-    }));
+    })),
+    startDate,
+    endDate,
+  );
   const expenseSummary = summarizeExpenses(expensesInRange);
   const management = managementResult(totals.revenue, expenseSummary.operational, expenseSummary.investments);
   const cashFlow = summarizeCashFlow(
