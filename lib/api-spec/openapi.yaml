@@ -2536,6 +2536,9 @@ components:
         basePrice:
           type: number
           minimum: 0
+        estimatedCost:
+          type: ["number", "null"]
+          minimum: 0
         defaultStartTime:
           type: ["string", "null"]
         defaultEndTime:
@@ -2560,6 +2563,9 @@ components:
           type: ["string", "null"]
         basePrice:
           type: number
+          minimum: 0
+        estimatedCost:
+          type: ["number", "null"]
           minimum: 0
         defaultStartTime:
           type: ["string", "null"]
@@ -3104,6 +3110,9 @@ components:
           type: ["string", "null"]
         packName:
           type: string
+        packEstimatedCost:
+          type: ["number", "null"]
+          minimum: 0
         birthdayChildName:
           type: ["string", "null"]
         birthdayChildAge:
@@ -3187,6 +3196,9 @@ components:
           type: ["string", "null"]
         packName:
           type: string
+        packEstimatedCost:
+          type: ["number", "null"]
+          minimum: 0
         birthdayChildName:
           type: ["string", "null"]
         birthdayChildAge:
@@ -3258,6 +3270,9 @@ components:
           type: ["string", "null"]
         packName:
           type: string
+        packEstimatedCost:
+          type: ["number", "null"]
+          minimum: 0
         birthdayChildName:
           type: ["string", "null"]
         birthdayChildAge:
@@ -4408,6 +4423,7 @@ components:
         - areas
         - venueEvents
         - extras
+        - financial
         - externalEvents
         - workshops
 
