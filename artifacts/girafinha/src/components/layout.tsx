@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Settings,
   ReceiptText,
+  Wallet,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { href: "/workshops", label: "Workshops/Formações", icon: GraduationCap },
   { href: "/calendar", label: "Calendário", icon: Calendar },
   { href: "/reports", label: "Relatórios", icon: BarChart3 },
+  { href: "/financial-movements", label: "Movimentos financeiros", icon: Wallet },
   { href: "/expenses", label: "Despesas", icon: ReceiptText },
   { href: "/settings", label: "Definições", icon: Settings },
 ];
@@ -44,7 +46,7 @@ const MOBILE_NAV_ITEMS = [
   { href: "/calendar", label: "Calendário", icon: Calendar },
 ];
 
-const MORE_NAV_ITEMS = NAV_ITEMS.filter((item) => ["/google-forms-review", "/workshops", "/reports", "/expenses", "/settings"].includes(item.href));
+const MORE_NAV_ITEMS = NAV_ITEMS.filter((item) => ["/google-forms-review", "/workshops", "/reports", "/financial-movements", "/expenses", "/settings"].includes(item.href));
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
