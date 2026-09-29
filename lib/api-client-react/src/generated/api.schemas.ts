@@ -1638,6 +1638,7 @@ export interface ReportsV2CashFlow {
   expensesPaid: number;
   net: number;
   undatedPaymentCount: number;
+  undatedPaymentAmount: number;
   workshopsExcluded: boolean;
 }
 
