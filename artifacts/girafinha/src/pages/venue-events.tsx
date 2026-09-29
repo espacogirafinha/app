@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, ChevronDown, ChevronRight, Loader2, MessageCircle, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronRight, Loader2, MessageCircle, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventExtrasDetails } from "@/components/event-extras-selector";
 import { EventAttachmentsDetails } from "@/components/event-attachments";
@@ -40,6 +41,7 @@ export default function VenueEventsPage() {
   const linkedId = useMemo(getLinkedCalendarItemId, []);
   const [expandedId, setExpandedId] = useState<string | null>(linkedId);
   const [listView, setListView] = useState<"upcoming" | "past">("upcoming");
+  const [searchQuery, setSearchQuery] = useState("");
   const deleteVenueEvent = useDeleteVenueEvent();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -54,7 +56,18 @@ export default function VenueEventsPage() {
     };
   }, [events]);
 
-  const rows = listView === "upcoming" ? upcomingRows : pastRows;
+  const normalizedSearchQuery = normalizeVenueEventSearch(searchQuery);
+  const hasSearch = normalizedSearchQuery.length > 0;
+  const searchRows = useMemo(
+    () =>
+      hasSearch
+        ? [...upcomingRows, ...pastRows].filter((event) =>
+            matchesVenueEventSearch(event, normalizedSearchQuery),
+          )
+        : [],
+    [hasSearch, normalizedSearchQuery, upcomingRows, pastRows],
+  );
+  const rows = hasSearch ? searchRows : listView === "upcoming" ? upcomingRows : pastRows;
 
   useEffect(() => {
     if (!linkedId || !events) return;
@@ -136,15 +149,32 @@ export default function VenueEventsPage() {
           <div className="hidden md:block">
             <CardTitle className="text-lg">Lista de festas</CardTitle>
             <CardDescription>
-              {listView === "upcoming" ? "Festas de hoje e próximas, por ordem cronológica." : "Festas terminadas, da mais recente para a mais antiga."}
+              {hasSearch
+                ? `Resultados em festas próximas e anteriores (${searchRows.length}).`
+                : listView === "upcoming"
+                  ? "Festas de hoje e próximas, por ordem cronológica."
+                  : "Festas terminadas, da mais recente para a mais antiga."}
             </CardDescription>
           </div>
-          <Tabs className="w-full md:w-auto" value={listView} onValueChange={(value) => setListView(value as "upcoming" | "past")}>
-            <TabsList className="grid w-full grid-cols-2 md:w-auto">
-              <TabsTrigger value="upcoming">Próximas ({upcomingRows.length})</TabsTrigger>
-              <TabsTrigger value="past">Anteriores</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
+            <div className="relative w-full md:w-[340px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                aria-label="Pesquisar festas"
+                placeholder="Pesquisar por cliente, criança ou telemóvel…"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Tabs className="w-full md:w-auto" value={listView} onValueChange={(value) => setListView(value as "upcoming" | "past")}>
+              <TabsList className="grid w-full grid-cols-2 md:w-auto">
+                <TabsTrigger value="upcoming" disabled={hasSearch}>Próximas ({upcomingRows.length})</TabsTrigger>
+                <TabsTrigger value="past" disabled={hasSearch}>Anteriores</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -167,13 +197,22 @@ export default function VenueEventsPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
-              <CalendarDays className="mb-3 h-12 w-12 text-muted-foreground/30" />
-              <p className="font-medium text-foreground">
-                {listView === "upcoming" ? "Não há festas próximas." : "Ainda não há festas anteriores."}
-              </p>
-              <p className="mt-1 text-sm">
-                {listView === "upcoming" ? "Cria uma festa usando o botão de nova festa ou consulta as anteriores." : "As festas terminadas aparecerão aqui."}
-              </p>
+              {hasSearch ? (
+                <>
+                  <Search className="mb-3 h-12 w-12 text-muted-foreground/30" />
+                  <p className="font-medium text-foreground">Nenhuma festa encontrada para esta pesquisa.</p>
+                </>
+              ) : (
+                <>
+                  <CalendarDays className="mb-3 h-12 w-12 text-muted-foreground/30" />
+                  <p className="font-medium text-foreground">
+                    {listView === "upcoming" ? "Não há festas próximas." : "Ainda não há festas anteriores."}
+                  </p>
+                  <p className="mt-1 text-sm">
+                    {listView === "upcoming" ? "Cria uma festa usando o botão de nova festa ou consulta as anteriores." : "As festas terminadas aparecerão aqui."}
+                  </p>
+                </>
+              )}
             </div>
           )}
         </CardContent>
@@ -416,6 +455,29 @@ function VenueEventRow({
       )}
     </div>
   );
+}
+
+function normalizeVenueEventSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLocaleLowerCase("pt-PT");
+}
+
+function compactVenueEventSearch(value: string) {
+  return value.replace(/[^a-z0-9]/g, "");
+}
+
+function matchesVenueEventSearch(event: VenueEvent, normalizedQuery: string) {
+  const compactQuery = compactVenueEventSearch(normalizedQuery);
+  return [event.customerName, event.birthdayChildName ?? "", event.phone].some((value) => {
+    const normalizedValue = normalizeVenueEventSearch(value);
+    return (
+      normalizedValue.includes(normalizedQuery)
+      || (compactQuery.length > 0 && compactVenueEventSearch(normalizedValue).includes(compactQuery))
+    );
+  });
 }
 
 function PaymentBadge({ status }: { status: VenueEvent["paymentStatus"] }) {
