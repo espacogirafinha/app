@@ -89,3 +89,5 @@ jobs:
         run: |
           if [ -f /tmp/simplify-financial-labels-vite.pid ]; then kill $(cat /tmp/simplify-financial-labels-vite.pid) || true; fi
           cat /tmp/simplify-financial-labels-vite.log || true
+
+# lockfile-synced validation pass
