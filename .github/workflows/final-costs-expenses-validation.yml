@@ -1,0 +1,85 @@
+name: Final costs expenses validation
+
+on:
+  push:
+    branches:
+      - feat/costs-expenses-profitability
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+
+      - name: Vercel function count
+        run: |
+          count=$(find api -type f -name '*.mjs' | wc -l)
+          echo "Vercel function files: $count"
+          test "$count" -eq 12
+          test -f 'api/expenses/[id].mjs'
+          test -f 'api/selected-extras/[id].mjs'
+          test -f 'api/workshops/[...path].mjs'
+
+      - name: API codegen consistency
+        run: |
+          corepack pnpm --filter @workspace/api-spec codegen
+          git restore --source=HEAD -- lib/api-zod/src/index.ts lib/api-zod/src/generated/types/workshop.ts
+          git diff --exit-code -- lib/api-client-react/src/generated lib/api-zod/src
+
+      - name: Relevant tests
+        run: |
+          node --experimental-strip-types --test \
+            artifacts/api-server/src/lib/venue-pack-cost.test.ts \
+            artifacts/api-server/src/lib/expenses-contract.test.ts \
+            artifacts/api-server/src/lib/reports-profitability.test.ts \
+            artifacts/api-server/src/lib/reports-extras.test.ts \
+            artifacts/api-server/src/lib/reports-finance.test.ts \
+            artifacts/api-server/src/lib/event-payment-rules.test.ts \
+            artifacts/api-server/src/lib/selected-extra-cost.test.ts \
+            artifacts/api-server/src/lib/selected-extra-cost-update.test.ts \
+            artifacts/api-server/src/lib/selected-extra-cost-contract.test.ts \
+            artifacts/api-server/src/lib/vercel-selected-extra-route.test.ts \
+            artifacts/api-server/src/lib/custom-fetch-auth-contract.test.ts \
+            artifacts/girafinha/src/lib/selected-extra-cost-error.test.ts \
+            artifacts/girafinha/src/components/event-extras-selector.test.ts
+
+      - name: Install Chromium
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Start expenses test app
+        run: |
+          PORT=4175 VITE_SUPABASE_URL=http://127.0.0.1:9999 VITE_SUPABASE_ANON_KEY=test-anon-key \
+            corepack pnpm --filter @workspace/girafinha dev > /tmp/costs-expenses-vite.log 2>&1 &
+          echo $! > /tmp/costs-expenses-vite.pid
+          for i in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:4175/expenses-flow-test.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/costs-expenses-vite.log
+          exit 1
+
+      - name: Expenses browser integration
+        run: corepack pnpm exec playwright test --config=playwright.expenses.config.ts
+
+      - name: Reports extras browser integration
+        run: corepack pnpm exec playwright test --config=playwright.reports-extra-cost.config.ts
+
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+
+      - name: Build
+        run: corepack pnpm run build
+
+      - name: Stop expenses test app
+        if: always()
+        run: |
+          if [ -f /tmp/costs-expenses-vite.pid ]; then kill $(cat /tmp/costs-expenses-vite.pid) || true; fi
+          cat /tmp/costs-expenses-vite.log || true
