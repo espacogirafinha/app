@@ -10,6 +10,7 @@ import {
   EventPaymentServiceError,
   createEventPayment,
   listEventPayments,
+  listFinancialMovements,
   softDeleteEventPayment,
   updateEventPayment,
 } from "../lib/event-payments";
@@ -44,6 +45,20 @@ function sendError(res: Response, error: unknown) {
   }
   return false;
 }
+
+router.get("/event-payments/movements", async (_req, res): Promise<void> => {
+  const result = await listFinancialMovements();
+  const serializeMovement = (movement: (typeof result.movements)[number]) => ({
+    ...movement,
+    paidAt: iso(movement.paidAt),
+    createdAt: iso(movement.createdAt),
+  });
+
+  res.json({
+    movements: result.movements.map(serializeMovement),
+    undatedPayments: result.undatedPayments.map(serializeMovement),
+  });
+});
 
 router.get("/event-payments", async (req, res): Promise<void> => {
   const parsed = ListEventPaymentsQueryParams.safeParse(req.query);
