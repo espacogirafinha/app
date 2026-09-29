@@ -31,3 +31,5 @@ export * from "./event-attachments";
 export * from "./user-roles";
 
 export * from "./google-form-imports";
+
+export * from "./expenses";

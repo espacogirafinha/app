@@ -547,6 +547,8 @@ export const ListVenueEventsQueryParams = zod.object({
   dateTo: zod.coerce.string().optional(),
 });
 
+export const listVenueEventsResponsePackEstimatedCostMin = 0;
+
 export const listVenueEventsResponseExpectedReservationDepositAmountMin = 0;
 
 export const ListVenueEventsResponseItem = zod.object({
@@ -562,6 +564,10 @@ export const ListVenueEventsResponseItem = zod.object({
   paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
   source: zod.string().nullish(),
   packName: zod.string(),
+  packEstimatedCost: zod
+    .number()
+    .min(listVenueEventsResponsePackEstimatedCostMin)
+    .nullable(),
   birthdayChildName: zod.string().nullish(),
   birthdayChildAge: zod.number().nullish(),
   childrenCount: zod.number(),
@@ -600,6 +606,8 @@ export const ListVenueEventsResponse = zod.array(ListVenueEventsResponseItem);
 /**
  * @summary Create a venue event
  */
+export const createVenueEventBodyPackEstimatedCostMin = 0;
+
 export const createVenueEventBodyExpectedReservationDepositAmountMin = 0;
 
 export const createVenueEventBodyInitialReservationDepositAmountExclusiveMin = 0;
@@ -615,6 +623,10 @@ export const CreateVenueEventBody = zod.object({
   status: zod.enum(["draft", "confirmed", "completed", "cancelled"]).optional(),
   source: zod.string().nullish(),
   packName: zod.string(),
+  packEstimatedCost: zod
+    .number()
+    .min(createVenueEventBodyPackEstimatedCostMin)
+    .nullish(),
   birthdayChildName: zod.string().nullish(),
   birthdayChildAge: zod.number().nullish(),
   childrenCount: zod.number().optional(),
@@ -660,6 +672,8 @@ export const GetVenueEventParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
 
+export const getVenueEventResponsePackEstimatedCostMin = 0;
+
 export const getVenueEventResponseExpectedReservationDepositAmountMin = 0;
 
 export const GetVenueEventResponse = zod.object({
@@ -675,6 +689,10 @@ export const GetVenueEventResponse = zod.object({
   paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
   source: zod.string().nullish(),
   packName: zod.string(),
+  packEstimatedCost: zod
+    .number()
+    .min(getVenueEventResponsePackEstimatedCostMin)
+    .nullable(),
   birthdayChildName: zod.string().nullish(),
   birthdayChildAge: zod.number().nullish(),
   childrenCount: zod.number(),
@@ -716,6 +734,8 @@ export const UpdateVenueEventParams = zod.object({
   id: zod.coerce.string().uuid(),
 });
 
+export const updateVenueEventBodyPackEstimatedCostMin = 0;
+
 export const updateVenueEventBodyExpectedReservationDepositAmountMin = 0;
 
 export const UpdateVenueEventBody = zod.object({
@@ -730,6 +750,10 @@ export const UpdateVenueEventBody = zod.object({
   paymentStatus: zod.enum(["unpaid", "partial", "paid"]).optional(),
   source: zod.string().nullish(),
   packName: zod.string().optional(),
+  packEstimatedCost: zod
+    .number()
+    .min(updateVenueEventBodyPackEstimatedCostMin)
+    .nullish(),
   birthdayChildName: zod.string().nullish(),
   birthdayChildAge: zod.number().nullish(),
   childrenCount: zod.number().optional(),
@@ -758,6 +782,8 @@ export const UpdateVenueEventBody = zod.object({
   notes: zod.string().nullish(),
 });
 
+export const updateVenueEventResponsePackEstimatedCostMin = 0;
+
 export const updateVenueEventResponseExpectedReservationDepositAmountMin = 0;
 
 export const UpdateVenueEventResponse = zod.object({
@@ -773,6 +799,10 @@ export const UpdateVenueEventResponse = zod.object({
   paymentStatus: zod.enum(["unpaid", "partial", "paid"]),
   source: zod.string().nullish(),
   packName: zod.string(),
+  packEstimatedCost: zod
+    .number()
+    .min(updateVenueEventResponsePackEstimatedCostMin)
+    .nullable(),
   birthdayChildName: zod.string().nullish(),
   birthdayChildAge: zod.number().nullish(),
   childrenCount: zod.number(),
@@ -1786,11 +1816,17 @@ export const UpdateSelectedExtraCostResponse = zod.object({
  */
 export const listVenuePacksResponseBasePriceMin = 0;
 
+export const listVenuePacksResponseEstimatedCostMin = 0;
+
 export const ListVenuePacksResponseItem = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   description: zod.string().nullish(),
   basePrice: zod.number().min(listVenuePacksResponseBasePriceMin),
+  estimatedCost: zod
+    .number()
+    .min(listVenuePacksResponseEstimatedCostMin)
+    .nullable(),
   defaultStartTime: zod.string().nullish(),
   defaultEndTime: zod.string().nullish(),
   isActive: zod.boolean(),
@@ -1808,11 +1844,17 @@ export const ListVenuePacksResponse = zod.array(ListVenuePacksResponseItem);
 
 export const createVenuePackBodyBasePriceMin = 0;
 
+export const createVenuePackBodyEstimatedCostMin = 0;
+
 export const CreateVenuePackBody = zod.object({
   id: zod.string().uuid().optional(),
   name: zod.string().min(1),
   description: zod.string().nullish(),
   basePrice: zod.number().min(createVenuePackBodyBasePriceMin),
+  estimatedCost: zod
+    .number()
+    .min(createVenuePackBodyEstimatedCostMin)
+    .nullish(),
   defaultStartTime: zod.string().nullish(),
   defaultEndTime: zod.string().nullish(),
   isActive: zod.boolean().optional(),
@@ -1822,11 +1864,17 @@ export const CreateVenuePackBody = zod.object({
 
 export const createVenuePackResponseBasePriceMin = 0;
 
+export const createVenuePackResponseEstimatedCostMin = 0;
+
 export const CreateVenuePackResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   description: zod.string().nullish(),
   basePrice: zod.number().min(createVenuePackResponseBasePriceMin),
+  estimatedCost: zod
+    .number()
+    .min(createVenuePackResponseEstimatedCostMin)
+    .nullable(),
   defaultStartTime: zod.string().nullish(),
   defaultEndTime: zod.string().nullish(),
   isActive: zod.boolean(),
@@ -1845,10 +1893,16 @@ export const UpdateVenuePackParams = zod.object({
 
 export const updateVenuePackBodyBasePriceMin = 0;
 
+export const updateVenuePackBodyEstimatedCostMin = 0;
+
 export const UpdateVenuePackBody = zod.object({
   name: zod.string().min(1).optional(),
   description: zod.string().nullish(),
   basePrice: zod.number().min(updateVenuePackBodyBasePriceMin).optional(),
+  estimatedCost: zod
+    .number()
+    .min(updateVenuePackBodyEstimatedCostMin)
+    .nullish(),
   defaultStartTime: zod.string().nullish(),
   defaultEndTime: zod.string().nullish(),
   isActive: zod.boolean().optional(),
@@ -1858,11 +1912,17 @@ export const UpdateVenuePackBody = zod.object({
 
 export const updateVenuePackResponseBasePriceMin = 0;
 
+export const updateVenuePackResponseEstimatedCostMin = 0;
+
 export const UpdateVenuePackResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string(),
   description: zod.string().nullish(),
   basePrice: zod.number().min(updateVenuePackResponseBasePriceMin),
+  estimatedCost: zod
+    .number()
+    .min(updateVenuePackResponseEstimatedCostMin)
+    .nullable(),
   defaultStartTime: zod.string().nullish(),
   defaultEndTime: zod.string().nullish(),
   isActive: zod.boolean(),
@@ -2158,6 +2218,155 @@ export const CreateMessageTemplateResponse = zod.object({
 });
 
 /**
+ * @summary List expense categories
+ */
+export const ListExpenseCategoriesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  isActive: zod.boolean(),
+  sortOrder: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListExpenseCategoriesResponse = zod.array(
+  ListExpenseCategoriesResponseItem,
+);
+
+/**
+ * @summary Create an expense category
+ */
+
+export const CreateExpenseCategoryBody = zod.object({
+  name: zod.string().min(1),
+  isActive: zod.boolean().optional(),
+  sortOrder: zod.number().optional(),
+});
+
+/**
+ * @summary Update an expense category
+ */
+export const UpdateExpenseCategoryParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const UpdateExpenseCategoryBody = zod.object({
+  name: zod.string().min(1).optional(),
+  isActive: zod.boolean().optional(),
+  sortOrder: zod.number().optional(),
+});
+
+export const UpdateExpenseCategoryResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  isActive: zod.boolean(),
+  sortOrder: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List active expenses
+ */
+export const listExpensesQueryStartDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+export const listExpensesQueryEndDateRegExp = new RegExp(
+  "^\\d{4}-\\d{2}-\\d{2}$",
+);
+
+export const ListExpensesQueryParams = zod.object({
+  startDate: zod.coerce
+    .string()
+    .regex(listExpensesQueryStartDateRegExp)
+    .optional(),
+  endDate: zod.coerce.string().regex(listExpensesQueryEndDateRegExp).optional(),
+  search: zod.coerce.string().optional(),
+  categoryId: zod.coerce.string().uuid().optional(),
+  expenseType: zod.enum(["operational", "investment"]).optional(),
+});
+
+export const listExpensesResponseAmountExclusiveMin = 0;
+
+export const ListExpensesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  expenseDate: zod.coerce.date(),
+  description: zod.string(),
+  amount: zod.number().gt(listExpensesResponseAmountExclusiveMin),
+  categoryId: zod.string().uuid(),
+  categoryName: zod.string(),
+  expenseType: zod.enum(["operational", "investment"]),
+  supplier: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  venueEventId: zod.string().uuid().nullable(),
+  venueEventLabel: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListExpensesResponse = zod.array(ListExpensesResponseItem);
+
+/**
+ * @summary Create an expense
+ */
+
+export const createExpenseBodyAmountExclusiveMin = 0;
+
+export const CreateExpenseBody = zod.object({
+  expenseDate: zod.coerce.date(),
+  description: zod.string().min(1),
+  amount: zod.number().gt(createExpenseBodyAmountExclusiveMin),
+  categoryId: zod.string().uuid(),
+  expenseType: zod.enum(["operational", "investment"]),
+  supplier: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  venueEventId: zod.string().uuid().nullish(),
+});
+
+/**
+ * @summary Update an expense
+ */
+export const UpdateExpenseParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateExpenseBodyAmountExclusiveMin = 0;
+
+export const UpdateExpenseBody = zod.object({
+  expenseDate: zod.coerce.date().optional(),
+  description: zod.string().min(1).optional(),
+  amount: zod.number().gt(updateExpenseBodyAmountExclusiveMin).optional(),
+  categoryId: zod.string().uuid().optional(),
+  expenseType: zod.enum(["operational", "investment"]).optional(),
+  supplier: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  venueEventId: zod.string().uuid().nullish(),
+});
+
+export const updateExpenseResponseAmountExclusiveMin = 0;
+
+export const UpdateExpenseResponse = zod.object({
+  id: zod.string().uuid(),
+  expenseDate: zod.coerce.date(),
+  description: zod.string(),
+  amount: zod.number().gt(updateExpenseResponseAmountExclusiveMin),
+  categoryId: zod.string().uuid(),
+  categoryName: zod.string(),
+  expenseType: zod.enum(["operational", "investment"]),
+  supplier: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  venueEventId: zod.string().uuid().nullable(),
+  venueEventLabel: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Soft-delete an expense
+ */
+export const DeleteExpenseParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+/**
  * Aggregates venue events, external events, services, workshops and participants for the V2 dashboard.
  * @summary Get V2 dashboard aggregate
  */
@@ -2449,6 +2658,69 @@ export const GetReportsV2Response = zod.object({
         ),
       }),
     ),
+    pendingAll: zod
+      .array(
+        zod.object({
+          id: zod.string().uuid(),
+          entityId: zod.string().uuid(),
+          eventDate: zod.coerce.date(),
+          customerName: zod.string(),
+          birthdayChildName: zod.string().nullable(),
+          extraName: zod.string(),
+          quantity: zod.number(),
+          unitPrice: zod.number(),
+          totalPrice: zod.number(),
+          unitCost: zod.number().nullable(),
+          totalCost: zod.number().nullable(),
+          margin: zod.number().nullable(),
+        }),
+      )
+      .describe(
+        "Venue-event extras with unknown supplier cost across all non-cancelled parties, independent of the selected report period.",
+      ),
+  }),
+  financial: zod.object({
+    venueProfitability: zod.object({
+      revenue: zod.number(),
+      knownPackCosts: zod.number(),
+      knownExtraCosts: zod.number(),
+      estimatedMarginKnownCosts: zod.number(),
+      unknownPackCostCount: zod.number(),
+      unknownExtraCostCount: zod.number(),
+    }),
+    expenses: zod.object({
+      operational: zod.number(),
+      investments: zod.number(),
+      totalOutflows: zod.number(),
+      byCategory: zod.array(
+        zod.object({
+          label: zod.string(),
+          count: zod.number(),
+          total: zod.number(),
+        }),
+      ),
+      topSuppliers: zod.array(
+        zod.object({
+          label: zod.string(),
+          count: zod.number(),
+          total: zod.number(),
+        }),
+      ),
+    }),
+    management: zod.object({
+      eventRevenue: zod.number(),
+      operationalExpenses: zod.number(),
+      result: zod.number(),
+      investments: zod.number(),
+      resultAfterInvestments: zod.number(),
+    }),
+    cashFlow: zod.object({
+      received: zod.number(),
+      expensesPaid: zod.number(),
+      net: zod.number(),
+      undatedPaymentCount: zod.number(),
+      workshopsExcluded: zod.boolean(),
+    }),
   }),
   externalEvents: zod.object({
     eventCount: zod.number(),

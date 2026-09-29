@@ -127,6 +127,19 @@ export default function ReportsPage() {
         item.knownCost,
         item.knownMargin,
       ]),
+      ["Rentabilidade estimada", "Receita Festas", report.financial.venueProfitability.revenue],
+      ["Rentabilidade estimada", "Custos packs conhecidos", report.financial.venueProfitability.knownPackCosts],
+      ["Rentabilidade estimada", "Custos extras conhecidos", report.financial.venueProfitability.knownExtraCosts],
+      ["Rentabilidade estimada", "Margem estimada apurada", report.financial.venueProfitability.estimatedMarginKnownCosts],
+      ["Despesas reais", "Operacionais", report.financial.expenses.operational],
+      ["Despesas reais", "Investimentos", report.financial.expenses.investments],
+      ["Despesas reais", "Total saídas", report.financial.expenses.totalOutflows],
+      ["Resultado de gestão", "Resultado operacional", report.financial.management.result],
+      ["Resultado de gestão", "Após investimentos", report.financial.management.resultAfterInvestments],
+      ["Fluxo de caixa", "Recebido com data conhecida", report.financial.cashFlow.received],
+      ["Fluxo de caixa", "Saídas pagas", report.financial.cashFlow.expensesPaid],
+      ["Fluxo de caixa", "Saldo", report.financial.cashFlow.net],
+      ["Fluxo de caixa", "Recebimentos históricos sem data", report.financial.cashFlow.undatedPaymentCount],
     ];
     downloadCsv(rows.map((row) => row.map(csv).join(",")).join("\n"), `relatorio_${period.startDate}_${period.endDate}.csv`);
   };
@@ -224,6 +237,7 @@ export default function ReportsPage() {
             extras={report.extras}
             reportParams={{ startDate: period.startDate, endDate: period.endDate }}
           />
+          <FinancialReportSection financial={report.financial} />
         </>
       )}
     </div>
@@ -412,6 +426,131 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
   );
 }
 
+function FinancialReportSection({ financial }: { financial: ReportsV2["financial"] }) {
+  const profitabilityUnknown =
+    financial.venueProfitability.unknownPackCostCount + financial.venueProfitability.unknownExtraCostCount;
+
+  return (
+    <section className="space-y-4" aria-label="Rentabilidade e despesas">
+      <div>
+        <h2 className="text-base font-semibold">Rentabilidade e despesas</h2>
+        <p className="text-xs text-muted-foreground">
+          Leituras separadas de estimativas das Festas, despesas reais e fluxo de caixa.
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-base">Rentabilidade estimada das Festas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4 pt-1">
+            <div className="grid grid-cols-2 gap-2">
+              <SmallMetric label="Receita das Festas" value={euro(financial.venueProfitability.revenue)} />
+              <SmallMetric label="Custos packs conhecidos" value={euro(financial.venueProfitability.knownPackCosts)} />
+              <SmallMetric label="Custos extras conhecidos" value={euro(financial.venueProfitability.knownExtraCosts)} />
+              <SmallMetric label="Margem estimada apurada" value={euro(financial.venueProfitability.estimatedMarginKnownCosts)} />
+            </div>
+            {profitabilityUnknown > 0 ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                {financial.venueProfitability.unknownPackCostCount} festa(s) com custo de pack por definir e{" "}
+                {financial.venueProfitability.unknownExtraCostCount} extra(s) com custo por apurar.
+                A margem não está totalmente conhecida.
+              </div>
+            ) : null}
+            <p className="text-xs text-muted-foreground">
+              Estimativa de gestão baseada nos snapshots dos Packs e Extras. Não representa lucro contabilístico real.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-base">Despesas reais</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4 pt-1">
+            <div className="grid grid-cols-3 gap-2">
+              <SmallMetric label="Operacionais" value={euro(financial.expenses.operational)} />
+              <SmallMetric label="Investimentos" value={euro(financial.expenses.investments)} />
+              <SmallMetric label="Total saídas" value={euro(financial.expenses.totalOutflows)} />
+            </div>
+            {financial.expenses.byCategory.length > 0 ? (
+              <BreakdownList title="Por categoria" rows={financial.expenses.byCategory} />
+            ) : null}
+            {financial.expenses.topSuppliers.length > 0 ? (
+              <BreakdownList title="Principais fornecedores / lojas" rows={financial.expenses.topSuppliers} />
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-base">Resultado de gestão</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4 pt-1">
+            <div className="grid grid-cols-2 gap-2">
+              <SmallMetric label="Receita dos eventos" value={euro(financial.management.eventRevenue)} />
+              <SmallMetric label="Despesas operacionais" value={euro(financial.management.operationalExpenses)} />
+              <SmallMetric label="Resultado operacional" value={euro(financial.management.result)} />
+              <SmallMetric label="Após investimentos" value={euro(financial.management.resultAfterInvestments)} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Visão de gestão: a receita segue a data do evento e as despesas a data em que foram pagas/registadas.
+              Compras de stock podem servir vários eventos. Não é contabilidade fiscal.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-base">Fluxo de caixa</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4 pt-1">
+            <div className="grid grid-cols-3 gap-2">
+              <SmallMetric label="Recebido" value={euro(financial.cashFlow.received)} />
+              <SmallMetric label="Saídas pagas" value={euro(financial.cashFlow.expensesPaid)} />
+              <SmallMetric label="Saldo" value={euro(financial.cashFlow.net)} />
+            </div>
+            {financial.cashFlow.undatedPaymentCount > 0 ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                Existem {financial.cashFlow.undatedPaymentCount} recebimento(s) histórico(s) sem data e não estão incluídos neste fluxo de caixa.
+              </div>
+            ) : null}
+            {financial.cashFlow.workshopsExcluded ? (
+              <p className="text-xs text-muted-foreground">
+                Recebimentos de Workshops não entram neste fluxo de caixa porque o modelo atual não guarda uma data fiável para cada pagamento.
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+function BreakdownList({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: Array<{ label: string; count: number; total: number }>;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-sm font-semibold">{title}</p>
+      {rows.slice(0, 8).map((row) => (
+        <div key={row.label} className="flex items-center justify-between gap-3 rounded-lg border px-2.5 py-2 text-xs">
+          <div className="min-w-0">
+            <p className="break-words font-medium">{row.label}</p>
+            <p className="text-muted-foreground">{row.count} registo{row.count === 1 ? "" : "s"}</p>
+          </div>
+          <strong>{euro(row.total)}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ExtrasReportSection({
   extras,
   reportParams,
@@ -430,7 +569,9 @@ function ExtrasReportSection({
     ? extras.items.find((item) => item.label === selectedLabel) ?? null
     : null;
   const editingOccurrence = editingId
-    ? selectedItem?.occurrences.find((occurrence) => occurrence.id === editingId) ?? null
+    ? selectedItem?.occurrences.find((occurrence) => occurrence.id === editingId)
+      ?? extras.pendingAll.find((occurrence) => occurrence.id === editingId)
+      ?? null
     : null;
 
   const openCostEditor = (occurrence: ReportsV2ExtraOccurrence) => {
@@ -532,6 +673,46 @@ function ExtrasReportSection({
           ))}
         </div>
       )}
+
+      <Card className="border-amber-200 shadow-sm">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-base">Extras por apurar — todas as festas</CardTitle>
+          <p className="text-xs font-normal text-muted-foreground">
+            Lista global de custos de fornecedor em falta. Pode incluir Festas fora do período selecionado e não altera as métricas financeiras acima.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2 p-4 pt-1">
+          {extras.pendingAll.length === 0 ? (
+            <EmptyState text="Todos os extras das Festas não canceladas têm custo definido." />
+          ) : (
+            extras.pendingAll.map((occurrence) => (
+              <div
+                key={occurrence.id}
+                data-testid={`global-pending-extra-${occurrence.id}`}
+                className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50/50 p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold">{occurrence.extraName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {occurrence.birthdayChildName || occurrence.customerName} · {format(parseISO(occurrence.eventDate), "dd MMM yyyy", { locale: pt })}
+                  </p>
+                  <p className="mt-1 text-xs">
+                    {occurrence.quantity} × {euro(occurrence.unitPrice)} · Cliente pagou <strong>{euro(occurrence.totalPrice)}</strong>
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => openCostEditor(occurrence)}
+                >
+                  Adicionar custo
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={Boolean(selectedItem)} onOpenChange={(open) => {
         if (!open) {

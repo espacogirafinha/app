@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aggregateVenueExtrasReport, eligibleVenueEventIds } from "./reports-extras.ts";
+import { aggregateVenueExtrasReport, eligibleVenueEventIds, globalPendingVenueExtraOccurrences } from "./reports-extras.ts";
 import { aggregateFinancials } from "./reports-finance.ts";
 
 const row = (
@@ -128,4 +128,81 @@ test("same extra can have different supplier costs per occurrence", () => {
     report.items[0].occurrences.map((item) => [item.id, item.unitCost]),
     [["second", 20], ["first", 35]],
   );
+});
+
+
+test("global pending extras ignore the report period but exclude cancelled events and known costs", () => {
+  const events = [
+    { id: "in-period", eventDate: "2026-09-10", status: "confirmed" },
+    { id: "outside-period", eventDate: "2026-10-20", status: "confirmed" },
+    { id: "cancelled", eventDate: "2026-10-21", status: "cancelled" },
+  ];
+  const rows = [
+    {
+      id: "pending-in",
+      entityId: "in-period",
+      eventDate: "2026-09-10",
+      customerName: "Cliente A",
+      birthdayChildName: "Mia",
+      extraName: "Pinturas",
+      category: "Animação",
+      quantity: 1,
+      unitPrice: 50,
+      totalPrice: 50,
+      unitCost: null,
+      totalCost: null,
+    },
+    {
+      id: "pending-outside",
+      entityId: "outside-period",
+      eventDate: "2026-10-20",
+      customerName: "Cliente B",
+      birthdayChildName: null,
+      extraName: "Animadora",
+      category: "Animação",
+      quantity: 1,
+      unitPrice: 70,
+      totalPrice: 70,
+      unitCost: null,
+      totalCost: null,
+    },
+    {
+      id: "cancelled-pending",
+      entityId: "cancelled",
+      eventDate: "2026-10-21",
+      customerName: "Cliente C",
+      birthdayChildName: null,
+      extraName: "Balões",
+      category: "Animação",
+      quantity: 1,
+      unitPrice: 30,
+      totalPrice: 30,
+      unitCost: null,
+      totalCost: null,
+    },
+    {
+      id: "known-outside",
+      entityId: "outside-period",
+      eventDate: "2026-10-20",
+      customerName: "Cliente B",
+      birthdayChildName: null,
+      extraName: "Fotografia",
+      category: "Animação",
+      quantity: 1,
+      unitPrice: 40,
+      totalPrice: 40,
+      unitCost: 20,
+      totalCost: 20,
+    },
+  ];
+
+  const periodIds = eligibleVenueEventIds(events, "2026-09-01", "2026-09-30");
+  const periodReport = aggregateVenueExtrasReport(rows.filter((row) => periodIds.has(row.entityId)));
+  const pendingAll = globalPendingVenueExtraOccurrences(events, rows);
+
+  assert.equal(periodReport.revenue, 50);
+  assert.equal(periodReport.soldCount, 1);
+  assert.deepEqual(pendingAll.map((item) => item.id), ["pending-outside", "pending-in"]);
+  assert.equal(pendingAll.some((item) => item.id === "cancelled-pending"), false);
+  assert.equal(pendingAll.some((item) => item.id === "known-outside"), false);
 });

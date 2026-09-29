@@ -1281,6 +1281,178 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /settings/expense-categories:
+    get:
+      operationId: listExpenseCategories
+      tags: [settings-catalogs]
+      summary: List expense categories
+      responses:
+        "200":
+          description: Expense categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExpenseCategory"
+    post:
+      operationId: createExpenseCategory
+      tags: [settings-catalogs]
+      summary: Create an expense category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseCategoryBody"
+      responses:
+        "201":
+          description: Expense category created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseCategory"
+
+  /settings/expense-categories/{id}:
+    patch:
+      operationId: updateExpenseCategory
+      tags: [settings-catalogs]
+      summary: Update an expense category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExpenseCategoryBody"
+      responses:
+        "200":
+          description: Expense category updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseCategory"
+        "404":
+          description: Expense category not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List active expenses
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: expenseType
+          in: query
+          schema:
+            $ref: "#/components/schemas/ExpenseType"
+      responses:
+        "200":
+          description: Expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Create an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseBody"
+      responses:
+        "201":
+          description: Expense created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /expenses/{id}:
+    patch:
+      operationId: updateExpense
+      tags: [expenses]
+      summary: Update an expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExpenseBody"
+      responses:
+        "200":
+          description: Expense updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+        "404":
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Soft-delete an expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Expense annulled
+        "404":
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /dashboard-v2:
     get:
       operationId: getDashboardV2
@@ -2323,6 +2495,9 @@ components:
         basePrice:
           type: number
           minimum: 0
+        estimatedCost:
+          type: ["number", "null"]
+          minimum: 0
         defaultStartTime:
           type: ["string", "null"]
         defaultEndTime:
@@ -2341,6 +2516,7 @@ components:
         - id
         - name
         - basePrice
+        - estimatedCost
         - isActive
         - sortOrder
         - createdAt
@@ -2359,6 +2535,9 @@ components:
           type: ["string", "null"]
         basePrice:
           type: number
+          minimum: 0
+        estimatedCost:
+          type: ["number", "null"]
           minimum: 0
         defaultStartTime:
           type: ["string", "null"]
@@ -2384,6 +2563,9 @@ components:
           type: ["string", "null"]
         basePrice:
           type: number
+          minimum: 0
+        estimatedCost:
+          type: ["number", "null"]
           minimum: 0
         defaultStartTime:
           type: ["string", "null"]
@@ -2928,6 +3110,9 @@ components:
           type: ["string", "null"]
         packName:
           type: string
+        packEstimatedCost:
+          type: ["number", "null"]
+          minimum: 0
         birthdayChildName:
           type: ["string", "null"]
         birthdayChildAge:
@@ -2978,6 +3163,7 @@ components:
         - status
         - paymentStatus
         - packName
+        - packEstimatedCost
         - childrenCount
         - termsAccepted
         - totalPrice
@@ -3010,6 +3196,9 @@ components:
           type: ["string", "null"]
         packName:
           type: string
+        packEstimatedCost:
+          type: ["number", "null"]
+          minimum: 0
         birthdayChildName:
           type: ["string", "null"]
         birthdayChildAge:
@@ -3081,6 +3270,9 @@ components:
           type: ["string", "null"]
         packName:
           type: string
+        packEstimatedCost:
+          type: ["number", "null"]
+          minimum: 0
         birthdayChildName:
           type: ["string", "null"]
         birthdayChildAge:
@@ -3727,6 +3919,7 @@ components:
       required:
         - venueEvents
         - extras
+        - financial
         - externalEvents
         - workshops
 
@@ -3982,6 +4175,232 @@ components:
         - occupiesSpace
         - status
 
+    ExpenseType:
+      type: string
+      enum: [operational, investment]
+
+    ExpenseCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, isActive, sortOrder, createdAt, updatedAt]
+
+    CreateExpenseCategoryBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+      required: [name]
+
+    UpdateExpenseCategoryBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        expenseDate:
+          type: string
+          format: date
+        description:
+          type: string
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        categoryId:
+          type: string
+          format: uuid
+        categoryName:
+          type: string
+        expenseType:
+          $ref: "#/components/schemas/ExpenseType"
+        supplier:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        venueEventId:
+          type: ["string", "null"]
+          format: uuid
+        venueEventLabel:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, expenseDate, description, amount, categoryId, categoryName, expenseType, supplier, notes, venueEventId, venueEventLabel, createdAt, updatedAt]
+
+    CreateExpenseBody:
+      type: object
+      properties:
+        expenseDate:
+          type: string
+          format: date
+        description:
+          type: string
+          minLength: 1
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        categoryId:
+          type: string
+          format: uuid
+        expenseType:
+          $ref: "#/components/schemas/ExpenseType"
+        supplier:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        venueEventId:
+          type: ["string", "null"]
+          format: uuid
+      required: [expenseDate, description, amount, categoryId, expenseType]
+
+    UpdateExpenseBody:
+      type: object
+      properties:
+        expenseDate:
+          type: string
+          format: date
+        description:
+          type: string
+          minLength: 1
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        categoryId:
+          type: string
+          format: uuid
+        expenseType:
+          $ref: "#/components/schemas/ExpenseType"
+        supplier:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        venueEventId:
+          type: ["string", "null"]
+          format: uuid
+
+    ReportsV2ExpenseBreakdown:
+      type: object
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+        total:
+          type: number
+      required: [label, count, total]
+
+    ReportsV2VenueProfitability:
+      type: object
+      properties:
+        revenue:
+          type: number
+        knownPackCosts:
+          type: number
+        knownExtraCosts:
+          type: number
+        estimatedMarginKnownCosts:
+          type: number
+        unknownPackCostCount:
+          type: integer
+        unknownExtraCostCount:
+          type: integer
+      required: [revenue, knownPackCosts, knownExtraCosts, estimatedMarginKnownCosts, unknownPackCostCount, unknownExtraCostCount]
+
+    ReportsV2ExpenseSummary:
+      type: object
+      properties:
+        operational:
+          type: number
+        investments:
+          type: number
+        totalOutflows:
+          type: number
+        byCategory:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2ExpenseBreakdown"
+        topSuppliers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportsV2ExpenseBreakdown"
+      required: [operational, investments, totalOutflows, byCategory, topSuppliers]
+
+    ReportsV2ManagementResult:
+      type: object
+      properties:
+        eventRevenue:
+          type: number
+        operationalExpenses:
+          type: number
+        result:
+          type: number
+        investments:
+          type: number
+        resultAfterInvestments:
+          type: number
+      required: [eventRevenue, operationalExpenses, result, investments, resultAfterInvestments]
+
+    ReportsV2CashFlow:
+      type: object
+      properties:
+        received:
+          type: number
+        expensesPaid:
+          type: number
+        net:
+          type: number
+        undatedPaymentCount:
+          type: integer
+        workshopsExcluded:
+          type: boolean
+      required: [received, expensesPaid, net, undatedPaymentCount, workshopsExcluded]
+
+    ReportsV2Financial:
+      type: object
+      properties:
+        venueProfitability:
+          $ref: "#/components/schemas/ReportsV2VenueProfitability"
+        expenses:
+          $ref: "#/components/schemas/ReportsV2ExpenseSummary"
+        management:
+          $ref: "#/components/schemas/ReportsV2ManagementResult"
+        cashFlow:
+          $ref: "#/components/schemas/ReportsV2CashFlow"
+      required: [venueProfitability, expenses, management, cashFlow]
+
     ReportsV2:
       type: object
       properties:
@@ -3993,6 +4412,8 @@ components:
           $ref: "#/components/schemas/ReportsV2VenueEvents"
         extras:
           $ref: "#/components/schemas/ReportsV2Extras"
+        financial:
+          $ref: "#/components/schemas/ReportsV2Financial"
         externalEvents:
           $ref: "#/components/schemas/ReportsV2ExternalEvents"
         workshops:
@@ -4002,6 +4423,7 @@ components:
         - areas
         - venueEvents
         - extras
+        - financial
         - externalEvents
         - workshops
 
@@ -4201,7 +4623,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReportsV2ExtraBreakdown"
-      required: [soldCount, revenue, knownCost, knownMargin, unknownCostCount, items]
+        pendingAll:
+          type: array
+          description: Venue-event extras with unknown supplier cost across all non-cancelled parties, independent of the selected report period.
+          items:
+            $ref: "#/components/schemas/ReportsV2ExtraOccurrence"
+      required: [soldCount, revenue, knownCost, knownMargin, unknownCostCount, items, pendingAll]
 
     ReportsV2ExternalEvents:
       type: object

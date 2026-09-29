@@ -63,6 +63,7 @@ function formatVenuePack(row: VenuePackRow) {
     name: row.name,
     description: row.description,
     basePrice: money(row.basePrice),
+    estimatedCost: moneyOrNull(row.estimatedCost),
     defaultStartTime: row.defaultStartTime,
     defaultEndTime: row.defaultEndTime,
     isActive: row.isActive,
@@ -137,12 +138,13 @@ router.post("/settings/venue-packs", requireSettingsAdmin, async (req, res): Pro
 
   const id = bodyId(req.body);
   const body = parsed.data;
-  const { basePrice, ...payload } = body;
+  const { basePrice, estimatedCost, ...payload } = body;
 
   if (id) {
     const updateData = compactObject({
       ...payload,
       basePrice: String(basePrice),
+      estimatedCost: estimatedCost === undefined ? undefined : estimatedCost === null ? null : String(estimatedCost),
     }) as Partial<typeof venuePacksTable.$inferInsert>;
 
     const [row] = await db
@@ -165,6 +167,7 @@ router.post("/settings/venue-packs", requireSettingsAdmin, async (req, res): Pro
     .values(compactObject({
       ...payload,
       basePrice: String(basePrice),
+      estimatedCost: estimatedCost === undefined || estimatedCost === null ? null : String(estimatedCost),
       isActive: body.isActive ?? true,
       sortOrder: body.sortOrder ?? 0,
     }) as typeof venuePacksTable.$inferInsert)
@@ -186,10 +189,11 @@ router.patch("/settings/venue-packs/:id", requireSettingsAdmin, async (req, res)
     return;
   }
 
-  const { basePrice, ...body } = parsed.data;
+  const { basePrice, estimatedCost, ...body } = parsed.data;
   const updateData = compactObject({
     ...body,
     basePrice: basePrice === undefined ? undefined : String(basePrice),
+    estimatedCost: estimatedCost === undefined ? undefined : estimatedCost === null ? null : String(estimatedCost),
   }) as Partial<typeof venuePacksTable.$inferInsert>;
 
   const [row] = await db

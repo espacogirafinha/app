@@ -25,6 +25,11 @@ export interface CreateVenueEventBody {
   /** @nullable */
   source?: string | null;
   packName: string;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  packEstimatedCost?: number | null;
   /** @nullable */
   birthdayChildName?: string | null;
   /** @nullable */

@@ -8,6 +8,7 @@
 import type { ReportsV2Areas } from "./reportsV2Areas";
 import type { ReportsV2ExternalEvents } from "./reportsV2ExternalEvents";
 import type { ReportsV2Extras } from "./reportsV2Extras";
+import type { ReportsV2Financial } from "./reportsV2Financial";
 import type { ReportsV2Summary } from "./reportsV2Summary";
 import type { ReportsV2VenueEvents } from "./reportsV2VenueEvents";
 import type { ReportsV2Workshops } from "./reportsV2Workshops";
@@ -17,6 +18,7 @@ export interface ReportsV2 {
   areas: ReportsV2Areas;
   venueEvents: ReportsV2VenueEvents;
   extras: ReportsV2Extras;
+  financial: ReportsV2Financial;
   externalEvents: ReportsV2ExternalEvents;
   workshops: ReportsV2Workshops;
 }

@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { SettingsChecklists } from "@/components/settings-checklists";
 import { SettingsMessageTemplates } from "@/components/settings-message-templates";
+import { SettingsExpenseCategories } from "@/components/settings-expense-categories";
 import { useToast } from "@/hooks/use-toast";
 import {
   getListEventExtrasQueryKey,
@@ -64,6 +65,7 @@ type CatalogFormState = {
   category: string;
   basePrice: string;
   baseCost: string;
+  estimatedCost: string;
   defaultStartTime: string;
   defaultEndTime: string;
   appliesTo: EventExtra["appliesTo"];
@@ -80,6 +82,7 @@ const emptyForm: CatalogFormState = {
   category: "",
   basePrice: "0",
   baseCost: "",
+  estimatedCost: "",
   defaultStartTime: "",
   defaultEndTime: "",
   appliesTo: "all",
@@ -176,10 +179,11 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="venue-packs" className="space-y-4">
-        <TabsList className="flex h-auto w-full max-w-full justify-start gap-1 overflow-x-auto rounded-xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-5 md:overflow-visible">
+        <TabsList className="flex h-auto w-full max-w-full justify-start gap-1 overflow-x-auto rounded-xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-6 md:overflow-visible">
           <TabsTrigger value="venue-packs" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Packs de Festas</TabsTrigger>
           <TabsTrigger value="external-services" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Serviços Externos</TabsTrigger>
           <TabsTrigger value="event-extras" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Extras</TabsTrigger>
+          <TabsTrigger value="expense-categories" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Categorias despesas</TabsTrigger>
           <TabsTrigger value="message-templates" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Templates WhatsApp</TabsTrigger>
           <TabsTrigger value="checklists" className="min-h-10 flex-none whitespace-nowrap px-3 text-xs md:px-2 md:text-sm">Checklists</TabsTrigger>
         </TabsList>
@@ -230,6 +234,10 @@ export default function SettingsPage() {
             onSave={(data) => createEventExtra.mutateAsync({ data: data as CreateEventExtraBody })}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: getListEventExtrasQueryKey() })}
           />
+        </TabsContent>
+
+        <TabsContent value="expense-categories">
+          <SettingsExpenseCategories />
         </TabsContent>
 
         <TabsContent value="message-templates">
@@ -398,6 +406,9 @@ function CatalogCard({
           {kind === "event-extras" && "baseCost" in item ? (
             <Info label="Custo sugerido" value={item.baseCost === null ? "Por apurar" : formatCurrency(item.baseCost)} />
           ) : null}
+          {kind === "venue-packs" && "estimatedCost" in item ? (
+            <Info label="Custo estimado" value={item.estimatedCost === null ? "Por definir" : formatCurrency(item.estimatedCost)} />
+          ) : null}
           <Info label="Ordem" value={String(item.sortOrder)} className="hidden md:block" />
           {kind === "venue-packs" && "defaultStartTime" in item && (item.defaultStartTime || item.defaultEndTime) ? (
             <Info
@@ -452,6 +463,7 @@ function CatalogModal({
 
     const basePrice = parseMoneyInput(form.basePrice);
     const baseCost = form.baseCost.trim() === "" ? null : parseMoneyInput(form.baseCost);
+    const estimatedCost = form.estimatedCost.trim() === "" ? null : parseMoneyInput(form.estimatedCost);
     const sortOrder = Number.parseInt(form.sortOrder || "0", 10);
 
     if (!form.name.trim()) {
@@ -471,6 +483,11 @@ function CatalogModal({
 
     if (baseCost !== null && (baseCost < 0 || Number.isNaN(baseCost))) {
       toast({ title: "Custo sugerido inválido", description: "Deixe vazio se ainda não souber o custo.", variant: "destructive" });
+      return;
+    }
+
+    if (estimatedCost !== null && (estimatedCost < 0 || Number.isNaN(estimatedCost))) {
+      toast({ title: "Custo estimado inválido", description: "Deixe vazio se ainda não souber o custo.", variant: "destructive" });
       return;
     }
 
@@ -516,6 +533,17 @@ function CatalogModal({
             <Field label="Preço base">
               <MoneyInput value={form.basePrice} onValueChange={(value) => patch({ basePrice: value })} />
             </Field>
+
+            {kind === "venue-packs" ? (
+              <Field label="Custo estimado">
+                <MoneyInput
+                  value={form.estimatedCost}
+                  onValueChange={(value) => patch({ estimatedCost: value })}
+                  normalizeOnBlur={false}
+                  placeholder="Deixar vazio se desconhecido"
+                />
+              </Field>
+            ) : null}
 
             {kind === "event-extras" ? (
               <Field label="Custo sugerido">
@@ -636,6 +664,7 @@ function toFormState(kind: CatalogKind, item?: CatalogItem): CatalogFormState {
     category: "category" in item && item.category ? item.category : "",
     basePrice: String(item.basePrice),
     baseCost: kind === "event-extras" && "baseCost" in item && item.baseCost !== null ? String(item.baseCost) : "",
+    estimatedCost: kind === "venue-packs" && "estimatedCost" in item && item.estimatedCost !== null ? String(item.estimatedCost) : "",
     defaultStartTime: "defaultStartTime" in item && item.defaultStartTime ? item.defaultStartTime : "",
     defaultEndTime: "defaultEndTime" in item && item.defaultEndTime ? item.defaultEndTime : "",
     appliesTo: kind === "event-extras" && "appliesTo" in item ? item.appliesTo : "all",
@@ -655,6 +684,7 @@ function toPayload(
   const nextForm = { ...form, ...overrides };
   const basePrice = parseMoneyInput(nextForm.basePrice);
   const baseCost = nextForm.baseCost.trim() === "" ? null : parseMoneyInput(nextForm.baseCost);
+  const estimatedCost = nextForm.estimatedCost.trim() === "" ? null : parseMoneyInput(nextForm.estimatedCost);
   const sortOrder = Number.parseInt(nextForm.sortOrder || "0", 10);
 
   if (kind === "venue-packs") {
@@ -663,6 +693,7 @@ function toPayload(
       name: nextForm.name.trim(),
       description: nullable(nextForm.description),
       basePrice,
+      estimatedCost,
       defaultStartTime: nullable(nextForm.defaultStartTime),
       defaultEndTime: nullable(nextForm.defaultEndTime),
       isActive: nextForm.isActive,

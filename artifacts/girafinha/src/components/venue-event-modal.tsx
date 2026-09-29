@@ -49,6 +49,7 @@ type VenueEventFormState = {
   endTime: string;
   status: "draft" | "confirmed" | "completed" | "cancelled";
   packName: string;
+  packEstimatedCost: string;
   birthdayChildName: string;
   birthdayChildAge: string;
   childrenCount: string;
@@ -82,6 +83,7 @@ const PACK_PRICES: Record<string, number> = {
 type PackOption = {
   name: string;
   basePrice: number;
+  estimatedCost: number | null;
   defaultStartTime?: string | null;
   defaultEndTime?: string | null;
   sortOrder: number;
@@ -90,6 +92,7 @@ type PackOption = {
 const FALLBACK_PACKS: PackOption[] = Object.entries(PACK_PRICES).map(([name, basePrice], index) => ({
   name,
   basePrice,
+  estimatedCost: null,
   defaultStartTime: null,
   defaultEndTime: null,
   sortOrder: index,
@@ -106,6 +109,7 @@ const initialState: VenueEventFormState = {
   endTime: "13:00",
   status: "draft",
   packName: "Pack Simples",
+  packEstimatedCost: "",
   birthdayChildName: "",
   birthdayChildAge: "",
   childrenCount: "0",
@@ -142,6 +146,7 @@ export function VenueEventModal({
   const [isExpectedDepositManual, setIsExpectedDepositManual] = useState(false);
   const [isInitialDepositAmountManual, setIsInitialDepositAmountManual] = useState(false);
   const loadedExtrasEntityRef = useRef<string | null>(null);
+  const initializedNewPackCostRef = useRef(false);
   const attachmentsRef = useRef<EventAttachmentsHandle>(null);
   const createVenueEvent = useCreateVenueEvent();
   const updateVenueEvent = useUpdateVenueEvent();
@@ -164,8 +169,43 @@ export function VenueEventModal({
   const expectedDeposit = parseMoneyInput(form.expectedReservationDepositAmount);
   const expectedRemaining = Math.max(0, totalPrice - expectedDeposit);
   const extrasTotal = useMemo(() => calculateExtrasTotal(extras), [extras]);
+  const knownExtraCosts = useMemo(
+    () => extras.reduce((sum, extra) => sum + (extra.totalCost ?? 0), 0),
+    [extras],
+  );
+  const unknownExtraCostCount = useMemo(
+    () => extras.filter((extra) => extra.totalCost === null || extra.totalCost === undefined).length,
+    [extras],
+  );
+  const packEstimatedCost = form.packEstimatedCost.trim() === "" ? null : parseMoneyInput(form.packEstimatedCost);
+  const estimatedMarginKnownCosts = totalPrice - (packEstimatedCost ?? 0) - knownExtraCosts;
+  const unknownEstimatedCostCount = (packEstimatedCost === null ? 1 : 0) + unknownExtraCostCount;
   const isPending = createVenueEvent.isPending || updateVenueEvent.isPending || replaceSelectedExtras.isPending;
   const packOptions = useMemo(() => buildPackOptions(venuePacksQuery.data), [venuePacksQuery.data]);
+
+  useEffect(() => {
+    if (
+      !open
+      || event
+      || initializedNewPackCostRef.current
+      || venuePacksQuery.isLoading
+      || packOptions.length === 0
+    ) return;
+
+    const selectedPack = packOptions.find((pack) => pack.name === form.packName);
+    if (!selectedPack) return;
+
+    if (form.packEstimatedCost.trim() !== "") {
+      initializedNewPackCostRef.current = true;
+      return;
+    }
+
+    initializedNewPackCostRef.current = true;
+    setForm((current) => ({
+      ...current,
+      packEstimatedCost: selectedPack.estimatedCost === null ? "" : formatMoneyInput(selectedPack.estimatedCost),
+    }));
+  }, [event, form.packEstimatedCost, form.packName, open, packOptions, venuePacksQuery.isLoading]);
 
   useEffect(() => {
     if (!open) return;
@@ -179,6 +219,7 @@ export function VenueEventModal({
     setIsExpectedDepositManual(event ? event.reservationDepositPolicy !== "auto_20" : false);
     setIsInitialDepositAmountManual(false);
     loadedExtrasEntityRef.current = null;
+    initializedNewPackCostRef.current = false;
   }, [event, open]);
 
   useEffect(() => {
@@ -225,6 +266,7 @@ export function VenueEventModal({
   const selectPack = (pack: PackOption) => {
     const nextPatch: Partial<VenueEventFormState> = {
       packName: pack.name,
+      packEstimatedCost: pack.estimatedCost === null ? "" : formatMoneyInput(pack.estimatedCost),
       totalPrice: formatMoneyInput(pack.basePrice + extrasTotal),
     };
 
@@ -471,6 +513,15 @@ export function VenueEventModal({
               <p className="text-xs text-muted-foreground">Subtotal dos extras</p>
               <p className="text-lg font-bold text-foreground">{extrasTotal.toFixed(2)} €</p>
             </div>
+            <Field label="Custo estimado do pack">
+              <MoneyInput
+                value={form.packEstimatedCost}
+                onValueChange={(value) => patch({ packEstimatedCost: value })}
+                normalizeOnBlur={false}
+                placeholder="Por apurar"
+              />
+              <p className="text-xs text-muted-foreground">Valor interno desta Festa. Não altera o preço cobrado ao cliente.</p>
+            </Field>
             <Field label="Total da festa">
               <MoneyInput value={form.totalPrice} onValueChange={updateTotalPrice} />
             </Field>
@@ -569,6 +620,25 @@ export function VenueEventModal({
               </div>
             ) : null}
 
+            <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-3 md:col-span-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold">Rentabilidade estimada da Festa</p>
+                <span className="text-xs text-muted-foreground">Estimativa interna</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+                <div><p className="text-xs text-muted-foreground">Cliente</p><p className="font-bold">{totalPrice.toFixed(2)} €</p></div>
+                <div><p className="text-xs text-muted-foreground">Pack</p><p className="font-bold">{packEstimatedCost === null ? "Por apurar" : `${packEstimatedCost.toFixed(2)} €`}</p></div>
+                <div><p className="text-xs text-muted-foreground">Extras conhecidos</p><p className="font-bold">{knownExtraCosts.toFixed(2)} €</p></div>
+                <div><p className="text-xs text-muted-foreground">Margem estimada apurada</p><p className="font-bold">{estimatedMarginKnownCosts.toFixed(2)} €</p></div>
+              </div>
+              {unknownEstimatedCostCount > 0 ? (
+                <p className="text-xs font-medium text-amber-700">
+                  {unknownEstimatedCostCount} custo{unknownEstimatedCostCount === 1 ? "" : "s"} ainda por apurar. A margem não está totalmente conhecida.
+                </p>
+              ) : null}
+              <p className="text-xs text-muted-foreground">Esta é uma estimativa de gestão, não lucro contabilístico real.</p>
+            </div>
+
             {isTotalManual && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 md:col-span-2">
                 <p>Total final com ajuste manual.</p>
@@ -626,6 +696,7 @@ function buildPackOptions(packs?: VenuePack[]): PackOption[] {
     .map((pack) => ({
       name: pack.name,
       basePrice: pack.basePrice,
+      estimatedCost: pack.estimatedCost,
       defaultStartTime: pack.defaultStartTime,
       defaultEndTime: pack.defaultEndTime,
       sortOrder: pack.sortOrder,
@@ -659,6 +730,7 @@ function toFormState(event?: VenueEvent): VenueEventFormState {
     endTime: event.endTime ?? "",
     status: event.status,
     packName: event.packName,
+    packEstimatedCost: event.packEstimatedCost === null ? "" : String(event.packEstimatedCost),
     birthdayChildName: event.birthdayChildName ?? "",
     birthdayChildAge: event.birthdayChildAge?.toString() ?? "",
     childrenCount: event.childrenCount.toString(),
@@ -706,6 +778,7 @@ function toRequestBody(
     endTime: emptyToNull(form.endTime),
     status: form.status,
     packName: form.packName,
+    packEstimatedCost: form.packEstimatedCost.trim() === "" ? null : parseMoneyInput(form.packEstimatedCost),
     birthdayChildName: emptyToNull(form.birthdayChildName),
     birthdayChildAge: form.birthdayChildAge ? Number(form.birthdayChildAge) : null,
     childrenCount: toNumber(form.childrenCount),
