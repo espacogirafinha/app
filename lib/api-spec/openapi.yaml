@@ -4384,9 +4384,11 @@ components:
           type: number
         undatedPaymentCount:
           type: integer
+        undatedPaymentAmount:
+          type: number
         workshopsExcluded:
           type: boolean
-      required: [received, expensesPaid, net, undatedPaymentCount, workshopsExcluded]
+      required: [received, expensesPaid, net, undatedPaymentCount, undatedPaymentAmount, workshopsExcluded]
 
     ReportsV2Financial:
       type: object
