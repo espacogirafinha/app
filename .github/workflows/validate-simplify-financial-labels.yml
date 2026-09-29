@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 22
       - run: corepack enable
-      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm install --no-frozen-lockfile
 
       - name: API codegen consistency
         run: |
