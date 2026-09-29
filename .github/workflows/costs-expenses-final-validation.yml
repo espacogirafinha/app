@@ -51,6 +51,12 @@ jobs:
           grep -F '"/workshops/:id/participants"' artifacts/api-server/dist/app.mjs
           grep -F '"/workshops/:id/participants/:participantId"' artifacts/api-server/dist/app.mjs
 
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+
+      - name: Build
+        run: corepack pnpm run build
+
       - name: Install Chromium
         run: corepack pnpm exec playwright install --with-deps chromium
 
@@ -69,10 +75,4 @@ jobs:
           kill $(cat /tmp/expenses-vite.pid) || true
 
       - name: Reports extra cost browser integration
-        run: corepack pnpm exec playwright test --config=playwright.reports-extra-cost.config.ts
-
-      - name: Typecheck
-        run: corepack pnpm run typecheck
-
-      - name: Build
-        run: corepack pnpm run build
+        run: timeout 240s corepack pnpm exec playwright test --config=playwright.reports-extra-cost.config.ts
