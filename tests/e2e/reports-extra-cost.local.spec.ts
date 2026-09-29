@@ -145,7 +145,8 @@ function baseReport() {
         received: 100,
         expensesPaid: 0,
         net: 100,
-        undatedPaymentCount: 0,
+        undatedPaymentsCount: 2,
+        undatedPaymentsAmount: 175,
         workshopsExcluded: true,
       },
     },
@@ -238,6 +239,28 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
   });
 
   await page.goto("/reports-extra-cost-test.html");
+
+  await expect(page.getByText("Quanto sobra das Festas — estimativa", { exact: true })).toBeVisible();
+  await expect(page.getByText("Total vendido em Festas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Custo estimado dos Packs", { exact: true })).toBeVisible();
+  await expect(page.getByText("Custo dos Extras", { exact: true })).toBeVisible();
+  await expect(page.getByText("Estimativa que sobra", { exact: true })).toBeVisible();
+  await expect(page.getByText("Faltam custos em 0 Festa(s) e 1 Extra(s). A estimativa ainda está incompleta.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Despesas do dia a dia", { exact: true })).toHaveCount(2);
+  await expect(page.getByText("Equipamento / investimentos", { exact: true })).toBeVisible();
+  await expect(page.getByText("Total gasto", { exact: true })).toBeVisible();
+  await expect(page.getByText("Vendas e despesas do período", { exact: true })).toBeVisible();
+  await expect(page.getByText("Total vendido", { exact: true })).toBeVisible();
+  await expect(page.getByText("Vendas − despesas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Depois de investimentos", { exact: true })).toBeVisible();
+  await expect(page.getByText("Dinheiro que entrou e saiu", { exact: true })).toBeVisible();
+  await expect(page.getByText("Dinheiro recebido com data", { exact: true })).toBeVisible();
+  await expect(page.getByText("Dinheiro gasto", { exact: true })).toBeVisible();
+  await expect(page.getByText("Diferença", { exact: true })).toBeVisible();
+  await expect(page.getByText("Pagamentos antigos sem data", { exact: true })).toBeVisible();
+  await expect(page.getByText("2 pagamentos · 175.00 €", { exact: true })).toBeVisible();
+  await expect(page.getByText("Estes pagamentos já estão registados como recebidos, mas o sistema antigo não guardava a data em que foram pagos. Por isso, não entram no cálculo mensal acima.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Os pagamentos de Workshops não entram aqui porque ainda não têm uma data de pagamento fiável.", { exact: true })).toBeVisible();
 
   const globalOutside = page.getByTestId(`global-pending-extra-${outsideId}`);
   await expect(globalOutside).toBeVisible();

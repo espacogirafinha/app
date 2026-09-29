@@ -127,19 +127,22 @@ export default function ReportsPage() {
         item.knownCost,
         item.knownMargin,
       ]),
-      ["Rentabilidade estimada", "Receita Festas", report.financial.venueProfitability.revenue],
-      ["Rentabilidade estimada", "Custos packs conhecidos", report.financial.venueProfitability.knownPackCosts],
-      ["Rentabilidade estimada", "Custos extras conhecidos", report.financial.venueProfitability.knownExtraCosts],
-      ["Rentabilidade estimada", "Margem estimada apurada", report.financial.venueProfitability.estimatedMarginKnownCosts],
-      ["Despesas reais", "Operacionais", report.financial.expenses.operational],
-      ["Despesas reais", "Investimentos", report.financial.expenses.investments],
-      ["Despesas reais", "Total saídas", report.financial.expenses.totalOutflows],
-      ["Resultado de gestão", "Resultado operacional", report.financial.management.result],
-      ["Resultado de gestão", "Após investimentos", report.financial.management.resultAfterInvestments],
-      ["Fluxo de caixa", "Recebido com data conhecida", report.financial.cashFlow.received],
-      ["Fluxo de caixa", "Saídas pagas", report.financial.cashFlow.expensesPaid],
-      ["Fluxo de caixa", "Saldo", report.financial.cashFlow.net],
-      ["Fluxo de caixa", "Recebimentos históricos sem data", report.financial.cashFlow.undatedPaymentCount],
+      ["Quanto sobra das Festas — estimativa", "Total vendido em Festas", report.financial.venueProfitability.revenue],
+      ["Quanto sobra das Festas — estimativa", "Custo estimado dos Packs", report.financial.venueProfitability.knownPackCosts],
+      ["Quanto sobra das Festas — estimativa", "Custo dos Extras", report.financial.venueProfitability.knownExtraCosts],
+      ["Quanto sobra das Festas — estimativa", "Estimativa que sobra", report.financial.venueProfitability.estimatedMarginKnownCosts],
+      ["Despesas reais", "Despesas do dia a dia", report.financial.expenses.operational],
+      ["Despesas reais", "Equipamento / investimentos", report.financial.expenses.investments],
+      ["Despesas reais", "Total gasto", report.financial.expenses.totalOutflows],
+      ["Vendas e despesas do período", "Total vendido", report.financial.management.eventRevenue],
+      ["Vendas e despesas do período", "Despesas do dia a dia", report.financial.management.operationalExpenses],
+      ["Vendas e despesas do período", "Vendas − despesas", report.financial.management.result],
+      ["Vendas e despesas do período", "Depois de investimentos", report.financial.management.resultAfterInvestments],
+      ["Dinheiro que entrou e saiu", "Dinheiro recebido com data", report.financial.cashFlow.received],
+      ["Dinheiro que entrou e saiu", "Dinheiro gasto", report.financial.cashFlow.expensesPaid],
+      ["Dinheiro que entrou e saiu", "Diferença", report.financial.cashFlow.net],
+      ["Dinheiro que entrou e saiu", "Pagamentos antigos sem data — quantidade", report.financial.cashFlow.undatedPaymentsCount],
+      ["Dinheiro que entrou e saiu", "Pagamentos antigos sem data — total", report.financial.cashFlow.undatedPaymentsAmount],
     ];
     downloadCsv(rows.map((row) => row.map(csv).join(",")).join("\n"), `relatorio_${period.startDate}_${period.endDate}.csv`);
   };
@@ -435,31 +438,30 @@ function FinancialReportSection({ financial }: { financial: ReportsV2["financial
       <div>
         <h2 className="text-base font-semibold">Rentabilidade e despesas</h2>
         <p className="text-xs text-muted-foreground">
-          Leituras separadas de estimativas das Festas, despesas reais e fluxo de caixa.
+          Leituras separadas de estimativas das Festas, despesas reais e dinheiro que entrou e saiu.
         </p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card className="border-border/70 shadow-sm">
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-base">Rentabilidade estimada das Festas</CardTitle>
+            <CardTitle className="text-base">Quanto sobra das Festas — estimativa</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-4 pt-1">
             <div className="grid grid-cols-2 gap-2">
-              <SmallMetric label="Receita das Festas" value={euro(financial.venueProfitability.revenue)} />
-              <SmallMetric label="Custos packs conhecidos" value={euro(financial.venueProfitability.knownPackCosts)} />
-              <SmallMetric label="Custos extras conhecidos" value={euro(financial.venueProfitability.knownExtraCosts)} />
-              <SmallMetric label="Margem estimada apurada" value={euro(financial.venueProfitability.estimatedMarginKnownCosts)} />
+              <SmallMetric label="Total vendido em Festas" value={euro(financial.venueProfitability.revenue)} />
+              <SmallMetric label="Custo estimado dos Packs" value={euro(financial.venueProfitability.knownPackCosts)} />
+              <SmallMetric label="Custo dos Extras" value={euro(financial.venueProfitability.knownExtraCosts)} />
+              <SmallMetric label="Estimativa que sobra" value={euro(financial.venueProfitability.estimatedMarginKnownCosts)} />
             </div>
             {profitabilityUnknown > 0 ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                {financial.venueProfitability.unknownPackCostCount} festa(s) com custo de pack por definir e{" "}
-                {financial.venueProfitability.unknownExtraCostCount} extra(s) com custo por apurar.
-                A margem não está totalmente conhecida.
+                Faltam custos em {financial.venueProfitability.unknownPackCostCount} Festa(s) e{" "}
+                {financial.venueProfitability.unknownExtraCostCount} Extra(s). A estimativa ainda está incompleta.
               </div>
             ) : null}
             <p className="text-xs text-muted-foreground">
-              Estimativa de gestão baseada nos snapshots dos Packs e Extras. Não representa lucro contabilístico real.
+              Estimativa baseada nos custos dos Packs e Extras já preenchidos. Enquanto existirem custos por definir, este valor ainda não representa o resultado final.
             </p>
           </CardContent>
         </Card>
@@ -470,9 +472,9 @@ function FinancialReportSection({ financial }: { financial: ReportsV2["financial
           </CardHeader>
           <CardContent className="space-y-3 p-4 pt-1">
             <div className="grid grid-cols-3 gap-2">
-              <SmallMetric label="Operacionais" value={euro(financial.expenses.operational)} />
-              <SmallMetric label="Investimentos" value={euro(financial.expenses.investments)} />
-              <SmallMetric label="Total saídas" value={euro(financial.expenses.totalOutflows)} />
+              <SmallMetric label="Despesas do dia a dia" value={euro(financial.expenses.operational)} />
+              <SmallMetric label="Equipamento / investimentos" value={euro(financial.expenses.investments)} />
+              <SmallMetric label="Total gasto" value={euro(financial.expenses.totalOutflows)} />
             </div>
             {financial.expenses.byCategory.length > 0 ? (
               <BreakdownList title="Por categoria" rows={financial.expenses.byCategory} />
@@ -485,40 +487,45 @@ function FinancialReportSection({ financial }: { financial: ReportsV2["financial
 
         <Card className="border-border/70 shadow-sm">
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-base">Resultado de gestão</CardTitle>
+            <CardTitle className="text-base">Vendas e despesas do período</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-4 pt-1">
             <div className="grid grid-cols-2 gap-2">
-              <SmallMetric label="Receita dos eventos" value={euro(financial.management.eventRevenue)} />
-              <SmallMetric label="Despesas operacionais" value={euro(financial.management.operationalExpenses)} />
-              <SmallMetric label="Resultado operacional" value={euro(financial.management.result)} />
-              <SmallMetric label="Após investimentos" value={euro(financial.management.resultAfterInvestments)} />
+              <SmallMetric label="Total vendido" value={euro(financial.management.eventRevenue)} />
+              <SmallMetric label="Despesas do dia a dia" value={euro(financial.management.operationalExpenses)} />
+              <SmallMetric label="Vendas − despesas" value={euro(financial.management.result)} />
+              <SmallMetric label="Depois de investimentos" value={euro(financial.management.resultAfterInvestments)} />
             </div>
             <p className="text-xs text-muted-foreground">
-              Visão de gestão: a receita segue a data do evento e as despesas a data em que foram pagas/registadas.
-              Compras de stock podem servir vários eventos. Não é contabilidade fiscal.
+              Compara o valor vendido nos eventos deste período com as despesas registadas no mesmo período. Não representa lucro contabilístico.
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-border/70 shadow-sm">
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-base">Fluxo de caixa</CardTitle>
+            <CardTitle className="text-base">Dinheiro que entrou e saiu</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-4 pt-1">
             <div className="grid grid-cols-3 gap-2">
-              <SmallMetric label="Recebido" value={euro(financial.cashFlow.received)} />
-              <SmallMetric label="Saídas pagas" value={euro(financial.cashFlow.expensesPaid)} />
-              <SmallMetric label="Saldo" value={euro(financial.cashFlow.net)} />
+              <SmallMetric label="Dinheiro recebido com data" value={euro(financial.cashFlow.received)} />
+              <SmallMetric label="Dinheiro gasto" value={euro(financial.cashFlow.expensesPaid)} />
+              <SmallMetric label="Diferença" value={euro(financial.cashFlow.net)} />
             </div>
-            {financial.cashFlow.undatedPaymentCount > 0 ? (
+            {financial.cashFlow.undatedPaymentsCount > 0 ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                Existem {financial.cashFlow.undatedPaymentCount} recebimento(s) histórico(s) sem data e não estão incluídos neste fluxo de caixa.
+                <p className="font-semibold">Pagamentos antigos sem data</p>
+                <p className="mt-1 font-medium">
+                  {financial.cashFlow.undatedPaymentsCount} pagamentos · {euro(financial.cashFlow.undatedPaymentsAmount)}
+                </p>
+                <p className="mt-1">
+                  Estes pagamentos já estão registados como recebidos, mas o sistema antigo não guardava a data em que foram pagos. Por isso, não entram no cálculo mensal acima.
+                </p>
               </div>
             ) : null}
             {financial.cashFlow.workshopsExcluded ? (
               <p className="text-xs text-muted-foreground">
-                Recebimentos de Workshops não entram neste fluxo de caixa porque o modelo atual não guarda uma data fiável para cada pagamento.
+                Os pagamentos de Workshops não entram aqui porque ainda não têm uma data de pagamento fiável.
               </p>
             ) : null}
           </CardContent>
