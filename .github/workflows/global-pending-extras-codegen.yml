@@ -1,0 +1,36 @@
+name: Global pending extras codegen
+
+on:
+  push:
+    branches:
+      - feat/costs-expenses-profitability
+
+permissions:
+  contents: write
+
+jobs:
+  codegen:
+    if: "!contains(github.event.head_commit.message, 'regenerate API clients for global pending extras')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/costs-expenses-profitability
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter @workspace/api-spec codegen
+      - name: Commit generated clients
+        run: |
+          if git diff --quiet -- lib/api-client-react/src/generated lib/api-zod/src/generated; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/api-client-react/src/generated lib/api-zod/src/generated
+          git commit -m "chore: regenerate API clients for global pending extras"
+          git push origin HEAD:feat/costs-expenses-profitability
