@@ -2719,6 +2719,7 @@ export const GetReportsV2Response = zod.object({
       expensesPaid: zod.number(),
       net: zod.number(),
       undatedPaymentCount: zod.number(),
+      undatedPaymentAmount: zod.number(),
       workshopsExcluded: zod.boolean(),
     }),
   }),
