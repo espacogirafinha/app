@@ -250,13 +250,14 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
   expect(report.areas.venueEvents.revenue).toBe(report.areas.venueEvents.received + report.areas.venueEvents.pending);
   await expect(page.getByText("Custo estimado dos Packs", { exact: true })).toBeVisible();
   await expect(page.getByText("Custo dos Extras", { exact: true })).toBeVisible();
-  await expect(page.getByText("Estimativa que sobra", { exact: true })).toBeVisible();
+  await expect(page.getByText("Estimativa parcial que sobra", { exact: true })).toBeVisible();
   await expect(page.getByText("Faltam custos em 0 Festa(s) e 1 Extra(s). A estimativa ainda está incompleta.", { exact: true })).toBeVisible();
   await expect(page.getByText("Despesas do dia a dia", { exact: true })).toHaveCount(2);
   await expect(page.getByText("Equipamento / investimentos", { exact: true })).toBeVisible();
   await expect(page.getByText("Total gasto", { exact: true })).toBeVisible();
   await expect(page.getByText("Vendas e despesas do período", { exact: true })).toBeVisible();
   await expect(page.getByText("Total vendido", { exact: true })).toBeVisible();
+  await expect(page.getByText("Inclui Festas, Serviços Externos e Workshops. Compara o valor vendido nos eventos deste período com as despesas registadas no mesmo período. Não representa lucro contabilístico.", { exact: true })).toBeVisible();
   await expect(page.getByText("Vendas − despesas", { exact: true })).toBeVisible();
   await expect(page.getByText("Depois de investimentos", { exact: true })).toBeVisible();
   await expect(page.getByText("Dinheiro que entrou e saiu", { exact: true })).toBeVisible();
