@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildFinancialMovements, type FinancialMovementRow } from "./event-payments.ts";
+import { buildFinancialMovements, type FinancialMovementRow } from "./financial-movements.ts";
 
 function row(overrides: Partial<FinancialMovementRow> = {}): FinancialMovementRow {
   return {
