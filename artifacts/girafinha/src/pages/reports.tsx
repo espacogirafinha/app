@@ -141,8 +141,8 @@ export default function ReportsPage() {
       ["Dinheiro que entrou e saiu", "Dinheiro recebido com data", report.financial.cashFlow.received],
       ["Dinheiro que entrou e saiu", "Dinheiro gasto", report.financial.cashFlow.expensesPaid],
       ["Dinheiro que entrou e saiu", "Diferença", report.financial.cashFlow.net],
-      ["Dinheiro que entrou e saiu", "Pagamentos antigos sem data — quantidade", report.financial.cashFlow.undatedPaymentCount],
-      ["Dinheiro que entrou e saiu", "Pagamentos antigos sem data — total", report.financial.cashFlow.undatedPaymentAmount],
+      ["Dinheiro que entrou e saiu", "Pagamentos antigos sem data — quantidade", report.financial.cashFlow.undatedPaymentsCount],
+      ["Dinheiro que entrou e saiu", "Pagamentos antigos sem data — total", report.financial.cashFlow.undatedPaymentsAmount],
     ];
     downloadCsv(rows.map((row) => row.map(csv).join(",")).join("\n"), `relatorio_${period.startDate}_${period.endDate}.csv`);
   };
@@ -438,7 +438,7 @@ function FinancialReportSection({ financial }: { financial: ReportsV2["financial
       <div>
         <h2 className="text-base font-semibold">Rentabilidade e despesas</h2>
         <p className="text-xs text-muted-foreground">
-          Leituras separadas de estimativas das Festas, despesas reais e fluxo de caixa.
+          Leituras separadas de estimativas das Festas, despesas reais e dinheiro que entrou e saiu.
         </p>
       </div>
 
@@ -512,11 +512,11 @@ function FinancialReportSection({ financial }: { financial: ReportsV2["financial
               <SmallMetric label="Dinheiro gasto" value={euro(financial.cashFlow.expensesPaid)} />
               <SmallMetric label="Diferença" value={euro(financial.cashFlow.net)} />
             </div>
-            {financial.cashFlow.undatedPaymentCount > 0 ? (
+            {financial.cashFlow.undatedPaymentsCount > 0 ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
                 <p className="font-semibold">Pagamentos antigos sem data</p>
                 <p className="mt-1 font-medium">
-                  {financial.cashFlow.undatedPaymentCount} pagamentos · {euro(financial.cashFlow.undatedPaymentAmount)}
+                  {financial.cashFlow.undatedPaymentsCount} pagamentos · {euro(financial.cashFlow.undatedPaymentsAmount)}
                 </p>
                 <p className="mt-1">
                   Estes pagamentos já estão registados como recebidos, mas o sistema antigo não guardava a data em que foram pagos. Por isso, não entram no cálculo mensal acima.
