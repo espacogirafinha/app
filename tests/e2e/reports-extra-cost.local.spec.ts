@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const unknownId = "11111111-1111-4111-8111-111111111111";
 const knownId = "22222222-2222-4222-8222-222222222222";
+const outsideId = "33333333-3333-4333-8333-333333333333";
 const eventOne = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const eventTwo = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 
@@ -33,6 +34,20 @@ function baseReport() {
     unitCost: 20,
     totalCost: 20,
     margin: 30,
+  };
+  const occurrenceOutsidePeriod = {
+    id: outsideId,
+    entityId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    eventDate: "2026-10-20",
+    customerName: "Cliente Fora",
+    birthdayChildName: "Lia",
+    extraName: "Animadora 1h",
+    quantity: 1,
+    unitPrice: 70,
+    totalPrice: 70,
+    unitCost: null,
+    totalCost: null,
+    margin: null,
   };
 
   return {
@@ -78,6 +93,7 @@ function baseReport() {
         unknownCostCount: 1,
         occurrences: [occurrenceUnknown, occurrenceKnown],
       }],
+      pendingAll: [occurrenceOutsidePeriod, occurrenceUnknown],
     },
     externalEvents: {
       eventCount: 0,
@@ -191,6 +207,7 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
               report.extras.items[0].occurrences[1],
             ],
           }],
+          pendingAll: report.extras.pendingAll.filter((item) => item.id !== unknownId),
         },
       };
 
@@ -222,6 +239,12 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
 
   await page.goto("/reports-extra-cost-test.html");
 
+  const globalOutside = page.getByTestId(`global-pending-extra-${outsideId}`);
+  await expect(globalOutside).toBeVisible();
+  await expect(globalOutside).toContainText("Animadora 1h");
+  await expect(globalOutside).toContainText("Lia");
+  await expect(page.getByText("Faturado em extras").locator("..")).toContainText("100.00 €");
+
   const card = page.getByRole("button", { name: "Ver ocorrências de Pinturas faciais" });
   await expect(card).toBeVisible();
   await expect(card).toContainText("1 com custo por apurar");
@@ -245,6 +268,8 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
   await expect.poll(() => patchBody).toEqual({ unitCost: 20 });
   await expect.poll(() => reportsFetches).toBeGreaterThan(1);
   await expect(editor).toBeHidden();
+  await expect(page.getByTestId(`global-pending-extra-${unknownId}`)).toHaveCount(0);
+  await expect(page.getByTestId(`global-pending-extra-${outsideId}`)).toBeVisible();
 
   const updatedOccurrence = detail.getByTestId(`extra-occurrence-${unknownId}`);
   await expect(updatedOccurrence).toContainText("20.00 €");
@@ -276,6 +301,82 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
   expect(report.summary.totalRevenue).toBe(500);
   expect(report.summary.totalReceived).toBe(100);
   expect(report.extras.items[0].occurrences.map((item) => item.unitCost)).toEqual([20, 20]);
+});
+
+
+test("Reports: outside-period pending cost disappears globally without changing period metrics", async ({ page }) => {
+  let report = baseReport();
+  let patchBody: unknown = null;
+  let reportsFetches = 0;
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+
+    if (url.pathname === "/api/reports-v2" && request.method() === "GET") {
+      reportsFetches += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(report),
+      });
+    }
+
+    if (url.pathname === `/api/selected-extras/${outsideId}` && request.method() === "PATCH") {
+      patchBody = request.postDataJSON();
+      report = {
+        ...report,
+        extras: {
+          ...report.extras,
+          pendingAll: report.extras.pendingAll.filter((item) => item.id !== outsideId),
+        },
+      };
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: outsideId,
+          module: "venue_events",
+          entityId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          extraId: null,
+          extraName: "Animadora 1h",
+          category: "Animação",
+          unitPrice: 70,
+          unitCost: 20,
+          quantity: 1,
+          totalPrice: 70,
+          totalCost: 20,
+          notes: null,
+          sortOrder: 1,
+          createdAt: "2026-10-01T10:00:00.000Z",
+          updatedAt: "2026-10-01T10:00:00.000Z",
+        }),
+      });
+    }
+
+    return route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
+  });
+
+  await page.goto("/reports-extra-cost-test.html");
+
+  const pending = page.getByTestId(`global-pending-extra-${outsideId}`);
+  await expect(pending).toBeVisible();
+  await pending.getByRole("button", { name: "Adicionar custo" }).click();
+
+  const editor = page.getByRole("dialog").filter({ hasText: "Altera apenas o custo deste extra nesta Festa." });
+  await editor.getByLabel("Pago ao fornecedor").fill("20");
+  await editor.getByRole("button", { name: "Guardar", exact: true }).click();
+
+  await expect.poll(() => patchBody).toEqual({ unitCost: 20 });
+  await expect.poll(() => reportsFetches).toBeGreaterThan(1);
+  await expect(page.getByTestId(`global-pending-extra-${outsideId}`)).toHaveCount(0);
+
+  expect(report.extras.revenue).toBe(100);
+  expect(report.extras.knownCost).toBe(20);
+  expect(report.extras.knownMargin).toBe(30);
+  expect(report.extras.unknownCostCount).toBe(1);
+  expect(report.summary.totalRevenue).toBe(500);
+  expect(report.financial.venueProfitability.knownExtraCosts).toBe(20);
 });
 
 
