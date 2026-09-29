@@ -235,6 +235,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /event-payments/movements:
+    get:
+      operationId: listFinancialMovements
+      tags: [event-payments]
+      summary: List active event payments as a global financial movement read model
+      responses:
+        "200":
+          description: Dated financial movements and historical payments without a payment date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialMovementsResponse"
+
   /event-payments/{id}:
     patch:
       operationId: updateEventPayment
@@ -3032,6 +3045,67 @@ components:
         summary:
           $ref: "#/components/schemas/EventPaymentSummary"
       required: [items, summary]
+
+    FinancialMovement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        module:
+          $ref: "#/components/schemas/EventPaymentModule"
+        entityId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+        paymentType:
+          $ref: "#/components/schemas/EventPaymentType"
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        paymentMethod:
+          oneOf:
+            - $ref: "#/components/schemas/EventPaymentMethod"
+            - type: "null"
+        paidAt:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - module
+        - entityId
+        - customerName
+        - birthdayChildName
+        - eventDate
+        - paymentType
+        - amount
+        - paymentMethod
+        - paidAt
+        - notes
+        - createdAt
+
+    FinancialMovementsResponse:
+      type: object
+      properties:
+        movements:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialMovement"
+        undatedPayments:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialMovement"
+      required: [movements, undatedPayments]
 
     EventPaymentMutationResult:
       type: object
