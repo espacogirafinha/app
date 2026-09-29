@@ -48,6 +48,44 @@ export type UpdateEventPaymentInput = {
   notes?: string | null;
 };
 
+export type FinancialMovementRow = {
+  id: string;
+  venueEventId: string | null;
+  externalEventId: string | null;
+  paymentType: EventPaymentType;
+  amount: number;
+  paymentMethod: EventPaymentMethod | null;
+  paidAt: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  deletedAt: Date | null;
+  venueCustomerName: string | null;
+  venueBirthdayChildName: string | null;
+  venueEventDate: string | null;
+  externalCustomerName: string | null;
+  externalEventDate: string | null;
+};
+
+export type FinancialMovement = {
+  id: string;
+  module: EventPaymentModule;
+  entityId: string;
+  customerName: string;
+  birthdayChildName: string | null;
+  eventDate: string;
+  paymentType: EventPaymentType;
+  amount: number;
+  paymentMethod: EventPaymentMethod | null;
+  paidAt: Date | null;
+  notes: string | null;
+  createdAt: Date;
+};
+
+export type FinancialMovementsResult = {
+  movements: FinancialMovement[];
+  undatedPayments: FinancialMovement[];
+};
+
 function money(value: unknown) {
   return Number.parseFloat(String(value ?? 0));
 }
@@ -216,6 +254,96 @@ export async function listEventPayments(module: EventPaymentModule, entityId: st
       payments: rows.map(toPaymentLike),
     }),
   };
+}
+
+export function buildFinancialMovements(rows: FinancialMovementRow[]): FinancialMovementsResult {
+  const active = rows
+    .filter((row) => row.deletedAt === null)
+    .map((row): FinancialMovement | null => {
+      const module: EventPaymentModule = row.venueEventId ? "venue_events" : "external_events";
+      const entityId = row.venueEventId ?? row.externalEventId;
+      if (!entityId) return null;
+
+      const customerName = module === "venue_events"
+        ? row.venueCustomerName
+        : row.externalCustomerName;
+      const eventDate = module === "venue_events"
+        ? row.venueEventDate
+        : row.externalEventDate;
+
+      if (!customerName || !eventDate) return null;
+
+      return {
+        id: row.id,
+        module,
+        entityId,
+        customerName,
+        birthdayChildName: module === "venue_events" ? row.venueBirthdayChildName : null,
+        eventDate,
+        paymentType: row.paymentType,
+        amount: row.amount,
+        paymentMethod: row.paymentMethod,
+        paidAt: row.paidAt,
+        notes: row.notes,
+        createdAt: row.createdAt,
+      };
+    })
+    .filter((row): row is FinancialMovement => row !== null);
+
+  const compareNewestFirst = (a: FinancialMovement, b: FinancialMovement) => {
+    const paidAtDiff = (b.paidAt?.getTime() ?? 0) - (a.paidAt?.getTime() ?? 0);
+    if (paidAtDiff !== 0) return paidAtDiff;
+    const createdAtDiff = b.createdAt.getTime() - a.createdAt.getTime();
+    if (createdAtDiff !== 0) return createdAtDiff;
+    return b.id.localeCompare(a.id);
+  };
+
+  const movements = active
+    .filter((row) => row.paidAt !== null)
+    .sort(compareNewestFirst);
+
+  const undatedPayments = active
+    .filter((row) => row.paidAt === null)
+    .sort((a, b) => {
+      const createdAtDiff = b.createdAt.getTime() - a.createdAt.getTime();
+      return createdAtDiff !== 0 ? createdAtDiff : b.id.localeCompare(a.id);
+    });
+
+  return { movements, undatedPayments };
+}
+
+export async function listFinancialMovements(): Promise<FinancialMovementsResult> {
+  const rows = await db
+    .select({
+      id: eventPaymentsTable.id,
+      venueEventId: eventPaymentsTable.venueEventId,
+      externalEventId: eventPaymentsTable.externalEventId,
+      paymentType: eventPaymentsTable.paymentType,
+      amount: eventPaymentsTable.amount,
+      paymentMethod: eventPaymentsTable.paymentMethod,
+      paidAt: eventPaymentsTable.paidAt,
+      notes: eventPaymentsTable.notes,
+      createdAt: eventPaymentsTable.createdAt,
+      deletedAt: eventPaymentsTable.deletedAt,
+      venueCustomerName: venueEventsTable.customerName,
+      venueBirthdayChildName: venueEventsTable.birthdayChildName,
+      venueEventDate: venueEventsTable.eventDate,
+      externalCustomerName: externalEventsTable.customerName,
+      externalEventDate: externalEventsTable.eventDate,
+    })
+    .from(eventPaymentsTable)
+    .leftJoin(venueEventsTable, eq(eventPaymentsTable.venueEventId, venueEventsTable.id))
+    .leftJoin(externalEventsTable, eq(eventPaymentsTable.externalEventId, externalEventsTable.id))
+    .where(isNull(eventPaymentsTable.deletedAt));
+
+  return buildFinancialMovements(
+    rows.map((row) => ({
+      ...row,
+      paymentType: row.paymentType as EventPaymentType,
+      amount: money(row.amount),
+      paymentMethod: row.paymentMethod as EventPaymentMethod | null,
+    })),
+  );
 }
 
 export async function createEventPaymentInTransaction(
