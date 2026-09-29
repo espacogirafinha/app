@@ -73,6 +73,7 @@ test("cash flow uses paid_at, ignores undated payments and includes investments 
     { amount: 100, paidAt: "2026-09-10T10:00:00.000Z" },
     { amount: 50, paidAt: "2026-08-31T23:00:00.000Z" },
     { amount: 75, paidAt: null },
+    { amount: 999, paidAt: null, deletedAt: "2026-09-20T10:00:00.000Z" },
     { amount: 20, paidAt: "2026-09-15T10:00:00.000Z", deletedAt: "2026-09-20T10:00:00.000Z" },
   ], 120, "2026-09-01", "2026-09-30");
 
@@ -81,6 +82,7 @@ test("cash flow uses paid_at, ignores undated payments and includes investments 
     expensesPaid: 120,
     net: -20,
     undatedPaymentCount: 1,
+    undatedPaymentAmount: 75,
     workshopsExcluded: true,
   });
 });
