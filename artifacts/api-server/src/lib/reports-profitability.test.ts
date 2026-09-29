@@ -81,8 +81,8 @@ test("cash flow uses paid_at, ignores undated payments and includes investments 
     received: 100,
     expensesPaid: 120,
     net: -20,
-    undatedPaymentCount: 1,
-    undatedPaymentAmount: 75,
+    undatedPaymentsCount: 1,
+    undatedPaymentsAmount: 75,
     workshopsExcluded: true,
   });
 });
