@@ -127,7 +127,9 @@ export default function ReportsPage() {
         item.knownCost,
         item.knownMargin,
       ]),
-      ["Quanto sobra das Festas — estimativa", "Total vendido em Festas", report.financial.venueProfitability.revenue],
+      ["Quanto sobra das Festas — estimativa", "Total vendido em Festas", report.areas.venueEvents.revenue],
+      ["Quanto sobra das Festas — estimativa", "Já recebido das Festas", report.areas.venueEvents.received],
+      ["Quanto sobra das Festas — estimativa", "Ainda por receber das Festas", report.areas.venueEvents.pending],
       ["Quanto sobra das Festas — estimativa", "Custo estimado dos Packs", report.financial.venueProfitability.knownPackCosts],
       ["Quanto sobra das Festas — estimativa", "Custo dos Extras", report.financial.venueProfitability.knownExtraCosts],
       ["Quanto sobra das Festas — estimativa", "Estimativa que sobra", report.financial.venueProfitability.estimatedMarginKnownCosts],
@@ -240,7 +242,7 @@ export default function ReportsPage() {
             extras={report.extras}
             reportParams={{ startDate: period.startDate, endDate: period.endDate }}
           />
-          <FinancialReportSection financial={report.financial} />
+          <FinancialReportSection financial={report.financial} venueEvents={report.areas.venueEvents} />
         </>
       )}
     </div>
@@ -429,7 +431,13 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
   );
 }
 
-function FinancialReportSection({ financial }: { financial: ReportsV2["financial"] }) {
+function FinancialReportSection({
+  financial,
+  venueEvents,
+}: {
+  financial: ReportsV2["financial"];
+  venueEvents: ReportsV2AreaSummary;
+}) {
   const profitabilityUnknown =
     financial.venueProfitability.unknownPackCostCount + financial.venueProfitability.unknownExtraCostCount;
 
@@ -448,12 +456,17 @@ function FinancialReportSection({ financial }: { financial: ReportsV2["financial
             <CardTitle className="text-base">Quanto sobra das Festas — estimativa</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-4 pt-1">
-            <div className="grid grid-cols-2 gap-2">
-              <SmallMetric label="Total vendido em Festas" value={euro(financial.venueProfitability.revenue)} />
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+              <SmallMetric label="Total vendido em Festas" value={euro(venueEvents.revenue)} />
+              <SmallMetric label="Já recebido das Festas" value={euro(venueEvents.received)} />
+              <SmallMetric label="Ainda por receber das Festas" value={euro(venueEvents.pending)} />
               <SmallMetric label="Custo estimado dos Packs" value={euro(financial.venueProfitability.knownPackCosts)} />
               <SmallMetric label="Custo dos Extras" value={euro(financial.venueProfitability.knownExtraCosts)} />
               <SmallMetric label="Estimativa que sobra" value={euro(financial.venueProfitability.estimatedMarginKnownCosts)} />
             </div>
+            <p className="text-xs text-muted-foreground">
+              O valor “Já recebido das Festas” mostra quanto já foi pago nas Festas deste período, mesmo que o pagamento tenha sido feito noutra data.
+            </p>
             {profitabilityUnknown > 0 ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
                 Faltam custos em {financial.venueProfitability.unknownPackCostCount} Festa(s) e{" "}
