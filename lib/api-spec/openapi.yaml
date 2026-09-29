@@ -4623,7 +4623,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReportsV2ExtraBreakdown"
-      required: [soldCount, revenue, knownCost, knownMargin, unknownCostCount, items]
+        pendingAll:
+          type: array
+          description: Venue-event extras with unknown supplier cost across all non-cancelled parties, independent of the selected report period.
+          items:
+            $ref: "#/components/schemas/ReportsV2ExtraOccurrence"
+      required: [soldCount, revenue, knownCost, knownMargin, unknownCostCount, items, pendingAll]
 
     ReportsV2ExternalEvents:
       type: object
