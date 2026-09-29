@@ -569,7 +569,9 @@ function ExtrasReportSection({
     ? extras.items.find((item) => item.label === selectedLabel) ?? null
     : null;
   const editingOccurrence = editingId
-    ? selectedItem?.occurrences.find((occurrence) => occurrence.id === editingId) ?? null
+    ? selectedItem?.occurrences.find((occurrence) => occurrence.id === editingId)
+      ?? extras.pendingAll.find((occurrence) => occurrence.id === editingId)
+      ?? null
     : null;
 
   const openCostEditor = (occurrence: ReportsV2ExtraOccurrence) => {
@@ -671,6 +673,46 @@ function ExtrasReportSection({
           ))}
         </div>
       )}
+
+      <Card className="border-amber-200 shadow-sm">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-base">Extras por apurar — todas as festas</CardTitle>
+          <p className="text-xs font-normal text-muted-foreground">
+            Lista global de custos de fornecedor em falta. Pode incluir Festas fora do período selecionado e não altera as métricas financeiras acima.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2 p-4 pt-1">
+          {extras.pendingAll.length === 0 ? (
+            <EmptyState text="Todos os extras das Festas não canceladas têm custo definido." />
+          ) : (
+            extras.pendingAll.map((occurrence) => (
+              <div
+                key={occurrence.id}
+                data-testid={`global-pending-extra-${occurrence.id}`}
+                className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50/50 p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold">{occurrence.extraName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {occurrence.birthdayChildName || occurrence.customerName} · {format(parseISO(occurrence.eventDate), "dd MMM yyyy", { locale: pt })}
+                  </p>
+                  <p className="mt-1 text-xs">
+                    {occurrence.quantity} × {euro(occurrence.unitPrice)} · Cliente pagou <strong>{euro(occurrence.totalPrice)}</strong>
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => openCostEditor(occurrence)}
+                >
+                  Adicionar custo
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={Boolean(selectedItem)} onOpenChange={(open) => {
         if (!open) {
