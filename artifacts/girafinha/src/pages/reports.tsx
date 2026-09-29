@@ -132,7 +132,7 @@ export default function ReportsPage() {
       ["Quanto sobra das Festas — estimativa", "Ainda por receber das Festas", report.areas.venueEvents.pending],
       ["Quanto sobra das Festas — estimativa", "Custo estimado dos Packs", report.financial.venueProfitability.knownPackCosts],
       ["Quanto sobra das Festas — estimativa", "Custo dos Extras", report.financial.venueProfitability.knownExtraCosts],
-      ["Quanto sobra das Festas — estimativa", "Estimativa que sobra", report.financial.venueProfitability.estimatedMarginKnownCosts],
+      ["Quanto sobra das Festas — estimativa", "Estimativa parcial que sobra", report.financial.venueProfitability.estimatedMarginKnownCosts],
       ["Despesas reais", "Despesas do dia a dia", report.financial.expenses.operational],
       ["Despesas reais", "Equipamento / investimentos", report.financial.expenses.investments],
       ["Despesas reais", "Total gasto", report.financial.expenses.totalOutflows],
@@ -462,7 +462,7 @@ function FinancialReportSection({
               <SmallMetric label="Ainda por receber das Festas" value={euro(venueEvents.pending)} />
               <SmallMetric label="Custo estimado dos Packs" value={euro(financial.venueProfitability.knownPackCosts)} />
               <SmallMetric label="Custo dos Extras" value={euro(financial.venueProfitability.knownExtraCosts)} />
-              <SmallMetric label="Estimativa que sobra" value={euro(financial.venueProfitability.estimatedMarginKnownCosts)} />
+              <SmallMetric label="Estimativa parcial que sobra" value={euro(financial.venueProfitability.estimatedMarginKnownCosts)} />
             </div>
             <p className="text-xs text-muted-foreground">
               O valor “Já recebido das Festas” mostra quanto já foi pago nas Festas deste período, mesmo que o pagamento tenha sido feito noutra data.
@@ -510,7 +510,7 @@ function FinancialReportSection({
               <SmallMetric label="Depois de investimentos" value={euro(financial.management.resultAfterInvestments)} />
             </div>
             <p className="text-xs text-muted-foreground">
-              Compara o valor vendido nos eventos deste período com as despesas registadas no mesmo período. Não representa lucro contabilístico.
+              Inclui Festas, Serviços Externos e Workshops. Compara o valor vendido nos eventos deste período com as despesas registadas no mesmo período. Não representa lucro contabilístico.
             </p>
           </CardContent>
         </Card>
