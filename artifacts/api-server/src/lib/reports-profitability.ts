@@ -124,11 +124,13 @@ export function summarizeCashFlow(
 ) {
   let received = 0;
   let undatedPaymentCount = 0;
+  let undatedPaymentAmount = 0;
 
   for (const payment of payments) {
     if (payment.deletedAt) continue;
     if (!payment.paidAt) {
       undatedPaymentCount += 1;
+      undatedPaymentAmount += payment.amount;
       continue;
     }
     const date = paidAtDate(payment.paidAt);
@@ -142,6 +144,7 @@ export function summarizeCashFlow(
     expensesPaid: roundedExpenses,
     net: round(roundedReceived - roundedExpenses),
     undatedPaymentCount,
+    undatedPaymentAmount: round(undatedPaymentAmount),
     workshopsExcluded: true,
   };
 }
