@@ -439,6 +439,68 @@ export const CreateEventPaymentBody = zod.object({
 });
 
 /**
+ * @summary List active event payments as a global financial movement read model
+ */
+export const listFinancialMovementsResponseMovementsItemAmountExclusiveMin = 0;
+
+export const listFinancialMovementsResponseUndatedPaymentsItemAmountExclusiveMin = 0;
+
+export const ListFinancialMovementsResponse = zod.object({
+  movements: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      module: zod.enum(["venue_events", "external_events"]),
+      entityId: zod.string().uuid(),
+      customerName: zod.string(),
+      birthdayChildName: zod.string().nullable(),
+      eventDate: zod.string(),
+      paymentType: zod.enum([
+        "reservation_deposit",
+        "payment",
+        "legacy_payment",
+      ]),
+      amount: zod
+        .number()
+        .gt(listFinancialMovementsResponseMovementsItemAmountExclusiveMin),
+      paymentMethod: zod.union([
+        zod.enum(["cash", "bank_transfer", "mbway"]),
+        zod.null(),
+      ]),
+      paidAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  undatedPayments: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      module: zod.enum(["venue_events", "external_events"]),
+      entityId: zod.string().uuid(),
+      customerName: zod.string(),
+      birthdayChildName: zod.string().nullable(),
+      eventDate: zod.string(),
+      paymentType: zod.enum([
+        "reservation_deposit",
+        "payment",
+        "legacy_payment",
+      ]),
+      amount: zod
+        .number()
+        .gt(
+          listFinancialMovementsResponseUndatedPaymentsItemAmountExclusiveMin,
+        ),
+      paymentMethod: zod.union([
+        zod.enum(["cash", "bank_transfer", "mbway"]),
+        zod.null(),
+      ]),
+      paidAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
  * @summary Update an active event payment
  */
 export const UpdateEventPaymentParams = zod.object({

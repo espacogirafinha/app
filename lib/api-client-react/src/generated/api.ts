@@ -51,6 +51,7 @@ import type {
   ExpenseCategory,
   ExternalEvent,
   ExternalServiceCatalog,
+  FinancialMovementsResponse,
   GetCalendarReservationsParams,
   GetCalendarV2Params,
   GetReportsDataParams,
@@ -804,6 +805,85 @@ export const useCreateEventPayment = <
 > => {
   return useMutation(getCreateEventPaymentMutationOptions(options));
 };
+
+/**
+ * @summary List active event payments as a global financial movement read model
+ */
+export const getListFinancialMovementsUrl = () => {
+  return `/api/event-payments/movements`;
+};
+
+export const listFinancialMovements = async (
+  options?: RequestInit,
+): Promise<FinancialMovementsResponse> => {
+  return customFetch<FinancialMovementsResponse>(
+    getListFinancialMovementsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListFinancialMovementsQueryKey = () => {
+  return [`/api/event-payments/movements`] as const;
+};
+
+export const getListFinancialMovementsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFinancialMovements>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFinancialMovements>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListFinancialMovementsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFinancialMovements>>
+  > = ({ signal }) => listFinancialMovements({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFinancialMovements>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFinancialMovementsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFinancialMovements>>
+>;
+export type ListFinancialMovementsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List active event payments as a global financial movement read model
+ */
+
+export function useListFinancialMovements<
+  TData = Awaited<ReturnType<typeof listFinancialMovements>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFinancialMovements>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFinancialMovementsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Update an active event payment

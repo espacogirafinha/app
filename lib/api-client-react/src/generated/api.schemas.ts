@@ -844,6 +844,30 @@ export interface EventPaymentsResponse {
   summary: EventPaymentSummary;
 }
 
+export interface FinancialMovement {
+  id: string;
+  module: EventPaymentModule;
+  entityId: string;
+  customerName: string;
+  /** @nullable */
+  birthdayChildName: string | null;
+  eventDate: string;
+  paymentType: EventPaymentType;
+  /** @exclusiveMinimum 0 */
+  amount: number;
+  paymentMethod: EventPaymentMethod | null;
+  /** @nullable */
+  paidAt: string | null;
+  /** @nullable */
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface FinancialMovementsResponse {
+  movements: FinancialMovement[];
+  undatedPayments: FinancialMovement[];
+}
+
 export interface EventPaymentMutationResult {
   payment: EventPayment;
   summary: EventPaymentSummary;
