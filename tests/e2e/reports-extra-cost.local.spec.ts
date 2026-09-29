@@ -102,6 +102,37 @@ function baseReport() {
       pending: 0,
       participantsByPaymentStatus: { paid: 0, partial: 0, unpaid: 0 },
     },
+    financial: {
+      venueProfitability: {
+        revenue: 500,
+        knownPackCosts: 0,
+        knownExtraCosts: 20,
+        estimatedMarginKnownCosts: 480,
+        unknownPackCostCount: 0,
+        unknownExtraCostCount: 1,
+      },
+      expenses: {
+        operational: 0,
+        investments: 0,
+        totalOutflows: 0,
+        byCategory: [],
+        topSuppliers: [],
+      },
+      management: {
+        eventRevenue: 500,
+        operationalExpenses: 0,
+        result: 500,
+        investments: 0,
+        resultAfterInvestments: 500,
+      },
+      cashFlow: {
+        received: 100,
+        expensesPaid: 0,
+        net: 100,
+        undatedPaymentCount: 0,
+        workshopsExcluded: true,
+      },
+    },
   };
 }
 
@@ -131,6 +162,15 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
 
       report = {
         ...report,
+        financial: {
+          ...report.financial,
+          venueProfitability: {
+            ...report.financial.venueProfitability,
+            knownExtraCosts: 40,
+            estimatedMarginKnownCosts: 460,
+            unknownExtraCostCount: 0,
+          },
+        },
         extras: {
           ...report.extras,
           knownCost: 40,
