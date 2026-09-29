@@ -47,6 +47,47 @@ export type ExtraBreakdown = {
 
 const round = (value: number) => Math.round(value * 100) / 100;
 
+
+function toOccurrence(row: ExtraReportRow): ExtraOccurrence {
+  const quantity = Math.max(0, row.quantity || 0);
+  const rowRevenue = round(Math.max(0, row.totalPrice || 0));
+  const hasKnownCost = row.unitCost !== null && row.totalCost !== null;
+  const rowKnownCost = hasKnownCost ? round(Math.max(0, row.totalCost ?? 0)) : null;
+
+  return {
+    id: row.id,
+    entityId: row.entityId,
+    eventDate: row.eventDate,
+    customerName: row.customerName,
+    birthdayChildName: row.birthdayChildName,
+    extraName: row.extraName,
+    quantity,
+    unitPrice: round(Math.max(0, row.unitPrice || 0)),
+    totalPrice: rowRevenue,
+    unitCost: row.unitCost,
+    totalCost: rowKnownCost,
+    margin: rowKnownCost === null ? null : round(rowRevenue - rowKnownCost),
+  };
+}
+
+export function globalPendingVenueExtraOccurrences(
+  events: ExtraReportEvent[],
+  rows: ExtraReportRow[],
+) {
+  const activeEventIds = new Set(
+    events.filter((event) => event.status !== "cancelled").map((event) => event.id),
+  );
+
+  return rows
+    .filter((row) => activeEventIds.has(row.entityId) && row.unitCost === null)
+    .map(toOccurrence)
+    .sort((a, b) =>
+      b.eventDate.localeCompare(a.eventDate) ||
+      a.customerName.localeCompare(b.customerName) ||
+      a.extraName.localeCompare(b.extraName),
+    );
+}
+
 export function eligibleVenueEventIds(
   events: ExtraReportEvent[],
   startDate: string,
@@ -74,20 +115,7 @@ export function aggregateVenueExtrasReport(rows: ExtraReportRow[]) {
     const rowKnownCost = hasKnownCost ? round(Math.max(0, row.totalCost ?? 0)) : 0;
     const rowKnownMargin = hasKnownCost ? round(rowRevenue - rowKnownCost) : 0;
     const unknownUnits = hasKnownCost ? 0 : quantity;
-    const occurrence: ExtraOccurrence = {
-      id: row.id,
-      entityId: row.entityId,
-      eventDate: row.eventDate,
-      customerName: row.customerName,
-      birthdayChildName: row.birthdayChildName,
-      extraName: row.extraName,
-      quantity,
-      unitPrice: round(Math.max(0, row.unitPrice || 0)),
-      totalPrice: rowRevenue,
-      unitCost: row.unitCost,
-      totalCost: hasKnownCost ? rowKnownCost : null,
-      margin: hasKnownCost ? rowKnownMargin : null,
-    };
+    const occurrence = toOccurrence(row);
 
     soldCount += quantity;
     revenue = round(revenue + rowRevenue);
