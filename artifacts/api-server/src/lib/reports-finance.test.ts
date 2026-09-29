@@ -10,7 +10,9 @@ import { eventFinancialPosition, isEventDateInRange } from "./event-finance-read
 import { summarizeEventPayments } from "./event-payment-rules.ts";
 
 test("calcula o saldo de uma festa parcialmente paga", () => {
-  assert.deepEqual(financialPosition(360, 142.5), { revenue: 360, received: 142.5, pending: 217.5 });
+  const position = financialPosition(360, 142.5);
+  assert.deepEqual(position, { revenue: 360, received: 142.5, pending: 217.5 });
+  assert.equal(position.revenue, position.received + position.pending);
 });
 
 test("uma caução em posse fica separada do serviço integralmente pago", () => {
