@@ -18,7 +18,7 @@ import {
   type FinancialLine,
 } from "../lib/reports-finance";
 import { eventFinancialPosition, isEventDateInRange } from "../lib/event-finance-read-model";
-import { aggregateVenueExtrasReport, eligibleVenueEventIds } from "../lib/reports-extras";
+import { aggregateVenueExtrasReport, eligibleVenueEventIds, globalPendingVenueExtraOccurrences } from "../lib/reports-extras";
 import {
   expensesForPeriod,
   managementResult,
@@ -281,27 +281,32 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
     endDate,
   );
   const venueEventsById = new Map(venueEventsRows.map((event) => [event.id, event]));
+  const venueExtraRows = selectedExtrasRows
+    .filter((extra) => extra.module === "venue_events")
+    .flatMap((extra) => {
+      const event = venueEventsById.get(extra.entityId);
+      if (!event) return [];
+      return [{
+        id: extra.id,
+        entityId: extra.entityId,
+        eventDate: event.eventDate,
+        customerName: event.customerName,
+        birthdayChildName: event.birthdayChildName,
+        extraName: extra.extraName,
+        category: extra.category,
+        quantity: extra.quantity,
+        unitPrice: money(extra.unitPrice),
+        totalPrice: money(extra.totalPrice),
+        unitCost: extra.unitCost === null ? null : money(extra.unitCost),
+        totalCost: extra.totalCost === null ? null : money(extra.totalCost),
+      }];
+    });
   const venueExtras = aggregateVenueExtrasReport(
-    selectedExtrasRows
-      .filter((extra) => extra.module === "venue_events" && venueEventIds.has(extra.entityId))
-      .flatMap((extra) => {
-        const event = venueEventsById.get(extra.entityId);
-        if (!event) return [];
-        return [{
-          id: extra.id,
-          entityId: extra.entityId,
-          eventDate: event.eventDate,
-          customerName: event.customerName,
-          birthdayChildName: event.birthdayChildName,
-          extraName: extra.extraName,
-          category: extra.category,
-          quantity: extra.quantity,
-          unitPrice: money(extra.unitPrice),
-          totalPrice: money(extra.totalPrice),
-          unitCost: extra.unitCost === null ? null : money(extra.unitCost),
-          totalCost: extra.totalCost === null ? null : money(extra.totalCost),
-        }];
-      }),
+    venueExtraRows.filter((extra) => venueEventIds.has(extra.entityId)),
+  );
+  const pendingVenueExtrasAll = globalPendingVenueExtraOccurrences(
+    venueEventsRows.map((event) => ({ id: event.id, eventDate: event.eventDate, status: event.status })),
+    venueExtraRows,
   );
   const external = externalReport(externalEvents, externalServices);
   const workshops = workshopsReport(workshopRowsInRange, workshopParticipants);
@@ -369,7 +374,10 @@ router.get("/reports-v2", async (req, res): Promise<void> => {
     },
     areas: { venueEvents: venueArea, externalEvents: externalArea, workshops: workshopArea },
     venueEvents: venue,
-    extras: venueExtras,
+    extras: {
+      ...venueExtras,
+      pendingAll: pendingVenueExtrasAll,
+    },
     financial: {
       venueProfitability,
       expenses: expenseSummary,
