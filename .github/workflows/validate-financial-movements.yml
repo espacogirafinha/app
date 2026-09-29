@@ -1,0 +1,47 @@
+name: Validate financial movements
+
+on:
+  push:
+    branches:
+      - feat/financial-movements
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+
+      - name: API codegen consistency
+        run: |
+          corepack pnpm --filter @workspace/api-spec codegen
+          git diff --exit-code -- lib/api-client-react/src/generated lib/api-zod/src/generated
+
+      - name: Financial movements unit tests
+        run: |
+          node --experimental-strip-types --test \
+            artifacts/api-server/src/lib/event-payments-movements.test.ts \
+            artifacts/girafinha/src/lib/financial-movements.test.ts
+
+      - name: Install Chromium
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Financial movements E2E
+        run: corepack pnpm exec playwright test --config=playwright.financial-movements.config.ts
+
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+
+      - name: Build
+        run: corepack pnpm run build
+
+      - name: Confirm Vercel function count
+        run: |
+          count=$(find api -type f -name '*.mjs' | wc -l | tr -d ' ')
+          echo "Vercel function files: $count"
+          test "$count" -le 12
