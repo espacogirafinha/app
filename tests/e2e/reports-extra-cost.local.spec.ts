@@ -242,6 +242,12 @@ test("Reports: edit one occurrence supplier cost without changing event revenue"
 
   await expect(page.getByText("Quanto sobra das Festas — estimativa", { exact: true })).toBeVisible();
   await expect(page.getByText("Total vendido em Festas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Já recebido das Festas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ainda por receber das Festas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Já recebido das Festas", { exact: true }).locator("..")).toContainText("100.00 €");
+  await expect(page.getByText("Ainda por receber das Festas", { exact: true }).locator("..")).toContainText("400.00 €");
+  await expect(page.getByText("O valor “Já recebido das Festas” mostra quanto já foi pago nas Festas deste período, mesmo que o pagamento tenha sido feito noutra data.", { exact: true })).toBeVisible();
+  expect(report.areas.venueEvents.revenue).toBe(report.areas.venueEvents.received + report.areas.venueEvents.pending);
   await expect(page.getByText("Custo estimado dos Packs", { exact: true })).toBeVisible();
   await expect(page.getByText("Custo dos Extras", { exact: true })).toBeVisible();
   await expect(page.getByText("Estimativa que sobra", { exact: true })).toBeVisible();
