@@ -1732,6 +1732,8 @@ export interface ReportsV2Extras {
   knownMargin: number;
   unknownCostCount: number;
   items: ReportsV2ExtraBreakdown[];
+  /** Venue-event extras with unknown supplier cost across all non-cancelled parties, independent of the selected report period. */
+  pendingAll: ReportsV2ExtraOccurrence[];
 }
 
 export interface ReportsV2ExternalEvents {

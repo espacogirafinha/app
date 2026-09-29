@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ReportsV2ExtraBreakdown } from "./reportsV2ExtraBreakdown";
+import type { ReportsV2ExtraOccurrence } from "./reportsV2ExtraOccurrence";
 
 export interface ReportsV2Extras {
   soldCount: number;
@@ -14,4 +15,6 @@ export interface ReportsV2Extras {
   knownMargin: number;
   unknownCostCount: number;
   items: ReportsV2ExtraBreakdown[];
+  /** Venue-event extras with unknown supplier cost across all non-cancelled parties, independent of the selected report period. */
+  pendingAll: ReportsV2ExtraOccurrence[];
 }

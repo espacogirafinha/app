@@ -2658,6 +2658,26 @@ export const GetReportsV2Response = zod.object({
         ),
       }),
     ),
+    pendingAll: zod
+      .array(
+        zod.object({
+          id: zod.string().uuid(),
+          entityId: zod.string().uuid(),
+          eventDate: zod.coerce.date(),
+          customerName: zod.string(),
+          birthdayChildName: zod.string().nullable(),
+          extraName: zod.string(),
+          quantity: zod.number(),
+          unitPrice: zod.number(),
+          totalPrice: zod.number(),
+          unitCost: zod.number().nullable(),
+          totalCost: zod.number().nullable(),
+          margin: zod.number().nullable(),
+        }),
+      )
+      .describe(
+        "Venue-event extras with unknown supplier cost across all non-cancelled parties, independent of the selected report period.",
+      ),
   }),
   financial: zod.object({
     venueProfitability: zod.object({
