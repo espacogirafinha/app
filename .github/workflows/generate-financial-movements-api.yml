@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   codegen:
-    if: github.event.head_commit.message != 'chore: generate financial movements api client'
+    if: "${{ github.event.head_commit.message != 'chore: generate financial movements api client' }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
