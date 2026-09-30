@@ -1,0 +1,24 @@
+name: Diagnose zod codegen barrel
+
+on:
+  push:
+    branches:
+      - feat/financial-movements
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter @workspace/api-spec codegen
+      - name: Show zod barrel after codegen
+        run: |
+          echo "=== lib/api-zod/src/index.ts ==="
+          cat -n lib/api-zod/src/index.ts
+          echo "=== diff ==="
+          git diff -- lib/api-zod/src/index.ts
