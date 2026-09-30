@@ -100,7 +100,7 @@ test("Movimentos financeiros: extrato, filtros, pesquisa e histórico sem data",
   await page.getByLabel("Método").click();
   await page.getByRole("option", { name: "Todos" }).click();
 
-  await expect(page.getByRole("heading", { name: "Pagamentos antigos sem data" })).toBeVisible();
+  await expect(page.getByText("Pagamentos antigos sem data", { exact: true })).toBeVisible();
   await expect(page.getByText("Ana Costa", { exact: true })).toBeVisible();
   await expect(page.getByText("Data não registada · Não registado", { exact: true })).toBeVisible();
 
