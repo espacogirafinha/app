@@ -20,6 +20,20 @@ jobs:
       - name: Install Chromium
         run: corepack pnpm exec playwright install --with-deps chromium
 
+      - name: Start expenses test app
+        run: |
+          PORT=4175 VITE_SUPABASE_URL=http://127.0.0.1:9999 VITE_SUPABASE_ANON_KEY=test-anon-key \
+            corepack pnpm --filter @workspace/girafinha dev > /tmp/personnel-expenses-vite.log 2>&1 &
+          echo $! > /tmp/personnel-expenses-vite.pid
+          for i in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:4175/expenses-flow-test.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/personnel-expenses-vite.log
+          exit 1
+
       - name: Expenses E2E
         run: corepack pnpm exec playwright test --config=playwright.expenses.config.ts
 
@@ -28,3 +42,9 @@ jobs:
 
       - name: Build
         run: corepack pnpm run build
+
+      - name: Stop expenses test app
+        if: always()
+        run: |
+          if [ -f /tmp/personnel-expenses-vite.pid ]; then kill $(cat /tmp/personnel-expenses-vite.pid) || true; fi
+          cat /tmp/personnel-expenses-vite.log || true
