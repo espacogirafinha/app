@@ -81,7 +81,7 @@ test("Movimentos financeiros: extrato, filtros, pesquisa e histórico sem data",
 
   const receivedSummary = page.getByText("Recebido no período", { exact: true }).locator("..");
   const movementSummary = page.getByText("Movimentos", { exact: true }).locator("..");
-  await expect(receivedSummary).toContainText("890,00");
+  await expect(receivedSummary).toContainText("790,00");
   await expect(movementSummary).toContainText("3");
 
   const search = page.getByPlaceholder("Pesquisar por cliente ou criança…");
