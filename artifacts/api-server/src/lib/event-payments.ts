@@ -14,6 +14,10 @@ import {
   summarizeEventPayments,
   validatePaymentDraft,
 } from "./event-payment-rules";
+import {
+  buildFinancialMovements,
+  type FinancialMovementsResult,
+} from "./financial-movements";
 
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -216,6 +220,40 @@ export async function listEventPayments(module: EventPaymentModule, entityId: st
       payments: rows.map(toPaymentLike),
     }),
   };
+}
+
+export async function listFinancialMovements(): Promise<FinancialMovementsResult> {
+  const rows = await db
+    .select({
+      id: eventPaymentsTable.id,
+      venueEventId: eventPaymentsTable.venueEventId,
+      externalEventId: eventPaymentsTable.externalEventId,
+      paymentType: eventPaymentsTable.paymentType,
+      amount: eventPaymentsTable.amount,
+      paymentMethod: eventPaymentsTable.paymentMethod,
+      paidAt: eventPaymentsTable.paidAt,
+      notes: eventPaymentsTable.notes,
+      createdAt: eventPaymentsTable.createdAt,
+      deletedAt: eventPaymentsTable.deletedAt,
+      venueCustomerName: venueEventsTable.customerName,
+      venueBirthdayChildName: venueEventsTable.birthdayChildName,
+      venueEventDate: venueEventsTable.eventDate,
+      externalCustomerName: externalEventsTable.customerName,
+      externalEventDate: externalEventsTable.eventDate,
+    })
+    .from(eventPaymentsTable)
+    .leftJoin(venueEventsTable, eq(eventPaymentsTable.venueEventId, venueEventsTable.id))
+    .leftJoin(externalEventsTable, eq(eventPaymentsTable.externalEventId, externalEventsTable.id))
+    .where(isNull(eventPaymentsTable.deletedAt));
+
+  return buildFinancialMovements(
+    rows.map((row) => ({
+      ...row,
+      paymentType: row.paymentType as EventPaymentType,
+      amount: money(row.amount),
+      paymentMethod: row.paymentMethod as EventPaymentMethod | null,
+    })),
+  );
 }
 
 export async function createEventPaymentInTransaction(

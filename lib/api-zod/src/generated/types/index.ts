@@ -70,6 +70,8 @@ export * from "./externalEventServiceType";
 export * from "./externalEventStatus";
 export * from "./externalServiceCatalog";
 export * from "./extraStats";
+export * from "./financialMovement";
+export * from "./financialMovementsResponse";
 export * from "./getCalendarReservationsParams";
 export * from "./getCalendarV2Params";
 export * from "./getReportsDataParams";
