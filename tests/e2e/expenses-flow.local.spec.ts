@@ -3,6 +3,8 @@ import { formControl } from "./helpers/transactions";
 
 const foodCategory = "11111111-1111-4111-8111-111111111111";
 const equipmentCategory = "22222222-2222-4222-8222-222222222222";
+const personnelCategory = "44444444-4444-4444-8444-444444444444";
+const supplierCategory = "55555555-5555-4555-8555-555555555555";
 const eventId = "33333333-3333-4333-8333-333333333333";
 
 type ExpenseRow = {
@@ -204,4 +206,105 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
 
   await expect.poll(() => lastDeleteId).toBe("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
   await expect(page.getByText("Mesa redonda", { exact: true })).toHaveCount(0);
+});
+
+
+test("Despesas: Pessoal / Colaboradores aparece e fica sempre operacional", async ({ page }) => {
+  let lastCreateBody: Record<string, unknown> | null = null;
+  let rows: ExpenseRow[] = [];
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const method = request.method();
+
+    if (url.pathname === "/api/settings/expense-categories" && method === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          { id: supplierCategory, name: "Fornecedores / Animação", isActive: true, sortOrder: 30, createdAt: "2026-10-01T00:00:00.000Z", updatedAt: "2026-10-01T00:00:00.000Z" },
+          { id: personnelCategory, name: "Pessoal / Colaboradores", isActive: true, sortOrder: 35, createdAt: "2026-10-01T00:00:00.000Z", updatedAt: "2026-10-01T00:00:00.000Z" },
+        ]),
+      });
+    }
+
+    if (url.pathname === "/api/venue-events" && method === "GET") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
+    }
+
+    if (url.pathname === "/api/expenses" && method === "GET") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
+    }
+
+    if (url.pathname === "/api/expenses" && method === "POST") {
+      lastCreateBody = request.postDataJSON();
+      const body = lastCreateBody as {
+        expenseDate: string;
+        description: string;
+        amount: number;
+        categoryId: string;
+        expenseType: "operational" | "investment";
+      };
+      const created: ExpenseRow = {
+        id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        expenseDate: body.expenseDate,
+        description: body.description,
+        amount: body.amount,
+        categoryId: body.categoryId,
+        categoryName: "Pessoal / Colaboradores",
+        expenseType: body.expenseType,
+        supplier: null,
+        notes: null,
+        venueEventId: null,
+        venueEventLabel: null,
+        createdAt: "2026-10-01T00:00:00.000Z",
+        updatedAt: "2026-10-01T00:00:00.000Z",
+      };
+      rows = [created];
+      return route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(created) });
+    }
+
+    if (url.pathname.startsWith("/api/expenses/") && method === "PATCH") {
+      const body = request.postDataJSON() as Partial<ExpenseRow>;
+      rows = rows.map((row) => ({ ...row, ...body }));
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows[0]) });
+    }
+
+    return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "not mocked" }) });
+  });
+
+  await page.goto("/expenses-flow-test.html");
+  await page.getByRole("button", { name: "Adicionar despesa" }).click();
+
+  const createDialog = page.getByRole("dialog", { name: "Adicionar despesa" });
+  const categoryControl = createDialog.locator("label").filter({ hasText: /^Categoria$/ }).locator("xpath=..").getByRole("combobox");
+  await categoryControl.click();
+  await expect(page.getByRole("option", { name: "Pessoal / Colaboradores" })).toBeVisible();
+  await expect(page.getByRole("option", { name: "Fornecedores / Animação" })).toBeVisible();
+  await page.getByRole("option", { name: "Pessoal / Colaboradores" }).click();
+
+  const typeControl = createDialog.locator("label").filter({ hasText: /^Tipo$/ }).locator("xpath=..").getByRole("combobox");
+  await expect(typeControl).toBeDisabled();
+  await expect(createDialog.getByText("Pessoal / Colaboradores é sempre registado como despesa operacional.", { exact: true })).toBeVisible();
+
+  await formControl(createDialog, "Data").fill("2026-10-01");
+  await formControl(createDialog, "Valor").fill("120");
+  await formControl(createDialog, "Descrição").fill("Pagamento colaboradora");
+  await createDialog.getByRole("button", { name: "Guardar", exact: true }).click();
+
+  await expect.poll(() => lastCreateBody).not.toBeNull();
+  expect(lastCreateBody).toMatchObject({
+    categoryId: personnelCategory,
+    expenseType: "operational",
+    description: "Pagamento colaboradora",
+    amount: 120,
+  });
+
+  const card = page.getByText("Pagamento colaboradora", { exact: true }).locator("xpath=ancestor::div[.//button[contains(.,'Editar')]][1]");
+  await card.getByRole("button", { name: "Editar" }).click();
+  const editDialog = page.getByRole("dialog", { name: "Editar despesa" });
+  const editTypeControl = editDialog.locator("label").filter({ hasText: /^Tipo$/ }).locator("xpath=..").getByRole("combobox");
+  await expect(editTypeControl).toBeDisabled();
+  await expect(editDialog.getByText("Pessoal / Colaboradores é sempre registado como despesa operacional.", { exact: true })).toBeVisible();
 });
