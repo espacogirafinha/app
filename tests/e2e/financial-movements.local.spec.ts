@@ -86,15 +86,15 @@ test("Movimentos financeiros: extrato, filtros, pesquisa e histórico sem data",
 
   const search = page.getByPlaceholder("Pesquisar por cliente ou criança…");
   await search.fill("lourenco");
-  await expect(page.getByText("Diana Pedrosa", { exact: true })).toHaveCount(2);
-  await expect(page.getByText("Rui Santos", { exact: true })).toHaveCount(0);
+  await expect(page.locator("tbody tr").filter({ hasText: "Diana Pedrosa" })).toHaveCount(2);
+  await expect(page.locator("tbody tr").filter({ hasText: "Rui Santos" })).toHaveCount(0);
   await expect(receivedSummary).toContainText("590,00");
 
   await search.fill("");
   await page.getByLabel("Método").click();
   await page.getByRole("option", { name: "Dinheiro" }).click();
-  await expect(page.getByText("Rui Santos", { exact: true })).toBeVisible();
-  await expect(page.getByText("Diana Pedrosa", { exact: true })).toHaveCount(0);
+  await expect(page.locator("tbody tr").filter({ hasText: "Rui Santos" })).toHaveCount(1);
+  await expect(page.locator("tbody tr").filter({ hasText: "Diana Pedrosa" })).toHaveCount(0);
   await expect(receivedSummary).toContainText("200,00");
 
   await page.getByLabel("Método").click();
