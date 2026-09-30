@@ -308,3 +308,113 @@ test("Despesas: Pessoal / Colaboradores aparece e fica sempre operacional", asyn
   await expect(editTypeControl).toBeDisabled();
   await expect(editDialog.getByText("Pessoal / Colaboradores é sempre registado como despesa operacional.", { exact: true })).toBeVisible();
 });
+
+
+test("Despesas mobile: seletor de Festa fica no viewport e permite percorrer toda a lista", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  const venueEvents = [
+    {
+      id: "60000000-0000-4000-8000-000000000001",
+      eventDate: "2026-12-31",
+      customerName: "Cliente recente",
+      birthdayChildName: "Festa recente",
+    },
+    ...Array.from({ length: 28 }, (_, index) => ({
+      id: `60000000-0000-4000-8000-${String(index + 2).padStart(12, "0")}`,
+      eventDate: "2025-06-15",
+      customerName: `Cliente ${index + 2}`,
+      birthdayChildName: `Criança ${index + 2}`,
+    })),
+    {
+      id: "60000000-0000-4000-8000-000000000030",
+      eventDate: "2024-01-01",
+      customerName: "Cliente antigo",
+      birthdayChildName: "Festa antiga",
+    },
+  ];
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const method = request.method();
+
+    if (url.pathname === "/api/settings/expense-categories" && method === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: foodCategory,
+            name: "Supermercado / Alimentação",
+            isActive: true,
+            sortOrder: 10,
+            createdAt: "2026-10-01T00:00:00.000Z",
+            updatedAt: "2026-10-01T00:00:00.000Z",
+          },
+        ]),
+      });
+    }
+
+    if (url.pathname === "/api/venue-events" && method === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(venueEvents),
+      });
+    }
+
+    if (url.pathname === "/api/expenses" && method === "GET") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    }
+
+    return route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "not mocked" }),
+    });
+  });
+
+  await page.goto("/expenses-flow-test.html");
+  await page.getByRole("button", { name: "Adicionar despesa" }).click();
+
+  const createDialog = page.getByRole("dialog", { name: "Adicionar despesa" });
+  const eventControl = createDialog
+    .locator("label")
+    .filter({ hasText: /^Associar a uma Festa$/ })
+    .locator("xpath=..")
+    .getByRole("combobox");
+
+  await eventControl.scrollIntoViewIfNeeded();
+  await eventControl.click();
+
+  const listbox = page.getByRole("listbox");
+  await expect(listbox).toBeVisible();
+  await expect(page.getByRole("option", { name: "Sem associação" })).toBeVisible();
+
+  const initialBox = await listbox.boundingBox();
+  expect(initialBox).not.toBeNull();
+  expect(initialBox!.y).toBeGreaterThanOrEqual(0);
+  expect(initialBox!.y + initialBox!.height).toBeLessThanOrEqual(844);
+  expect(initialBox!.height).toBeLessThanOrEqual(844 * 0.6);
+  expect(await listbox.evaluate((element) => getComputedStyle(element).overflowY)).toBe("auto");
+
+  const newest = page.getByRole("option", { name: "2026-12-31 · Festa recente" });
+  await expect(newest).toBeVisible();
+
+  const oldest = page.getByRole("option", { name: "2024-01-01 · Festa antiga" });
+  await oldest.scrollIntoViewIfNeeded();
+  await expect(oldest).toBeVisible();
+
+  const scrolledBox = await listbox.boundingBox();
+  expect(scrolledBox).not.toBeNull();
+  expect(scrolledBox!.y).toBeGreaterThanOrEqual(0);
+  expect(scrolledBox!.y + scrolledBox!.height).toBeLessThanOrEqual(844);
+
+  await newest.scrollIntoViewIfNeeded();
+  await expect(newest).toBeVisible();
+});
