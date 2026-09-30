@@ -52,6 +52,7 @@ type ExpenseForm = {
 
 const ALL = "__all__";
 const NONE = "__none__";
+const PERSONNEL_EXPENSE_CATEGORY_NAME = "Pessoal / Colaboradores";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -418,6 +419,8 @@ function ExpenseDialog({
   const selectableCategories = expense && !categories.some((category) => category.id === expense.categoryId)
     ? [...categories, ...allCategories.filter((category) => category.id === expense.categoryId)]
     : categories;
+  const selectedCategory = selectableCategories.find((category) => category.id === form.categoryId);
+  const personnelCategorySelected = selectedCategory?.name === PERSONNEL_EXPENSE_CATEGORY_NAME;
 
   return (
     <Dialog open={open} onOpenChange={initialize}>
@@ -463,7 +466,17 @@ function ExpenseDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Categoria">
-              <Select value={form.categoryId} onValueChange={(value) => setForm((current) => ({ ...current, categoryId: value }))}>
+              <Select
+                value={form.categoryId}
+                onValueChange={(value) => {
+                  const category = selectableCategories.find((item) => item.id === value);
+                  setForm((current) => ({
+                    ...current,
+                    categoryId: value,
+                    expenseType: category?.name === PERSONNEL_EXPENSE_CATEGORY_NAME ? "operational" : current.expenseType,
+                  }));
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder="Escolher categoria" /></SelectTrigger>
                 <SelectContent>
                   {selectableCategories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}
@@ -472,7 +485,11 @@ function ExpenseDialog({
             </Field>
 
             <Field label="Tipo">
-              <Select value={form.expenseType} onValueChange={(value) => setForm((current) => ({ ...current, expenseType: value as ExpenseType }))}>
+              <Select
+                value={form.expenseType}
+                disabled={personnelCategorySelected}
+                onValueChange={(value) => setForm((current) => ({ ...current, expenseType: value as ExpenseType }))}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="operational">Despesa operacional</SelectItem>
@@ -481,6 +498,12 @@ function ExpenseDialog({
               </Select>
             </Field>
           </div>
+
+          {personnelCategorySelected ? (
+            <p className="text-xs text-muted-foreground">
+              Pessoal / Colaboradores é sempre registado como despesa operacional.
+            </p>
+          ) : null}
 
           <Field label="Fornecedor / Loja">
             <Input value={form.supplier} onChange={(event) => setForm((current) => ({ ...current, supplier: event.target.value }))} placeholder="Opcional" />
