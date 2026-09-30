@@ -5,6 +5,7 @@ import {
   date,
   index,
   integer,
+  uniqueIndex,
   numeric,
   pgTable,
   text,
@@ -14,6 +15,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { venueEventsTable } from "./venue-events";
+import { externalEventsTable } from "./external-events";
 
 export const expenseCategoriesTable = pgTable("expense_categories", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -62,6 +64,39 @@ export const expensesTable = pgTable(
     index("expenses_type_idx").on(t.expenseType),
     index("expenses_venue_event_id_idx").on(t.venueEventId),
     index("expenses_deleted_at_idx").on(t.deletedAt),
+  ],
+);
+
+
+export const expenseEventLinksTable = pgTable(
+  "expense_event_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    expenseId: uuid("expense_id")
+      .notNull()
+      .references(() => expensesTable.id, { onDelete: "cascade" }),
+    venueEventId: uuid("venue_event_id").references(() => venueEventsTable.id, {
+      onDelete: "cascade",
+    }),
+    externalEventId: uuid("external_event_id").references(() => externalEventsTable.id, {
+      onDelete: "cascade",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      "expense_event_links_exactly_one_event",
+      sql`num_nonnulls(${t.venueEventId}, ${t.externalEventId}) = 1`,
+    ),
+    index("expense_event_links_expense_id_idx").on(t.expenseId),
+    index("expense_event_links_venue_event_id_idx").on(t.venueEventId),
+    index("expense_event_links_external_event_id_idx").on(t.externalEventId),
+    uniqueIndex("expense_event_links_expense_venue_unique")
+      .on(t.expenseId, t.venueEventId)
+      .where(sql`${t.venueEventId} is not null`),
+    uniqueIndex("expense_event_links_expense_external_unique")
+      .on(t.expenseId, t.externalEventId)
+      .where(sql`${t.externalEventId} is not null`),
   ],
 );
 
