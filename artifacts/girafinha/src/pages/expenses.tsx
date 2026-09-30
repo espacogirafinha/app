@@ -515,7 +515,10 @@ function ExpenseDialog({
               onValueChange={(value) => setForm((current) => ({ ...current, venueEventId: value === NONE ? "" : value }))}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                collisionPadding={12}
+                className="max-h-[55dvh] overflow-y-auto sm:max-h-[var(--radix-select-content-available-height)]"
+              >
                 <SelectItem value={NONE}>Sem associação</SelectItem>
                 {[...venueEvents]
                   .sort((a, b) => b.eventDate.localeCompare(a.eventDate))
