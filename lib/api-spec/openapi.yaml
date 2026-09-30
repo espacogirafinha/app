@@ -4296,6 +4296,42 @@ components:
         sortOrder:
           type: integer
 
+    ExpenseEventType:
+      type: string
+      enum: [venue_event, external_event]
+
+    ExpenseEventLinkInput:
+      type: object
+      properties:
+        eventType:
+          $ref: "#/components/schemas/ExpenseEventType"
+        eventId:
+          type: string
+          format: uuid
+      required: [eventType, eventId]
+
+    ExpenseEventLink:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventType:
+          $ref: "#/components/schemas/ExpenseEventType"
+        eventId:
+          type: string
+          format: uuid
+        eventDate:
+          type: string
+          format: date
+        customerName:
+          type: string
+        birthdayChildName:
+          type: ["string", "null"]
+        label:
+          type: string
+      required: [id, eventType, eventId, eventDate, customerName, birthdayChildName, label]
+
     Expense:
       type: object
       properties:
@@ -4326,13 +4362,17 @@ components:
           format: uuid
         venueEventLabel:
           type: ["string", "null"]
+        eventLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpenseEventLink"
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-      required: [id, expenseDate, description, amount, categoryId, categoryName, expenseType, supplier, notes, venueEventId, venueEventLabel, createdAt, updatedAt]
+      required: [id, expenseDate, description, amount, categoryId, categoryName, expenseType, supplier, notes, venueEventId, venueEventLabel, eventLinks, createdAt, updatedAt]
 
     CreateExpenseBody:
       type: object
@@ -4358,6 +4398,12 @@ components:
         venueEventId:
           type: ["string", "null"]
           format: uuid
+          deprecated: true
+          description: Legacy compatibility field. Use eventLinks for new clients.
+        eventLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpenseEventLinkInput"
       required: [expenseDate, description, amount, categoryId, expenseType]
 
     UpdateExpenseBody:
@@ -4384,6 +4430,12 @@ components:
         venueEventId:
           type: ["string", "null"]
           format: uuid
+          deprecated: true
+          description: Legacy compatibility field. Use eventLinks for new clients.
+        eventLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpenseEventLinkInput"
 
     ReportsV2ExpenseBreakdown:
       type: object
