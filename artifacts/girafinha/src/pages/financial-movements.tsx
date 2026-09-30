@@ -154,7 +154,7 @@ export default function FinancialMovementsPage() {
           <div className="space-y-2">
             <Label>Período pela data do pagamento</Label>
             <Select value={periodMode} onValueChange={(value) => setPeriodMode(value as MovementPeriodMode)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label="Período pela data do pagamento"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="this_month">Este mês</SelectItem>
                 <SelectItem value="previous_month">Mês anterior</SelectItem>
@@ -167,7 +167,7 @@ export default function FinancialMovementsPage() {
           <div className="space-y-2">
             <Label>Método</Label>
             <Select value={method} onValueChange={(value) => setMethod(value as MovementMethodFilter)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label="Método"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="cash">Dinheiro</SelectItem>
@@ -180,7 +180,7 @@ export default function FinancialMovementsPage() {
           <div className="space-y-2">
             <Label>Origem</Label>
             <Select value={origin} onValueChange={(value) => setOrigin(value as MovementOriginFilter)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label="Origem"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="venue_events">Festas no Espaço</SelectItem>
