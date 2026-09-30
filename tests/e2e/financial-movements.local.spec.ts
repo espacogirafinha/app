@@ -79,21 +79,23 @@ test("Movimentos financeiros: extrato, filtros, pesquisa e histórico sem data",
   await page.getByLabel("Período pela data do pagamento").click();
   await page.getByRole("option", { name: "Tudo" }).click();
 
-  await expect(page.getByText("890,00 €", { exact: true })).toBeVisible();
-  await expect(page.getByText("3", { exact: true })).toBeVisible();
+  const receivedSummary = page.getByText("Recebido no período", { exact: true }).locator("..");
+  const movementSummary = page.getByText("Movimentos", { exact: true }).locator("..");
+  await expect(receivedSummary).toContainText("890,00");
+  await expect(movementSummary).toContainText("3");
 
   const search = page.getByPlaceholder("Pesquisar por cliente ou criança…");
   await search.fill("lourenco");
   await expect(page.getByText("Diana Pedrosa", { exact: true })).toHaveCount(2);
   await expect(page.getByText("Rui Santos", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("590,00 €", { exact: true })).toBeVisible();
+  await expect(receivedSummary).toContainText("590,00");
 
   await search.fill("");
   await page.getByLabel("Método").click();
   await page.getByRole("option", { name: "Dinheiro" }).click();
   await expect(page.getByText("Rui Santos", { exact: true })).toBeVisible();
   await expect(page.getByText("Diana Pedrosa", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("200,00 €", { exact: true })).toBeVisible();
+  await expect(receivedSummary).toContainText("200,00");
 
   await page.getByLabel("Método").click();
   await page.getByRole("option", { name: "Todos" }).click();
