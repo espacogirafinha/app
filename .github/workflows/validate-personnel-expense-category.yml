@@ -1,0 +1,30 @@
+name: Validate personnel expense category
+
+on:
+  push:
+    branches:
+      - feat/personnel-expense-category
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Expenses E2E
+        run: corepack pnpm exec playwright test --config=playwright.expenses.config.ts
+
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+
+      - name: Build
+        run: corepack pnpm run build
