@@ -28,6 +28,7 @@ export const eventPaymentsTable = pgTable(
     amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
     paymentMethod: text("payment_method"),
     paidAt: timestamp("paid_at", { withTimezone: true }),
+    reconciledAt: timestamp("reconciled_at", { withTimezone: true }),
     notes: text("notes"),
     source: text("source").notNull().default("manual"),
     sourceReference: text("source_reference"),
