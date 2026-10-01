@@ -1,0 +1,35 @@
+name: Generate expense event link API
+
+on:
+  push:
+    branches:
+      - feat/expense-event-links
+
+permissions:
+  contents: write
+
+jobs:
+  codegen:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/expense-event-links
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter @workspace/api-spec codegen
+      - name: Commit generated API
+        run: |
+          if git diff --quiet -- lib/api-client-react/src/generated lib/api-zod/src/generated; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/api-client-react/src/generated lib/api-zod/src/generated
+          git commit -m "chore: regenerate expense event link API"
+          git push origin HEAD:feat/expense-event-links
