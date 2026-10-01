@@ -23,6 +23,10 @@ import {
   UpdateInventoryItemBody,
   UpdateInventoryItemParams,
 } from "@workspace/api-zod";
+import {
+  calculateInventoryMovement,
+  InventoryStockError,
+} from "../lib/inventory-stock";
 
 const router: IRouter = Router();
 
@@ -265,11 +269,6 @@ router.post("/inventory/items/:id/movements", async (req, res): Promise<void> =>
     return;
   }
 
-  if (body.data.movementType !== "adjustment" && body.data.quantity <= 0) {
-    res.status(400).json({ error: "Movement quantity must be greater than zero" });
-    return;
-  }
-
   try {
     const result = await db.transaction(async (tx) => {
       const [item] = await tx
@@ -280,20 +279,12 @@ router.post("/inventory/items/:id/movements", async (req, res): Promise<void> =>
 
       if (!item) return null;
 
-      const before = numberValue(item.quantityCurrent);
-      let delta = 0;
-      if (body.data.movementType === "entry") delta = body.data.quantity;
-      if (body.data.movementType === "exit") delta = -body.data.quantity;
-      if (body.data.movementType === "adjustment") delta = body.data.quantity - before;
-
-      if (delta === 0) {
-        throw new InventoryMovementError("A quantidade já corresponde ao valor indicado.");
-      }
-
-      const after = before + delta;
-      if (after < 0) {
-        throw new InventoryMovementError("Stock insuficiente. A saída não pode deixar o stock negativo.");
-      }
+      const { quantityBefore: before, quantityDelta: delta, quantityAfter: after } =
+        calculateInventoryMovement({
+          currentQuantity: numberValue(item.quantityCurrent),
+          movementType: body.data.movementType,
+          quantity: body.data.quantity,
+        });
 
       const [updatedItem] = await tx
         .update(inventoryItemsTable)
@@ -324,14 +315,12 @@ router.post("/inventory/items/:id/movements", async (req, res): Promise<void> =>
 
     res.status(201).json(result);
   } catch (error) {
-    if (error instanceof InventoryMovementError) {
+    if (error instanceof InventoryStockError) {
       res.status(409).json({ error: error.message });
       return;
     }
     throw error;
   }
 });
-
-class InventoryMovementError extends Error {}
 
 export default router;
