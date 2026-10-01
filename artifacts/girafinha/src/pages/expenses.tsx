@@ -135,15 +135,19 @@ export default function ExpensesPage() {
       ? yearRange(year)
       : { startDate: customStart, endDate: customEnd };
 
-  const params = {
+  const summaryParams = {
     startDate: range.startDate,
     endDate: range.endDate,
     search: search.trim() || undefined,
     categoryId: categoryId === ALL ? undefined : categoryId,
+  };
+  const params = {
+    ...summaryParams,
     expenseType: expenseType === ALL ? undefined : expenseType,
   };
 
   const expensesQuery = useListExpenses(params);
+  const summaryExpensesQuery = useListExpenses(summaryParams);
   const categoriesQuery = useListExpenseCategories();
   const venueEventsQuery = useListVenueEvents();
   const externalEventsQuery = useListExternalEvents();
@@ -159,6 +163,7 @@ export default function ExpensesPage() {
   );
   const activeCategories = categories.filter((category) => category.isActive);
   const expenses = expensesQuery.data ?? [];
+  const summaryExpenses = summaryExpensesQuery.data ?? [];
   const eventOptions = useMemo<ExpenseEventOption[]>(
     () => [
       ...(venueEventsQuery.data ?? []).map((event) => ({
@@ -184,16 +189,20 @@ export default function ExpensesPage() {
   );
 
   const summary = useMemo(() => {
-    const operational = expenses
+    const operational = summaryExpenses
       .filter((expense) => expense.expenseType === "operational")
       .reduce((sum, expense) => sum + expense.amount, 0);
-    const investments = expenses
+    const investments = summaryExpenses
       .filter((expense) => expense.expenseType === "investment")
       .reduce((sum, expense) => sum + expense.amount, 0);
     return { operational, investments, total: operational + investments };
-  }, [expenses]);
+  }, [summaryExpenses]);
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey(params) });
+  const toggleExpenseType = (nextType: ExpenseType) => {
+    setExpenseType((current) => current === nextType ? ALL : nextType);
+  };
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey() });
   const isSaving = createExpense.isPending || updateExpense.isPending || deleteExpense.isPending;
 
   return (
@@ -281,8 +290,18 @@ export default function ExpensesPage() {
       </Card>
 
       <div className="grid grid-cols-3 gap-2">
-        <SummaryCard label="Operacionais" value={summary.operational} />
-        <SummaryCard label="Investimentos" value={summary.investments} />
+        <SummaryCard
+          label="Operacionais"
+          value={summary.operational}
+          active={expenseType === "operational"}
+          onClick={() => toggleExpenseType("operational")}
+        />
+        <SummaryCard
+          label="Investimentos"
+          value={summary.investments}
+          active={expenseType === "investment"}
+          onClick={() => toggleExpenseType("investment")}
+        />
         <SummaryCard label="Total saídas" value={summary.total} />
       </div>
 
@@ -404,14 +423,47 @@ export default function ExpensesPage() {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+  label,
+  value,
+  active = false,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  if (!onClick) {
+    return (
+      <Card className="border-border/70">
+        <CardContent className="p-3">
+          <p className="text-[11px] text-muted-foreground sm:text-xs">{label}</p>
+          <p className="mt-1 text-sm font-bold sm:text-lg">{euro(value)}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="border-border/70">
-      <CardContent className="p-3">
-        <p className="text-[11px] text-muted-foreground sm:text-xs">{label}</p>
-        <p className="mt-1 text-sm font-bold sm:text-lg">{euro(value)}</p>
-      </CardContent>
-    </Card>
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={[
+        "min-h-16 rounded-xl border bg-card p-3 text-left text-card-foreground shadow transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        active ? "border-primary bg-primary/5 ring-1 ring-primary/25" : "border-border/70 hover:bg-muted/30",
+      ].join(" ")}
+    >
+      <p className={active
+        ? "text-[11px] font-medium text-primary sm:text-xs"
+        : "text-[11px] text-muted-foreground sm:text-xs"}
+      >
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-bold sm:text-lg">{euro(value)}</p>
+    </button>
   );
 }
 
