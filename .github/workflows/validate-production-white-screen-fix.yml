@@ -19,6 +19,9 @@ jobs:
       - name: Typecheck
         run: corepack pnpm run typecheck
       - name: Build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: test-anon-key
         run: corepack pnpm run build
       - name: Verify chunk graph
         run: |
