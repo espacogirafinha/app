@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Edit, Plus, ReceiptText, Search, Trash2 } from "lucide-react";
+import { Check, ChevronsUpDown, Edit, Plus, ReceiptText, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -14,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoneyInput } from "@/components/money-input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -30,10 +39,13 @@ import {
   useDeleteExpense,
   useListExpenseCategories,
   useListExpenses,
+  useListExternalEvents,
   useListVenueEvents,
   useUpdateExpense,
   type CreateExpenseBody,
   type Expense,
+  type ExpenseEventLink,
+  type ExpenseEventLinkInput,
   type ExpenseType,
 } from "@workspace/api-client-react";
 
@@ -47,11 +59,20 @@ type ExpenseForm = {
   expenseType: ExpenseType;
   supplier: string;
   notes: string;
-  venueEventId: string;
+  eventLinks: ExpenseEventLinkInput[];
+};
+
+type ExpenseEventOption = {
+  eventType: "venue_event" | "external_event";
+  eventId: string;
+  eventDate: string;
+  customerName: string;
+  birthdayChildName: string | null;
+  typeLabel: "Festa" | "Serviço Externo";
+  displayName: string;
 };
 
 const ALL = "__all__";
-const NONE = "__none__";
 const PERSONNEL_EXPENSE_CATEGORY_NAME = "Pessoal / Colaboradores";
 
 function today() {
@@ -87,7 +108,7 @@ function emptyForm(): ExpenseForm {
     expenseType: "operational",
     supplier: "",
     notes: "",
-    venueEventId: "",
+    eventLinks: [],
   };
 }
 
@@ -125,6 +146,7 @@ export default function ExpensesPage() {
   const expensesQuery = useListExpenses(params);
   const categoriesQuery = useListExpenseCategories();
   const venueEventsQuery = useListVenueEvents();
+  const externalEventsQuery = useListExternalEvents();
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
@@ -137,6 +159,29 @@ export default function ExpensesPage() {
   );
   const activeCategories = categories.filter((category) => category.isActive);
   const expenses = expensesQuery.data ?? [];
+  const eventOptions = useMemo<ExpenseEventOption[]>(
+    () => [
+      ...(venueEventsQuery.data ?? []).map((event) => ({
+        eventType: "venue_event" as const,
+        eventId: event.id,
+        eventDate: event.eventDate,
+        customerName: event.customerName,
+        birthdayChildName: event.birthdayChildName ?? null,
+        typeLabel: "Festa" as const,
+        displayName: event.birthdayChildName || event.customerName,
+      })),
+      ...(externalEventsQuery.data ?? []).map((event) => ({
+        eventType: "external_event" as const,
+        eventId: event.id,
+        eventDate: event.eventDate,
+        customerName: event.customerName,
+        birthdayChildName: null,
+        typeLabel: "Serviço Externo" as const,
+        displayName: event.customerName,
+      })),
+    ].sort((a, b) => b.eventDate.localeCompare(a.eventDate) || a.displayName.localeCompare(b.displayName, "pt")),
+    [externalEventsQuery.data, venueEventsQuery.data],
+  );
 
   const summary = useMemo(() => {
     const operational = expenses
@@ -270,7 +315,13 @@ export default function ExpensesPage() {
                   <span className="rounded-full bg-muted px-2 py-1">
                     {expense.expenseType === "operational" ? "Operacional" : "Investimento"}
                   </span>
-                  {expense.venueEventLabel ? <span className="rounded-full bg-primary/10 px-2 py-1 text-primary">{expense.venueEventLabel}</span> : null}
+                  {expense.eventLinks.length > 0 ? (
+                    <span className="rounded-full bg-primary/10 px-2 py-1 text-primary">
+                      {expense.eventLinks.length === 1
+                        ? compactExpenseEventLabel(expense.eventLinks[0])
+                        : `Associada a ${expense.eventLinks.length} eventos`}
+                    </span>
+                  ) : null}
                 </div>
 
                 {expense.notes ? <p className="mt-2 text-sm text-muted-foreground">{expense.notes}</p> : null}
@@ -294,7 +345,7 @@ export default function ExpensesPage() {
         expense={editing}
         categories={activeCategories}
         allCategories={categories}
-        venueEvents={venueEventsQuery.data ?? []}
+        eventOptions={eventOptions}
         isSaving={isSaving}
         onOpenChange={(open) => {
           if (!open) {
@@ -369,7 +420,7 @@ function ExpenseDialog({
   expense,
   categories,
   allCategories,
-  venueEvents,
+  eventOptions,
   isSaving,
   onOpenChange,
   onSave,
@@ -378,7 +429,7 @@ function ExpenseDialog({
   expense: Expense | null;
   categories: Array<{ id: string; name: string }>;
   allCategories: Array<{ id: string; name: string }>;
-  venueEvents: Array<{ id: string; eventDate: string; customerName: string; birthdayChildName?: string | null }>;
+  eventOptions: ExpenseEventOption[];
   isSaving: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: CreateExpenseBody) => Promise<void>;
@@ -396,7 +447,7 @@ function ExpenseDialog({
       expenseType: expense.expenseType,
       supplier: expense.supplier ?? "",
       notes: expense.notes ?? "",
-      venueEventId: expense.venueEventId ?? "",
+      eventLinks: expense.eventLinks.map(({ eventType, eventId }) => ({ eventType, eventId })),
     } : emptyForm());
   }, [expense, open]);
 
@@ -410,7 +461,7 @@ function ExpenseDialog({
         expenseType: expense.expenseType,
         supplier: expense.supplier ?? "",
         notes: expense.notes ?? "",
-        venueEventId: expense.venueEventId ?? "",
+        eventLinks: expense.eventLinks.map(({ eventType, eventId }) => ({ eventType, eventId })),
       } : emptyForm());
     }
     onOpenChange(nextOpen);
@@ -427,7 +478,7 @@ function ExpenseDialog({
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{expense ? "Editar despesa" : "Adicionar despesa"}</DialogTitle>
-          <DialogDescription>Registe a saída real. Associar a uma Festa é opcional.</DialogDescription>
+          <DialogDescription>Registe a saída real. Associar a eventos é opcional.</DialogDescription>
         </DialogHeader>
 
         <form
@@ -447,7 +498,7 @@ function ExpenseDialog({
               expenseType: form.expenseType,
               supplier: form.supplier.trim() || null,
               notes: form.notes.trim() || null,
-              venueEventId: form.venueEventId || null,
+              eventLinks: form.eventLinks,
             });
           }}
         >
@@ -509,27 +560,17 @@ function ExpenseDialog({
             <Input value={form.supplier} onChange={(event) => setForm((current) => ({ ...current, supplier: event.target.value }))} placeholder="Opcional" />
           </Field>
 
-          <Field label="Associar a uma Festa">
-            <Select
-              value={form.venueEventId || NONE}
-              onValueChange={(value) => setForm((current) => ({ ...current, venueEventId: value === NONE ? "" : value }))}
-            >
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent
-                collisionPadding={12}
-                className="max-h-[55dvh] overflow-y-auto sm:max-h-[var(--radix-select-content-available-height)]"
-              >
-                <SelectItem value={NONE}>Sem associação</SelectItem>
-                {[...venueEvents]
-                  .sort((a, b) => b.eventDate.localeCompare(a.eventDate))
-                  .map((event) => (
-                    <SelectItem key={event.id} value={event.id}>
-                      {event.eventDate} · {event.birthdayChildName || event.customerName}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </Field>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Associar a eventos</Label>
+              <span className="text-xs text-muted-foreground">Opcional</span>
+            </div>
+            <ExpenseEventMultiSelect
+              options={eventOptions}
+              selected={form.eventLinks}
+              onChange={(eventLinks) => setForm((current) => ({ ...current, eventLinks }))}
+            />
+          </div>
 
           <Field label="Notas">
             <Textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} rows={3} placeholder="Opcional" />
@@ -546,6 +587,163 @@ function ExpenseDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function normalizeEventSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-PT")
+    .trim();
+}
+
+function formatEventDate(value: string) {
+  return new Date(`${value}T12:00:00`).toLocaleDateString("pt-PT");
+}
+
+function compactExpenseEventLabel(link: ExpenseEventLink) {
+  const type = link.eventType === "venue_event" ? "Festa" : "Serviço";
+  const name = link.birthdayChildName || link.customerName;
+  return `${type} · ${name} · ${formatEventDate(link.eventDate)}`;
+}
+
+function eventOptionKey(option: Pick<ExpenseEventOption, "eventType" | "eventId">) {
+  return `${option.eventType}:${option.eventId}`;
+}
+
+function ExpenseEventMultiSelect({
+  options,
+  selected,
+  onChange,
+}: {
+  options: ExpenseEventOption[];
+  selected: ExpenseEventLinkInput[];
+  onChange: (links: ExpenseEventLinkInput[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const selectedKeys = new Set(selected.map(eventOptionKey));
+  const normalizedSearch = normalizeEventSearch(search);
+  const filteredOptions = options.filter((option) => {
+    if (!normalizedSearch) return true;
+    const haystack = normalizeEventSearch([
+      option.typeLabel,
+      option.eventDate,
+      formatEventDate(option.eventDate),
+      option.customerName,
+      option.birthdayChildName ?? "",
+    ].join(" "));
+    return haystack.includes(normalizedSearch);
+  });
+  const selectedOptions = selected
+    .map((link) => options.find((option) => eventOptionKey(option) === eventOptionKey(link)))
+    .filter((option): option is ExpenseEventOption => Boolean(option));
+
+  const toggle = (option: ExpenseEventOption) => {
+    const key = eventOptionKey(option);
+    onChange(
+      selectedKeys.has(key)
+        ? selected.filter((link) => eventOptionKey(link) !== key)
+        : [...selected, { eventType: option.eventType, eventId: option.eventId }],
+    );
+  };
+
+  return (
+    <div className="space-y-2">
+      <Popover open={open} onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) setSearch("");
+      }}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="min-h-11 w-full justify-between font-normal"
+          >
+            <span className={selected.length ? "" : "text-muted-foreground"}>
+              {selected.length === 0
+                ? "Selecionar eventos"
+                : selected.length === 1
+                  ? "1 evento selecionado"
+                  : `${selected.length} eventos selecionados`}
+            </span>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          collisionPadding={12}
+          className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-24px)] p-0"
+        >
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Pesquisar festa ou serviço…"
+              value={search}
+              onValueChange={setSearch}
+            />
+            <CommandList className="max-h-[55dvh] sm:max-h-[300px]">
+              <CommandEmpty>Nenhum evento encontrado.</CommandEmpty>
+              <CommandGroup>
+                {filteredOptions.map((option) => {
+                  const key = eventOptionKey(option);
+                  const isSelected = selectedKeys.has(key);
+                  return (
+                    <CommandItem
+                      key={key}
+                      value={key}
+                      onSelect={() => toggle(option)}
+                      className="items-start py-2"
+                    >
+                      <Check className={`mt-0.5 h-4 w-4 ${isSelected ? "opacity-100" : "opacity-0"}`} />
+                      <div className="min-w-0">
+                        <p className="font-medium">
+                          {option.typeLabel} · {formatEventDate(option.eventDate)}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {option.displayName}
+                          {option.birthdayChildName && option.customerName !== option.birthdayChildName
+                            ? ` · Cliente: ${option.customerName}`
+                            : ""}
+                        </p>
+                      </div>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {selectedOptions.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedOptions.map((option) => {
+            const key = eventOptionKey(option);
+            return (
+              <span
+                key={key}
+                className="inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary"
+              >
+                <span className="truncate">
+                  {option.typeLabel === "Serviço Externo" ? "Serviço" : "Festa"} · {option.displayName} · {formatEventDate(option.eventDate)}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Remover ${option.displayName}`}
+                  className="rounded-full p-0.5 hover:bg-primary/10"
+                  onClick={() => onChange(selected.filter((link) => eventOptionKey(link) !== key))}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
