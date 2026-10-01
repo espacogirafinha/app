@@ -42,7 +42,7 @@ test("Despesas: criar, editar, filtrar e anular sem exigir evento", async ({ pag
   let rows: ExpenseRow[] = [
     {
       id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-      expenseDate: "2026-09-05",
+      expenseDate: "2026-10-05",
       description: "Continente",
       amount: 86.4,
       categoryId: foodCategory,
@@ -53,12 +53,12 @@ test("Despesas: criar, editar, filtrar e anular sem exigir evento", async ({ pag
       venueEventId: null,
       venueEventLabel: null,
       eventLinks: [],
-      createdAt: "2026-09-05T10:00:00.000Z",
-      updatedAt: "2026-09-05T10:00:00.000Z",
+      createdAt: "2026-10-05T10:00:00.000Z",
+      updatedAt: "2026-10-05T10:00:00.000Z",
     },
     {
       id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-      expenseDate: "2026-09-10",
+      expenseDate: "2026-10-10",
       description: "Mesa redonda",
       amount: 220,
       categoryId: equipmentCategory,
@@ -69,8 +69,8 @@ test("Despesas: criar, editar, filtrar e anular sem exigir evento", async ({ pag
       venueEventId: null,
       venueEventLabel: null,
       eventLinks: [],
-      createdAt: "2026-09-10T10:00:00.000Z",
-      updatedAt: "2026-09-10T10:00:00.000Z",
+      createdAt: "2026-10-10T10:00:00.000Z",
+      updatedAt: "2026-10-10T10:00:00.000Z",
     },
   ];
 
@@ -183,7 +183,7 @@ test("Despesas: criar, editar, filtrar e anular sem exigir evento", async ({ pag
 
   await page.getByRole("button", { name: "Adicionar despesa" }).click();
   const createDialog = page.getByRole("dialog", { name: "Adicionar despesa" });
-  await formControl(createDialog, "Data").fill("2026-09-15");
+  await formControl(createDialog, "Data").fill("2026-10-15");
   await formControl(createDialog, "Valor").fill("42");
   await formControl(createDialog, "Descrição").fill("Balões");
 
@@ -196,7 +196,7 @@ test("Despesas: criar, editar, filtrar e anular sem exigir evento", async ({ pag
 
   await expect.poll(() => lastCreateBody).not.toBeNull();
   expect(lastCreateBody).toMatchObject({
-    expenseDate: "2026-09-15",
+    expenseDate: "2026-10-15",
     description: "Balões",
     amount: 42,
     categoryId: foodCategory,
