@@ -59,7 +59,9 @@ export default defineConfig(async ({ mode }) => {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
           if (id.includes("recharts") || id.includes("d3-")) return "charts";
-          if (id.includes("@radix-ui")) return "radix-ui";
+          // Keep Radix together with the general vendor chunk.
+          // Splitting it out can create a circular vendor <-> radix-ui import
+          // that crashes at module initialization before React mounts.
           if (id.includes("@tanstack/react-query")) return "react-query";
           if (id.includes("date-fns")) return "date-utils";
           return "vendor";
