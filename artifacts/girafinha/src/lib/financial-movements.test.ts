@@ -20,6 +20,7 @@ function movement(overrides: Partial<FinancialMovement> = {}): FinancialMovement
     amount: 110,
     paymentMethod: "bank_transfer",
     paidAt: "2026-10-05T10:00:00.000Z",
+    reconciledAt: null,
     notes: null,
     createdAt: "2026-10-05T10:01:00.000Z",
     ...overrides,
@@ -33,6 +34,7 @@ const baseFilters: FinancialMovementFilters = {
   customEnd: "",
   method: "all",
   origin: "all",
+  reconciliation: "all",
 };
 
 test("pesquisa por cliente e criança é parcial, case-insensitive e tolerante a acentos", () => {
@@ -145,5 +147,107 @@ test("Recebido no período soma apenas os movimentos datados já filtrados", () 
     movement({ id: "c", amount: 999, paidAt: "2026-09-20T10:00:00.000Z" }),
   ], { ...baseFilters, periodMode: "this_month" }, new Date("2026-10-15T12:00:00.000Z"));
 
-  assert.deepEqual(summarizeFinancialMovements(filtered), { received: 310, count: 2 });
+  assert.deepEqual(summarizeFinancialMovements(filtered), {
+    received: 310,
+    count: 2,
+    pending: { amount: 310, count: 2 },
+    reconciled: { amount: 0, count: 0 },
+  });
+});
+
+test("filtro de conferência separa Por conferir e Conferidos", () => {
+  const rows = [
+    movement({ id: "pending", amount: 100, reconciledAt: null }),
+    movement({
+      id: "done",
+      amount: 200,
+      reconciledAt: "2026-10-06T12:00:00.000Z",
+    }),
+  ];
+
+  assert.deepEqual(
+    filterFinancialMovements(rows, { ...baseFilters, reconciliation: "pending" })
+      .map((item) => item.id),
+    ["pending"],
+  );
+  assert.deepEqual(
+    filterFinancialMovements(rows, { ...baseFilters, reconciliation: "reconciled" })
+      .map((item) => item.id),
+    ["done"],
+  );
+});
+
+test("filtros de conferência combinam com período, método, origem e pesquisa", () => {
+  const rows = [
+    movement({
+      id: "match",
+      customerName: "Diana Pedrosa",
+      amount: 100,
+      paymentMethod: "bank_transfer",
+      module: "venue_events",
+      reconciledAt: null,
+      paidAt: "2026-10-05T10:00:00.000Z",
+    }),
+    movement({
+      id: "wrong-method",
+      customerName: "Diana Pedrosa",
+      paymentMethod: "cash",
+      reconciledAt: null,
+      paidAt: "2026-10-05T11:00:00.000Z",
+    }),
+    movement({
+      id: "already-done",
+      customerName: "Diana Pedrosa",
+      paymentMethod: "bank_transfer",
+      reconciledAt: "2026-10-05T12:00:00.000Z",
+      paidAt: "2026-10-05T12:00:00.000Z",
+    }),
+  ];
+
+  const filtered = filterFinancialMovements(
+    rows,
+    {
+      ...baseFilters,
+      search: "diana",
+      periodMode: "this_month",
+      method: "bank_transfer",
+      origin: "venue_events",
+      reconciliation: "pending",
+    },
+    new Date("2026-10-15T12:00:00.000Z"),
+  );
+
+  assert.deepEqual(filtered.map((item) => item.id), ["match"]);
+});
+
+test("resumo de reconciliação mostra valor e quantidade sem legacy sem data", () => {
+  const dated = [
+    movement({ id: "pending", amount: 230, reconciledAt: null }),
+    movement({
+      id: "done-a",
+      amount: 500,
+      reconciledAt: "2026-10-06T10:00:00.000Z",
+    }),
+    movement({
+      id: "done-b",
+      amount: 350,
+      reconciledAt: "2026-10-07T10:00:00.000Z",
+    }),
+  ];
+  const legacy = movement({
+    id: "legacy",
+    paymentType: "legacy_payment",
+    amount: 999,
+    paidAt: null,
+    paymentMethod: null,
+    reconciledAt: null,
+  });
+
+  const filtered = filterFinancialMovements([...dated, legacy], baseFilters);
+  assert.deepEqual(summarizeFinancialMovements(filtered), {
+    received: 1080,
+    count: 3,
+    pending: { amount: 230, count: 1 },
+    reconciled: { amount: 850, count: 2 },
+  });
 });
