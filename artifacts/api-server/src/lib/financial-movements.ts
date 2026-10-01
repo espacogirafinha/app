@@ -34,6 +34,7 @@ export type FinancialMovement = {
   amount: number;
   paymentMethod: EventPaymentMethod | null;
   paidAt: Date | null;
+  reconciledAt: Date | null;
   notes: string | null;
   createdAt: Date;
 };
