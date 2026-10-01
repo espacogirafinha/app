@@ -95,3 +95,25 @@ export function toDateTimeLocalInput(value: Date | string = new Date()) {
 export function toIsoDateTime(value: string) {
   return value ? new Date(value).toISOString() : null;
 }
+
+
+const PORTUGAL_TIME_ZONE = "Europe/Lisbon";
+
+export function getPortugalDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: PORTUGAL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
+  return part("year") + "-" + part("month") + "-" + part("day");
+}
+
+export function isHistoricalEventDate(eventDate: string, now = new Date()) {
+  return eventDate < getPortugalDateKey(now);
+}
+
+export function initialPaymentPaidAt(eventDate: string, now = new Date()) {
+  return isHistoricalEventDate(eventDate, now) ? "" : toDateTimeLocalInput(now);
+}
