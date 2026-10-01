@@ -423,7 +423,7 @@ function ExternalEventRow({
             </DetailsBlock>
           </div>
 
-          <EventPaymentsPanel module="external_events" entityId={event.id} />
+          <EventPaymentsPanel module="external_events" entityId={event.id} eventDate={event.eventDate} />
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <DetailsBlock title="Serviços incluídos">
