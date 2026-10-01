@@ -18,6 +18,9 @@ import {
   buildFinancialMovements,
   type FinancialMovementsResult,
 } from "./financial-movements";
+import {
+  nextPaymentReconciledAt,
+} from "./payment-reconciliation";
 
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -49,6 +52,7 @@ export type UpdateEventPaymentInput = {
   amount?: number;
   paymentMethod?: EventPaymentMethod | null;
   paidAt?: Date | null;
+  reconciledAt?: Date | null;
   notes?: string | null;
 };
 
@@ -148,6 +152,7 @@ function publicPayment(row: typeof eventPaymentsTable.$inferSelect) {
     amount: money(row.amount),
     paymentMethod: row.paymentMethod as EventPaymentMethod | null,
     paidAt: row.paidAt,
+    reconciledAt: row.reconciledAt,
     notes: row.notes,
     source: row.source,
     sourceReference: row.sourceReference,
@@ -232,6 +237,7 @@ export async function listFinancialMovements(): Promise<FinancialMovementsResult
       amount: eventPaymentsTable.amount,
       paymentMethod: eventPaymentsTable.paymentMethod,
       paidAt: eventPaymentsTable.paidAt,
+      reconciledAt: eventPaymentsTable.reconciledAt,
       notes: eventPaymentsTable.notes,
       createdAt: eventPaymentsTable.createdAt,
       deletedAt: eventPaymentsTable.deletedAt,
@@ -338,6 +344,23 @@ export async function updateEventPayment(paymentId: string, input: UpdateEventPa
         paidAt: input.paidAt === undefined ? current.paidAt : input.paidAt,
         source: current.source,
       };
+      const reconciledAt = nextPaymentReconciledAt(
+        {
+          amount: money(current.amount),
+          paymentMethod: current.paymentMethod as EventPaymentMethod | null,
+          paidAt: current.paidAt,
+          reconciledAt: current.reconciledAt,
+        },
+        input,
+      );
+
+      if (reconciledAt !== null && next.paidAt === null) {
+        throw new EventPaymentServiceError(
+          400,
+          "validation",
+          "Payment without paid_at cannot be reconciled",
+        );
+      }
 
       validatePaymentDraft(next);
       assertPaymentWithinBalance(event.totalPrice, rows.map(toPaymentLike), next.amount, paymentId);
@@ -349,6 +372,12 @@ export async function updateEventPayment(paymentId: string, input: UpdateEventPa
           ...(input.amount !== undefined ? { amount: String(input.amount) } : {}),
           ...(input.paymentMethod !== undefined ? { paymentMethod: input.paymentMethod } : {}),
           ...(input.paidAt !== undefined ? { paidAt: input.paidAt } : {}),
+          ...(
+            input.reconciledAt !== undefined
+            || reconciledAt !== current.reconciledAt
+              ? { reconciledAt }
+              : {}
+          ),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
           updatedAt: new Date(),
         })

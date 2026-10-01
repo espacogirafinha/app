@@ -24,6 +24,7 @@ function iso(value: Date | null | undefined) {
 
 function serializePayment(payment: {
   paidAt: Date | null;
+  reconciledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -32,6 +33,7 @@ function serializePayment(payment: {
   return {
     ...payment,
     paidAt: iso(payment.paidAt),
+    reconciledAt: iso(payment.reconciledAt),
     createdAt: iso(payment.createdAt),
     updatedAt: iso(payment.updatedAt),
     deletedAt: iso(payment.deletedAt),
@@ -51,6 +53,7 @@ router.get("/event-payments/movements", async (_req, res): Promise<void> => {
   const serializeMovement = (movement: (typeof result.movements)[number]) => ({
     ...movement,
     paidAt: iso(movement.paidAt),
+    reconciledAt: iso(movement.reconciledAt),
     createdAt: iso(movement.createdAt),
   });
 

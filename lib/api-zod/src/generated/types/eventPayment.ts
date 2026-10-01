@@ -21,6 +21,8 @@ export interface EventPayment {
   /** @nullable */
   paidAt: Date | null;
   /** @nullable */
+  reconciledAt: Date | null;
+  /** @nullable */
   notes?: string | null;
   source: string;
   /** @nullable */

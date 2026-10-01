@@ -24,6 +24,8 @@ export interface FinancialMovement {
   /** @nullable */
   paidAt: Date | null;
   /** @nullable */
+  reconciledAt: Date | null;
+  /** @nullable */
   notes: string | null;
   createdAt: Date;
 }

@@ -2976,6 +2976,9 @@ components:
         paidAt:
           type: ["string", "null"]
           format: date-time
+        reconciledAt:
+          type: ["string", "null"]
+          format: date-time
         notes:
           type: ["string", "null"]
         source:
@@ -2999,6 +3002,7 @@ components:
         - amount
         - paymentMethod
         - paidAt
+        - reconciledAt
         - source
         - sourceReference
         - createdAt
@@ -3075,6 +3079,9 @@ components:
         paidAt:
           type: ["string", "null"]
           format: date-time
+        reconciledAt:
+          type: ["string", "null"]
+          format: date-time
         notes:
           type: ["string", "null"]
         createdAt:
@@ -3091,6 +3098,7 @@ components:
         - amount
         - paymentMethod
         - paidAt
+        - reconciledAt
         - notes
         - createdAt
 
@@ -3153,6 +3161,10 @@ components:
         paidAt:
           type: ["string", "null"]
           format: date-time
+        reconciledAt:
+          type: ["string", "null"]
+          format: date-time
+          description: Bank reconciliation timestamp. Set to null to mark the payment as pending reconciliation.
         notes:
           type: ["string", "null"]
 

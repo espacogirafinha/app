@@ -1,6 +1,15 @@
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowUpRight, Search, WalletCards } from "lucide-react";
+import {
+  ArrowUpRight,
+  Check,
+  Loader2,
+  RotateCcw,
+  Search,
+  WalletCards,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,9 +36,12 @@ import {
   type MovementMethodFilter,
   type MovementOriginFilter,
   type MovementPeriodMode,
+  type MovementReconciliationFilter,
 } from "@/lib/financial-movements";
 import {
+  getListFinancialMovementsQueryKey,
   useListFinancialMovements,
+  useUpdateEventPayment,
   type FinancialMovement,
 } from "@workspace/api-client-react";
 
@@ -95,13 +107,17 @@ function movementSubtitle(movement: FinancialMovement) {
 }
 
 export default function FinancialMovementsPage() {
+  const queryClient = useQueryClient();
   const query = useListFinancialMovements();
+  const updatePayment = useUpdateEventPayment();
   const [search, setSearch] = useState("");
   const [periodMode, setPeriodMode] = useState<MovementPeriodMode>("this_month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [method, setMethod] = useState<MovementMethodFilter>(ALL);
   const [origin, setOrigin] = useState<MovementOriginFilter>(ALL);
+  const [reconciliation, setReconciliation] = useState<MovementReconciliationFilter>(ALL);
+  const [reconciliationError, setReconciliationError] = useState<string | null>(null);
 
   const filters: FinancialMovementFilters = {
     search,
@@ -110,17 +126,45 @@ export default function FinancialMovementsPage() {
     customEnd,
     method,
     origin,
+    reconciliation,
   };
 
   const movements = useMemo(
     () => filterFinancialMovements(query.data?.movements ?? [], filters),
-    [query.data?.movements, search, periodMode, customStart, customEnd, method, origin],
+    [
+      query.data?.movements,
+      search,
+      periodMode,
+      customStart,
+      customEnd,
+      method,
+      origin,
+      reconciliation,
+    ],
   );
   const undatedPayments = useMemo(
     () => filterUndatedFinancialMovements(query.data?.undatedPayments ?? [], filters),
     [query.data?.undatedPayments, search, method, origin],
   );
   const summary = useMemo(() => summarizeFinancialMovements(movements), [movements]);
+
+  const toggleReconciliation = async (movement: FinancialMovement) => {
+    if (!movement.paidAt) return;
+    setReconciliationError(null);
+    try {
+      await updatePayment.mutateAsync({
+        id: movement.id,
+        data: {
+          reconciledAt: movement.reconciledAt ? null : new Date().toISOString(),
+        },
+      });
+      await queryClient.invalidateQueries({
+        queryKey: getListFinancialMovementsQueryKey(),
+      });
+    } catch {
+      setReconciliationError("Não foi possível atualizar o estado de conferência.");
+    }
+  };
 
   return (
     <div className="animate-in space-y-4 fade-in slide-in-from-bottom-4 duration-500 md:space-y-6">
@@ -137,7 +181,7 @@ export default function FinancialMovementsPage() {
       </header>
 
       <Card className="border-border/70 shadow-sm">
-        <CardContent className="grid gap-3 p-3 sm:grid-cols-2 md:p-4 xl:grid-cols-4">
+        <CardContent className="grid gap-3 p-3 sm:grid-cols-2 md:p-4 xl:grid-cols-5">
           <div className="space-y-2 sm:col-span-2 xl:col-span-1">
             <Label>Pesquisa</Label>
             <div className="relative">
@@ -189,8 +233,23 @@ export default function FinancialMovementsPage() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label>Estado de conferência</Label>
+            <Select
+              value={reconciliation}
+              onValueChange={(value) => setReconciliation(value as MovementReconciliationFilter)}
+            >
+              <SelectTrigger aria-label="Estado de conferência"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="pending">Por conferir</SelectItem>
+                <SelectItem value="reconciled">Conferidos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {periodMode === "custom" ? (
-            <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 xl:col-span-4">
+            <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 xl:col-span-5">
               <div className="space-y-2">
                 <Label>De</Label>
                 <Input type="date" value={customStart} onChange={(event) => setCustomStart(event.target.value)} />
@@ -204,10 +263,26 @@ export default function FinancialMovementsPage() {
         </CardContent>
       </Card>
 
-      <section className="grid grid-cols-2 gap-2.5 md:gap-4">
-        <SummaryCard label="Recebido no período" value={euro(summary.received)} />
-        <SummaryCard label="Movimentos" value={String(summary.count)} />
+      <section className="grid grid-cols-2 gap-2.5 md:gap-4 xl:grid-cols-4">
+        <SummaryCard testId="summary-received" label="Recebido no período" value={euro(summary.received)} />
+        <SummaryCard testId="summary-movements" label="Movimentos" value={String(summary.count)} />
+        <SummaryCard
+          testId="summary-pending"
+          label="Por conferir"
+          value={euro(summary.pending.amount)}
+          detail={movementCountLabel(summary.pending.count)}
+        />
+        <SummaryCard
+          testId="summary-reconciled"
+          label="Conferidos"
+          value={euro(summary.reconciled.amount)}
+          detail={movementCountLabel(summary.reconciled.count)}
+        />
       </section>
+
+      {reconciliationError ? (
+        <p className="text-sm text-destructive">{reconciliationError}</p>
+      ) : null}
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
         <CardHeader className="p-4 pb-2 md:p-5 md:pb-3">
@@ -231,6 +306,7 @@ export default function FinancialMovementsPage() {
                       <TableHead>Data evento</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Método</TableHead>
+                      <TableHead>Estado</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -253,6 +329,16 @@ export default function FinancialMovementsPage() {
                         <TableCell className="whitespace-nowrap">{formatEventDate(movement.eventDate)}</TableCell>
                         <TableCell>{PAYMENT_TYPE_LABELS[movement.paymentType]}</TableCell>
                         <TableCell>{methodLabel(movement.paymentMethod)}</TableCell>
+                        <TableCell>
+                          <ReconciliationAction
+                            movement={movement}
+                            isPending={
+                              updatePayment.isPending
+                              && updatePayment.variables?.id === movement.id
+                            }
+                            onToggle={toggleReconciliation}
+                          />
+                        </TableCell>
                         <TableCell className="text-right text-base font-bold">{euro(movement.amount)}</TableCell>
                       </TableRow>
                     ))}
@@ -262,17 +348,22 @@ export default function FinancialMovementsPage() {
 
               <div className="divide-y divide-border/60 md:hidden">
                 {movements.map((movement) => (
-                  <Link
+                  <div
                     key={movement.id}
-                    href={eventHref(movement)}
-                    className="block space-y-1.5 p-4 transition-colors hover:bg-muted/40"
+                    data-testid={`mobile-movement-${movement.id}`}
+                    className="space-y-2 p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-muted-foreground">
                           {movement.paidAt ? formatPaymentDate(movement.paidAt) : "—"}
                         </p>
-                        <p className="mt-1 break-words font-bold">{movement.customerName}</p>
+                        <Link
+                          href={eventHref(movement)}
+                          className="mt-1 block break-words font-bold hover:text-primary hover:underline"
+                        >
+                          {movement.customerName}
+                        </Link>
                       </div>
                       <p className="shrink-0 text-lg font-bold text-primary">{euro(movement.amount)}</p>
                     </div>
@@ -281,7 +372,16 @@ export default function FinancialMovementsPage() {
                       {PAYMENT_TYPE_LABELS[movement.paymentType]} · {methodLabel(movement.paymentMethod)}
                     </p>
                     {movement.notes ? <p className="text-xs text-muted-foreground">{movement.notes}</p> : null}
-                  </Link>
+                    <ReconciliationAction
+                      movement={movement}
+                      isPending={
+                        updatePayment.isPending
+                        && updatePayment.variables?.id === movement.id
+                      }
+                      onToggle={toggleReconciliation}
+                      mobile
+                    />
+                  </div>
                 ))}
               </div>
             </>
@@ -326,12 +426,73 @@ export default function FinancialMovementsPage() {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
+function ReconciliationAction({
+  movement,
+  isPending,
+  onToggle,
+  mobile = false,
+}: {
+  movement: FinancialMovement;
+  isPending: boolean;
+  onToggle: (movement: FinancialMovement) => void | Promise<void>;
+  mobile?: boolean;
+}) {
+  const reconciled = movement.reconciledAt !== null;
+
   return (
-    <Card className="border-border/70 shadow-sm">
+    <div className={mobile ? "flex items-center justify-between gap-2 pt-1" : "space-y-1"}>
+      <span
+        className={
+          reconciled
+            ? "inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800"
+            : "inline-flex rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800"
+        }
+      >
+        {reconciled ? <Check className="h-3 w-3" /> : null}
+        {reconciled ? "Conferido" : "Por conferir"}
+      </span>
+      <Button
+        type="button"
+        size="sm"
+        variant={reconciled ? "ghost" : "outline"}
+        disabled={isPending}
+        className={mobile ? "h-8 text-xs" : "h-7 px-2 text-xs"}
+        onClick={() => void onToggle(movement)}
+      >
+        {isPending ? (
+          <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+        ) : reconciled ? (
+          <RotateCcw className="mr-1 h-3.5 w-3.5" />
+        ) : (
+          <Check className="mr-1 h-3.5 w-3.5" />
+        )}
+        {reconciled ? "Voltar a Por conferir" : "Marcar como conferido"}
+      </Button>
+    </div>
+  );
+}
+
+function movementCountLabel(count: number) {
+  return `${count} ${count === 1 ? "movimento" : "movimentos"}`;
+}
+
+function SummaryCard({
+  testId,
+  label,
+  value,
+  detail,
+}: {
+  testId: string;
+  label: string;
+  value: string;
+  detail?: string;
+}) {
+  return (
+    <Card data-testid={testId} className="border-border/70 shadow-sm">
       <CardContent className="p-3 md:p-4">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         <p className="mt-1 text-xl font-bold md:text-2xl">{value}</p>
+        {detail ? <p className="mt-0.5 text-xs text-muted-foreground">{detail}</p> : null}
       </CardContent>
     </Card>
   );

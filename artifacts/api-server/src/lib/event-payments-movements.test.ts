@@ -11,6 +11,7 @@ function row(overrides: Partial<FinancialMovementRow> = {}): FinancialMovementRo
     amount: 110,
     paymentMethod: "bank_transfer",
     paidAt: new Date("2026-10-01T10:00:00.000Z"),
+    reconciledAt: null,
     notes: null,
     createdAt: new Date("2026-10-01T10:00:01.000Z"),
     deletedAt: null,
@@ -106,6 +107,26 @@ test("soft-deleted fica fora e legacy sem paid_at fica apenas no histórico", ()
 
   assert.deepEqual(result.movements.map((item) => item.id), ["active"]);
   assert.deepEqual(result.undatedPayments.map((item) => item.id), ["legacy"]);
+});
+
+test("estado de reconciliação é preservado no read model sem alterar ordenação", () => {
+  const reconciledAt = new Date("2026-10-03T12:00:00.000Z");
+  const result = buildFinancialMovements([
+    row({
+      id: "pending",
+      paidAt: new Date("2026-10-02T09:00:00.000Z"),
+      reconciledAt: null,
+    }),
+    row({
+      id: "reconciled",
+      paidAt: new Date("2026-10-03T09:00:00.000Z"),
+      reconciledAt,
+    }),
+  ]);
+
+  assert.deepEqual(result.movements.map((item) => item.id), ["reconciled", "pending"]);
+  assert.equal(result.movements[0]?.reconciledAt, reconciledAt);
+  assert.equal(result.movements[1]?.reconciledAt, null);
 });
 
 test("serviço externo é enriquecido sem nome de criança", () => {
