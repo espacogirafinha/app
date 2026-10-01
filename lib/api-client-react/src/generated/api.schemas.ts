@@ -808,6 +808,8 @@ export interface EventPayment {
   /** @nullable */
   paidAt: string | null;
   /** @nullable */
+  reconciledAt: string | null;
+  /** @nullable */
   notes?: string | null;
   source: string;
   /** @nullable */
@@ -859,6 +861,8 @@ export interface FinancialMovement {
   /** @nullable */
   paidAt: string | null;
   /** @nullable */
+  reconciledAt: string | null;
+  /** @nullable */
   notes: string | null;
   createdAt: string;
 }
@@ -892,6 +896,11 @@ export interface UpdateEventPaymentBody {
   paymentMethod?: EventPaymentMethod | null;
   /** @nullable */
   paidAt?: string | null;
+  /**
+   * Bank reconciliation timestamp. Set to null to mark the payment as pending reconciliation.
+   * @nullable
+   */
+  reconciledAt?: string | null;
   /** @nullable */
   notes?: string | null;
 }

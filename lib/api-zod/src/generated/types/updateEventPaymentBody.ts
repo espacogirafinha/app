@@ -15,6 +15,11 @@ export interface UpdateEventPaymentBody {
   paymentMethod?: EventPaymentMethod | null;
   /** @nullable */
   paidAt?: Date | null;
+  /**
+   * Bank reconciliation timestamp. Set to null to mark the payment as pending reconciliation.
+   * @nullable
+   */
+  reconciledAt?: Date | null;
   /** @nullable */
   notes?: string | null;
 }

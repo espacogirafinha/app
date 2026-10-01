@@ -403,6 +403,7 @@ export const ListEventPaymentsResponse = zod.object({
         zod.null(),
       ]),
       paidAt: zod.coerce.date().nullable(),
+      reconciledAt: zod.coerce.date().nullable(),
       notes: zod.string().nullish(),
       source: zod.string(),
       sourceReference: zod.string().nullable(),
@@ -467,6 +468,7 @@ export const ListFinancialMovementsResponse = zod.object({
         zod.null(),
       ]),
       paidAt: zod.coerce.date().nullable(),
+      reconciledAt: zod.coerce.date().nullable(),
       notes: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
@@ -494,6 +496,7 @@ export const ListFinancialMovementsResponse = zod.object({
         zod.null(),
       ]),
       paidAt: zod.coerce.date().nullable(),
+      reconciledAt: zod.coerce.date().nullable(),
       notes: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
@@ -518,6 +521,12 @@ export const UpdateEventPaymentBody = zod.object({
     .union([zod.enum(["cash", "bank_transfer", "mbway"]), zod.null()])
     .optional(),
   paidAt: zod.coerce.date().nullish(),
+  reconciledAt: zod.coerce
+    .date()
+    .nullish()
+    .describe(
+      "Bank reconciliation timestamp. Set to null to mark the payment as pending reconciliation.",
+    ),
   notes: zod.string().nullish(),
 });
 
@@ -537,6 +546,7 @@ export const UpdateEventPaymentResponse = zod.object({
       zod.null(),
     ]),
     paidAt: zod.coerce.date().nullable(),
+    reconciledAt: zod.coerce.date().nullable(),
     notes: zod.string().nullish(),
     source: zod.string(),
     sourceReference: zod.string().nullable(),
@@ -579,6 +589,7 @@ export const DeleteEventPaymentResponse = zod.object({
       zod.null(),
     ]),
     paidAt: zod.coerce.date().nullable(),
+    reconciledAt: zod.coerce.date().nullable(),
     notes: zod.string().nullish(),
     source: zod.string(),
     sourceReference: zod.string().nullable(),
