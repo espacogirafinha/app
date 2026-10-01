@@ -4,6 +4,8 @@ import {
   EVENT_PAYMENT_METHOD_OPTIONS,
   collectionDefaultAmount,
   initialExpectedDeposit,
+  initialPaymentPaidAt,
+  isHistoricalEventDate,
   nextAutomaticVenueDeposit,
   paymentMethodLabel,
   paymentSummaryLabel,
@@ -115,4 +117,15 @@ test("partial reservation deposit keeps the remaining deposit visible", () => {
     depositReceived: 100,
     depositRemaining: 10,
   }, [{ paymentType: "reservation_deposit" }]), "Sinal recebido parcialmente · Faltam 10,00 € do sinal");
+});
+
+
+test("historical event dates use Europe/Lisbon day and do not default payment time", () => {
+  const now = new Date("2026-10-01T23:30:00.000Z"); // 02/10/2026 00:30 in Lisbon
+  assert.equal(isHistoricalEventDate("2026-10-01", now), true);
+  assert.equal(isHistoricalEventDate("2026-10-02", now), false);
+  assert.equal(isHistoricalEventDate("2026-10-03", now), false);
+  assert.equal(initialPaymentPaidAt("2026-10-01", now), "");
+  assert.notEqual(initialPaymentPaidAt("2026-10-02", now), "");
+  assert.notEqual(initialPaymentPaidAt("2026-10-03", now), "");
 });

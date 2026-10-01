@@ -439,7 +439,7 @@ function VenueEventRow({
               </div>
             </DetailsBlock>
           </div>
-          <EventPaymentsPanel module="venue_events" entityId={event.id} />
+          <EventPaymentsPanel module="venue_events" entityId={event.id} eventDate={event.eventDate} />
           <EventExtrasDetails module="venue_events" entityId={event.id} supplierCostsEnabled />
           <EventAttachmentsDetails entityType="venue_event" entityId={event.id} />
           <div className="mt-4">

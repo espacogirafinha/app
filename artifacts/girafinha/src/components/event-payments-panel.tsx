@@ -23,6 +23,8 @@ import {
   paymentMethodLabel,
   paymentSummaryLabel,
   paymentTypeLabel,
+  initialPaymentPaidAt,
+  isHistoricalEventDate,
   toDateTimeLocalInput,
   toIsoDateTime,
 } from "@/lib/event-payment-ui";
@@ -68,9 +70,11 @@ type EditorState = {
 export function EventPaymentsPanel({
   module,
   entityId,
+  eventDate,
 }: {
   module: EventPaymentModule;
   entityId: string;
+  eventDate: string;
 }) {
   const params = useMemo(() => ({ module, entityId }), [entityId, module]);
   const paymentsQuery = useListEventPayments(params);
@@ -104,7 +108,7 @@ export function EventPaymentsPanel({
       paymentType: "payment",
       amount: collectionDefaultAmount(summary.remainingBalance).toFixed(2),
       paymentMethod: "",
-      paidAt: toDateTimeLocalInput(),
+      paidAt: initialPaymentPaidAt(eventDate),
       notes: "",
       isLegacy: false,
     });
@@ -123,6 +127,8 @@ export function EventPaymentsPanel({
     });
   };
 
+  const isHistoricalEvent = isHistoricalEventDate(eventDate);
+
   const saveEditor = async () => {
     if (!editor) return;
     const amount = parseMoneyInput(editor.amount);
@@ -131,8 +137,13 @@ export function EventPaymentsPanel({
       return;
     }
 
-    if (!editor.isLegacy && (!editor.paymentMethod || !editor.paidAt)) {
-      toast({ title: "Escolha o método e a data do pagamento", variant: "destructive" });
+    if (!editor.isLegacy && !editor.paymentMethod) {
+      toast({ title: "Escolha o método do pagamento", variant: "destructive" });
+      return;
+    }
+
+    if (!editor.isLegacy && !editor.paidAt) {
+      toast({ title: "Indique a data em que o pagamento foi recebido.", variant: "destructive" });
       return;
     }
 
@@ -343,7 +354,11 @@ export function EventPaymentsPanel({
                   value={editor.paidAt}
                   onChange={(event) => setEditor((current) => current ? { ...current, paidAt: event.target.value } : current)}
                 />
-                {editor.isLegacy && !editor.paidAt ? (
+                {editor.mode === "create" && isHistoricalEvent ? (
+                  <p className="text-xs text-amber-700">
+                    Este evento já aconteceu. Confirme a data real em que o pagamento foi recebido.
+                  </p>
+                ) : editor.isLegacy && !editor.paidAt ? (
                   <p className="text-xs text-muted-foreground">Data não registada.</p>
                 ) : null}
               </div>
