@@ -202,7 +202,7 @@ export default function ExpensesPage() {
     setExpenseType((current) => current === nextType ? ALL : nextType);
   };
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey(params) });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey() });
   const isSaving = createExpense.isPending || updateExpense.isPending || deleteExpense.isPending;
 
   return (
