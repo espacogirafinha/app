@@ -436,6 +436,7 @@ function ItemEditorDialog({
 
     setSaving(true);
     let uploadedPath: string | null = null;
+    let createdNewItem = false;
     try {
       const common = {
         name: form.name.trim(),
@@ -462,6 +463,7 @@ function ItemEditorDialog({
               purchaseCost: parseOptionalNumber(form.purchaseCost),
             };
         saved = await createItem.mutateAsync({ data: body });
+        createdNewItem = true;
       } else {
         const body: UpdateInventoryItemBody = actualType === "consumable"
           ? common
@@ -485,12 +487,13 @@ function ItemEditorDialog({
         if (uploadError) throw uploadError;
 
         await updateItem.mutateAsync({ id: saved.id, data: { photoPath: uploadedPath } });
+        uploadedPath = null;
 
-        if (item?.photoPath && item.photoPath !== uploadedPath) {
-          await supabase.storage.from(INVENTORY_IMAGE_BUCKET).remove([item.photoPath]);
+        if (item?.photoPath) {
+          void supabase.storage.from(INVENTORY_IMAGE_BUCKET).remove([item.photoPath]);
         }
       } else if (actualType === "material" && removePhoto && item?.photoPath) {
-        await supabase.storage.from(INVENTORY_IMAGE_BUCKET).remove([item.photoPath]);
+        void supabase.storage.from(INVENTORY_IMAGE_BUCKET).remove([item.photoPath]);
       }
 
       await queryClient.invalidateQueries({ queryKey: getListInventoryItemsQueryKey() });
@@ -500,7 +503,17 @@ function ItemEditorDialog({
       if (uploadedPath) {
         await supabase.storage.from(INVENTORY_IMAGE_BUCKET).remove([uploadedPath]);
       }
-      toast({ title: "Não foi possível guardar o artigo", description: errorMessage(error), variant: "destructive" });
+      if (createdNewItem) {
+        await queryClient.invalidateQueries({ queryKey: getListInventoryItemsQueryKey() });
+        toast({
+          title: "Artigo criado sem foto",
+          description: "O artigo foi guardado, mas a imagem não ficou associada. Pode adicioná-la ao editar.",
+          variant: "destructive",
+        });
+        onClose();
+      } else {
+        toast({ title: "Não foi possível guardar o artigo", description: errorMessage(error), variant: "destructive" });
+      }
     } finally {
       setSaving(false);
     }
