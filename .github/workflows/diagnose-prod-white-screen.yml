@@ -1,0 +1,110 @@
+name: Diagnose production white screen
+
+on:
+  push:
+    branches:
+      - fix/production-white-screen
+
+jobs:
+  browser-diagnosis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm exec playwright install --with-deps chromium webkit
+      - name: Diagnose current production and previous deployment
+        env:
+          PROD_URL: https://reservas.espacogirafinha.pt
+          PREVIOUS_URL: https://app-coe1c7sj7-espacogirafinhas-projects.vercel.app/?_vercel_share=eeKI0gmd2nvWPTmycEyqMq7c0YqsKPVs
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium, webkit } from "playwright";
+
+          const targets = [
+            ["production", process.env.PROD_URL],
+            ["previous", process.env.PREVIOUS_URL],
+          ];
+          const engines = [
+            ["chromium", chromium],
+            ["webkit", webkit],
+          ];
+
+          for (const [engineName, engine] of engines) {
+            const browser = await engine.launch({ headless: true });
+            for (const [label, url] of targets) {
+              const context = await browser.newContext({
+                viewport: { width: 1280, height: 900 },
+              });
+              const page = await context.newPage();
+              const events = [];
+              page.on("console", msg => events.push({
+                type: "console",
+                level: msg.type(),
+                text: msg.text(),
+              }));
+              page.on("pageerror", err => events.push({
+                type: "pageerror",
+                text: err.stack || err.message,
+              }));
+              page.on("requestfailed", req => events.push({
+                type: "requestfailed",
+                url: req.url(),
+                failure: req.failure()?.errorText ?? "unknown",
+              }));
+              page.on("response", res => {
+                if (res.status() >= 400 || /\.(js|css)(\?|$)/.test(res.url())) {
+                  events.push({
+                    type: "response",
+                    status: res.status(),
+                    url: res.url(),
+                    contentType: res.headers()["content-type"] ?? "",
+                  });
+                }
+              });
+
+              let navigationStatus = null;
+              try {
+                const response = await page.goto(url, {
+                  waitUntil: "domcontentloaded",
+                  timeout: 30000,
+                });
+                navigationStatus = response?.status() ?? null;
+                await page.waitForTimeout(5000);
+              } catch (error) {
+                events.push({ type: "navigation-error", text: error.stack || String(error) });
+              }
+
+              const snapshot = await page.evaluate(() => ({
+                url: location.href,
+                title: document.title,
+                readyState: document.readyState,
+                rootExists: !!document.getElementById("root"),
+                rootHtmlLength: document.getElementById("root")?.innerHTML.length ?? -1,
+                rootText: document.getElementById("root")?.textContent?.slice(0, 500) ?? null,
+                bodyText: document.body?.innerText?.slice(0, 1000) ?? null,
+                scripts: Array.from(document.scripts).map(s => s.src).filter(Boolean),
+                styles: Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(l => l.href),
+              }));
+
+              const file = `/tmp/${engineName}-${label}.png`;
+              await page.screenshot({ path: file, fullPage: true });
+              console.log("\n=== BROWSER DIAGNOSIS ===");
+              console.log(JSON.stringify({
+                engine: engineName,
+                label,
+                requestedUrl: url,
+                navigationStatus,
+                snapshot,
+                events,
+                screenshot: file,
+              }, null, 2));
+              await context.close();
+            }
+            await browser.close();
+          }
+          NODE
