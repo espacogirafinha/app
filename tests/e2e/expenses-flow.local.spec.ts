@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { formControl } from "./helpers/transactions";
 
 const foodCategory = "11111111-1111-4111-8111-111111111111";
@@ -6,6 +6,19 @@ const equipmentCategory = "22222222-2222-4222-8222-222222222222";
 const personnelCategory = "44444444-4444-4444-8444-444444444444";
 const supplierCategory = "55555555-5555-4555-8555-555555555555";
 const eventId = "33333333-3333-4333-8333-333333333333";
+
+type ExpenseEventLinkInput = {
+  eventType: "venue_event" | "external_event";
+  eventId: string;
+};
+
+type ExpenseEventLinkRow = ExpenseEventLinkInput & {
+  id: string;
+  eventDate: string;
+  customerName: string;
+  birthdayChildName: string | null;
+  label: string;
+};
 
 type ExpenseRow = {
   id: string;
@@ -19,16 +32,17 @@ type ExpenseRow = {
   notes: string | null;
   venueEventId: string | null;
   venueEventLabel: string | null;
+  eventLinks: ExpenseEventLinkRow[];
   createdAt: string;
   updatedAt: string;
 };
 
-test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page }) => {
+test("Despesas: criar, editar, filtrar e anular sem exigir evento", async ({ page }) => {
   let sequence = 3;
   let rows: ExpenseRow[] = [
     {
       id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-      expenseDate: "2026-09-05",
+      expenseDate: "2026-10-05",
       description: "Continente",
       amount: 86.4,
       categoryId: foodCategory,
@@ -38,12 +52,13 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
       notes: null,
       venueEventId: null,
       venueEventLabel: null,
-      createdAt: "2026-09-05T10:00:00.000Z",
-      updatedAt: "2026-09-05T10:00:00.000Z",
+      eventLinks: [],
+      createdAt: "2026-10-05T10:00:00.000Z",
+      updatedAt: "2026-10-05T10:00:00.000Z",
     },
     {
       id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-      expenseDate: "2026-09-10",
+      expenseDate: "2026-10-10",
       description: "Mesa redonda",
       amount: 220,
       categoryId: equipmentCategory,
@@ -53,8 +68,9 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
       notes: null,
       venueEventId: null,
       venueEventLabel: null,
-      createdAt: "2026-09-10T10:00:00.000Z",
-      updatedAt: "2026-09-10T10:00:00.000Z",
+      eventLinks: [],
+      createdAt: "2026-10-10T10:00:00.000Z",
+      updatedAt: "2026-10-10T10:00:00.000Z",
     },
   ];
 
@@ -83,13 +99,12 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
       return route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([{
-          id: eventId,
-          eventDate: "2026-09-20",
-          customerName: "Cliente Festa",
-          birthdayChildName: "Mia",
-        }]),
+        body: JSON.stringify([{ id: eventId, eventDate: "2026-09-20", customerName: "Cliente Festa", birthdayChildName: "Mia" }]),
       });
+    }
+
+    if (url.pathname === "/api/external-events" && method === "GET") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
     }
 
     if (url.pathname === "/api/expenses" && method === "GET") {
@@ -112,8 +127,14 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
     if (url.pathname === "/api/expenses" && method === "POST") {
       lastCreateBody = request.postDataJSON();
       const body = lastCreateBody as {
-        expenseDate: string; description: string; amount: number; categoryId: string;
-        expenseType: "operational" | "investment"; supplier?: string | null; notes?: string | null; venueEventId?: string | null;
+        expenseDate: string;
+        description: string;
+        amount: number;
+        categoryId: string;
+        expenseType: "operational" | "investment";
+        supplier?: string | null;
+        notes?: string | null;
+        eventLinks?: ExpenseEventLinkInput[];
       };
       const categoryName = body.categoryId === foodCategory ? "Supermercado / Alimentação" : "Equipamento / Mobiliário";
       const id = `cccccccc-cccc-4ccc-8ccc-${String(sequence++).padStart(12, "0")}`;
@@ -127,8 +148,9 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
         expenseType: body.expenseType,
         supplier: body.supplier ?? null,
         notes: body.notes ?? null,
-        venueEventId: body.venueEventId ?? null,
-        venueEventLabel: body.venueEventId ? "Mia · 2026-09-20" : null,
+        venueEventId: null,
+        venueEventLabel: null,
+        eventLinks: [],
         createdAt: "2026-09-28T10:00:00.000Z",
         updatedAt: "2026-09-28T10:00:00.000Z",
       };
@@ -161,7 +183,7 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
 
   await page.getByRole("button", { name: "Adicionar despesa" }).click();
   const createDialog = page.getByRole("dialog", { name: "Adicionar despesa" });
-  await formControl(createDialog, "Data").fill("2026-09-15");
+  await formControl(createDialog, "Data").fill("2026-10-15");
   await formControl(createDialog, "Valor").fill("42");
   await formControl(createDialog, "Descrição").fill("Balões");
 
@@ -174,13 +196,14 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
 
   await expect.poll(() => lastCreateBody).not.toBeNull();
   expect(lastCreateBody).toMatchObject({
-    expenseDate: "2026-09-15",
+    expenseDate: "2026-10-15",
     description: "Balões",
     amount: 42,
     categoryId: foodCategory,
     expenseType: "operational",
-    venueEventId: null,
+    eventLinks: [],
   });
+  expect(lastCreateBody).not.toHaveProperty("venueEventId");
   await expect(page.getByText("Balões", { exact: true })).toBeVisible();
 
   const baloesCard = page.getByText("Balões", { exact: true }).locator("xpath=ancestor::div[contains(@class,'rounded-xl') or contains(@class,'p-3')][.//button[contains(.,'Editar')]][1]");
@@ -189,7 +212,7 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
   await formControl(editDialog, "Valor").fill("45");
   await editDialog.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect.poll(() => lastPatchBody).not.toBeNull();
-  expect(lastPatchBody).toMatchObject({ amount: 45 });
+  expect(lastPatchBody).toMatchObject({ amount: 45, eventLinks: [] });
 
   const typeFilter = page.locator("label").filter({ hasText: /^Tipo$/ }).locator("xpath=..").getByRole("combobox").first();
   await typeFilter.click();
@@ -207,7 +230,6 @@ test("Despesas: criar, editar, filtrar e anular sem exigir Festa", async ({ page
   await expect.poll(() => lastDeleteId).toBe("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
   await expect(page.getByText("Mesa redonda", { exact: true })).toHaveCount(0);
 });
-
 
 test("Despesas: Pessoal / Colaboradores aparece e fica sempre operacional", async ({ page }) => {
   let lastCreateBody: Record<string, unknown> | null = null;
@@ -228,15 +250,15 @@ test("Despesas: Pessoal / Colaboradores aparece e fica sempre operacional", asyn
         ]),
       });
     }
-
     if (url.pathname === "/api/venue-events" && method === "GET") {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
     }
-
+    if (url.pathname === "/api/external-events" && method === "GET") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
+    }
     if (url.pathname === "/api/expenses" && method === "GET") {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
     }
-
     if (url.pathname === "/api/expenses" && method === "POST") {
       lastCreateBody = request.postDataJSON();
       const body = lastCreateBody as {
@@ -245,6 +267,7 @@ test("Despesas: Pessoal / Colaboradores aparece e fica sempre operacional", asyn
         amount: number;
         categoryId: string;
         expenseType: "operational" | "investment";
+        eventLinks?: ExpenseEventLinkInput[];
       };
       const created: ExpenseRow = {
         id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
@@ -258,19 +281,18 @@ test("Despesas: Pessoal / Colaboradores aparece e fica sempre operacional", asyn
         notes: null,
         venueEventId: null,
         venueEventLabel: null,
+        eventLinks: [],
         createdAt: "2026-10-01T00:00:00.000Z",
         updatedAt: "2026-10-01T00:00:00.000Z",
       };
       rows = [created];
       return route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(created) });
     }
-
     if (url.pathname.startsWith("/api/expenses/") && method === "PATCH") {
       const body = request.postDataJSON() as Partial<ExpenseRow>;
       rows = rows.map((row) => ({ ...row, ...body }));
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows[0]) });
     }
-
     return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "not mocked" }) });
   });
 
@@ -299,6 +321,7 @@ test("Despesas: Pessoal / Colaboradores aparece e fica sempre operacional", asyn
     expenseType: "operational",
     description: "Pagamento colaboradora",
     amount: 120,
+    eventLinks: [],
   });
 
   const card = page.getByText("Pagamento colaboradora", { exact: true }).locator("xpath=ancestor::div[.//button[contains(.,'Editar')]][1]");
@@ -309,30 +332,96 @@ test("Despesas: Pessoal / Colaboradores aparece e fica sempre operacional", asyn
   await expect(editDialog.getByText("Pessoal / Colaboradores é sempre registado como despesa operacional.", { exact: true })).toBeVisible();
 });
 
-
-test("Despesas mobile: seletor de Festa fica no viewport e permite percorrer toda a lista", async ({ page }) => {
+test("Despesas mobile: multi-associação, pesquisa e edição de Festas e Serviços Externos", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
   const venueEvents = [
     {
       id: "60000000-0000-4000-8000-000000000001",
-      eventDate: "2026-12-31",
-      customerName: "Cliente recente",
-      birthdayChildName: "Festa recente",
+      eventDate: "2026-09-26",
+      customerName: "Mãe da Iara",
+      birthdayChildName: "Iara",
     },
-    ...Array.from({ length: 28 }, (_, index) => ({
-      id: `60000000-0000-4000-8000-${String(index + 2).padStart(12, "0")}`,
-      eventDate: "2025-06-15",
-      customerName: `Cliente ${index + 2}`,
-      birthdayChildName: `Criança ${index + 2}`,
-    })),
     {
-      id: "60000000-0000-4000-8000-000000000030",
-      eventDate: "2024-01-01",
-      customerName: "Cliente antigo",
-      birthdayChildName: "Festa antiga",
+      id: "60000000-0000-4000-8000-000000000002",
+      eventDate: "2026-09-27",
+      customerName: "Diana Pedrosa",
+      birthdayChildName: "Lourenço",
+    },
+    ...Array.from({ length: 24 }, (_, index) => ({
+      id: `60000000-0000-4000-8000-${String(index + 10).padStart(12, "0")}`,
+      eventDate: "2025-06-15",
+      customerName: `Cliente histórico ${index + 1}`,
+      birthdayChildName: `Criança histórica ${index + 1}`,
+    })),
+  ];
+  const externalEvents = [
+    {
+      id: "70000000-0000-4000-8000-000000000001",
+      eventDate: "2026-09-26",
+      customerName: "Sofia Silvestre",
+    },
+    {
+      id: "70000000-0000-4000-8000-000000000002",
+      eventDate: "2026-09-26",
+      customerName: "Inês Maria",
     },
   ];
+  const allEvents = [
+    ...venueEvents.map((event) => ({ ...event, eventType: "venue_event" as const })),
+    ...externalEvents.map((event) => ({ ...event, birthdayChildName: null, eventType: "external_event" as const })),
+  ];
+
+  let rows: ExpenseRow[] = [];
+  let sequence = 1;
+  const createBodies: Array<Record<string, unknown>> = [];
+  let lastPatchBody: Record<string, unknown> | null = null;
+
+  function responseLinks(inputs: ExpenseEventLinkInput[]) {
+    return inputs.map((input, index): ExpenseEventLinkRow => {
+      const event = allEvents.find((candidate) => candidate.id === input.eventId && candidate.eventType === input.eventType);
+      if (!event) throw new Error("Unknown mocked event");
+      const typeLabel = input.eventType === "venue_event" ? "Festa" : "Serviço Externo";
+      const name = event.birthdayChildName || event.customerName;
+      return {
+        id: `80000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+        eventType: input.eventType,
+        eventId: input.eventId,
+        eventDate: event.eventDate,
+        customerName: event.customerName,
+        birthdayChildName: event.birthdayChildName,
+        label: `${typeLabel} · ${event.eventDate} · ${name}`,
+      };
+    });
+  }
+
+  function makeExpense(body: {
+    expenseDate: string;
+    description: string;
+    amount: number;
+    categoryId: string;
+    expenseType: "operational" | "investment";
+    eventLinks?: ExpenseEventLinkInput[];
+  }): ExpenseRow {
+    const links = responseLinks(body.eventLinks ?? []);
+    const onlyVenue = links.length === 1 && links[0].eventType === "venue_event" ? links[0] : null;
+    return {
+      id: `90000000-0000-4000-8000-${String(sequence++).padStart(12, "0")}`,
+      expenseDate: body.expenseDate,
+      description: body.description,
+      amount: body.amount,
+      categoryId: body.categoryId,
+      categoryName: "Supermercado / Alimentação",
+      expenseType: body.expenseType,
+      supplier: null,
+      notes: null,
+      venueEventId: onlyVenue?.eventId ?? null,
+      venueEventLabel: onlyVenue ? `${onlyVenue.birthdayChildName || onlyVenue.customerName} · ${onlyVenue.eventDate}` : null,
+      eventLinks: links,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      updatedAt: "2026-10-01T00:00:00.000Z",
+    };
+  }
 
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -343,78 +432,179 @@ test("Despesas mobile: seletor de Festa fica no viewport e permite percorrer tod
       return route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          {
-            id: foodCategory,
-            name: "Supermercado / Alimentação",
-            isActive: true,
-            sortOrder: 10,
-            createdAt: "2026-10-01T00:00:00.000Z",
-            updatedAt: "2026-10-01T00:00:00.000Z",
-          },
-        ]),
+        body: JSON.stringify([{ id: foodCategory, name: "Supermercado / Alimentação", isActive: true, sortOrder: 10, createdAt: "2026-10-01T00:00:00.000Z", updatedAt: "2026-10-01T00:00:00.000Z" }]),
       });
     }
-
     if (url.pathname === "/api/venue-events" && method === "GET") {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(venueEvents),
-      });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(venueEvents) });
     }
-
+    if (url.pathname === "/api/external-events" && method === "GET") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(externalEvents) });
+    }
     if (url.pathname === "/api/expenses" && method === "GET") {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([]),
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
+    }
+    if (url.pathname === "/api/expenses" && method === "POST") {
+      const body = request.postDataJSON() as {
+        expenseDate: string;
+        description: string;
+        amount: number;
+        categoryId: string;
+        expenseType: "operational" | "investment";
+        eventLinks?: ExpenseEventLinkInput[];
+      };
+      createBodies.push(body);
+      const created = makeExpense(body);
+      rows = [created, ...rows];
+      return route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(created) });
+    }
+    if (url.pathname.startsWith("/api/expenses/") && method === "PATCH") {
+      const id = url.pathname.split("/").pop()!;
+      lastPatchBody = request.postDataJSON();
+      const body = lastPatchBody as { eventLinks?: ExpenseEventLinkInput[]; amount?: number };
+      rows = rows.map((row) => {
+        if (row.id !== id) return row;
+        const eventLinks = body.eventLinks === undefined ? row.eventLinks : responseLinks(body.eventLinks);
+        const onlyVenue = eventLinks.length === 1 && eventLinks[0].eventType === "venue_event" ? eventLinks[0] : null;
+        return {
+          ...row,
+          amount: body.amount ?? row.amount,
+          eventLinks,
+          venueEventId: onlyVenue?.eventId ?? null,
+          venueEventLabel: onlyVenue ? `${onlyVenue.birthdayChildName || onlyVenue.customerName} · ${onlyVenue.eventDate}` : null,
+        };
       });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows.find((row) => row.id === id)) });
     }
 
-    return route.fulfill({
-      status: 404,
-      contentType: "application/json",
-      body: JSON.stringify({ error: "not mocked" }),
-    });
+    return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "not mocked" }) });
   });
 
   await page.goto("/expenses-flow-test.html");
-  await page.getByRole("button", { name: "Adicionar despesa" }).click();
 
-  const createDialog = page.getByRole("dialog", { name: "Adicionar despesa" });
-  const eventControl = createDialog
-    .locator("label")
-    .filter({ hasText: /^Associar a uma Festa$/ })
-    .locator("xpath=..")
-    .getByRole("combobox");
+  async function openCreate(description: string, amount = "10") {
+    await page.getByRole("button", { name: "Adicionar despesa" }).click();
+    const dialog = page.getByRole("dialog", { name: "Adicionar despesa" });
+    await formControl(dialog, "Data").fill("2026-10-01");
+    await formControl(dialog, "Valor").fill(amount);
+    await formControl(dialog, "Descrição").fill(description);
+    const category = dialog.locator("label").filter({ hasText: /^Categoria$/ }).locator("xpath=..").getByRole("combobox");
+    await category.click();
+    await page.getByRole("option", { name: "Supermercado / Alimentação" }).click();
+    return dialog;
+  }
 
-  await eventControl.scrollIntoViewIfNeeded();
-  await eventControl.click();
+  async function selectEvent(dialog: Locator, search: string, name: string) {
+    const trigger = dialog.getByRole("combobox", { name: "Associar a eventos" });
+    if (!(await page.getByPlaceholder("Pesquisar festa ou serviço…").isVisible().catch(() => false))) {
+      await trigger.click();
+    }
+    const input = page.getByPlaceholder("Pesquisar festa ou serviço…");
+    await input.fill(search);
+    const option = page.getByRole("option").filter({ hasText: name }).first();
+    await expect(option).toBeVisible();
+    await option.click();
+  }
 
-  const listbox = page.getByRole("listbox");
-  await expect(listbox).toBeVisible();
-  await expect(page.getByRole("option", { name: "Sem associação" })).toBeVisible();
+  async function saveDialog(dialog: Locator) {
+    if (await page.getByPlaceholder("Pesquisar festa ou serviço…").isVisible().catch(() => false)) {
+      await page.keyboard.press("Escape");
+    }
+    await dialog.getByRole("button", { name: "Guardar", exact: true }).click();
+  }
 
-  const initialBox = await listbox.boundingBox();
-  expect(initialBox).not.toBeNull();
-  expect(initialBox!.y).toBeGreaterThanOrEqual(0);
-  expect(initialBox!.y + initialBox!.height).toBeLessThanOrEqual(844);
-  expect(initialBox!.height).toBeLessThanOrEqual(844 * 0.6);
-  expect(await listbox.evaluate((element) => getComputedStyle(element).overflowY)).toBe("auto");
+  // 2 Serviços Externos: uma despesa de 50 € continua a contar apenas 50 €.
+  let dialog = await openCreate("Colaboradora duas externas", "50");
+  const trigger = dialog.getByRole("combobox", { name: "Associar a eventos" });
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.click();
 
-  const newest = page.getByRole("option", { name: "2026-12-31 · Festa recente" });
-  await expect(newest).toBeVisible();
+  const commandList = page.locator("[cmdk-list]");
+  await expect(commandList).toBeVisible();
+  const box = await commandList.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+  expect(box!.height).toBeLessThanOrEqual(844 * 0.6);
+  expect(await commandList.evaluate((element) => getComputedStyle(element).overflowY)).toBe("auto");
 
-  const oldest = page.getByRole("option", { name: "2024-01-01 · Festa antiga" });
-  await oldest.scrollIntoViewIfNeeded();
-  await expect(oldest).toBeVisible();
+  const input = page.getByPlaceholder("Pesquisar festa ou serviço…");
+  await input.fill("servico externo");
+  await expect(page.getByRole("option").filter({ hasText: "Sofia Silvestre" })).toBeVisible();
+  await expect(page.getByRole("option").filter({ hasText: "Inês Maria" })).toBeVisible();
+  await input.fill("26/09/2026");
+  await expect(page.getByRole("option").filter({ hasText: "Iara" })).toBeVisible();
+  await input.fill("sofia");
+  await page.getByRole("option").filter({ hasText: "Sofia Silvestre" }).click();
+  await input.fill("ines");
+  await page.getByRole("option").filter({ hasText: "Inês Maria" }).click();
+  await page.keyboard.press("Escape");
 
-  const scrolledBox = await listbox.boundingBox();
-  expect(scrolledBox).not.toBeNull();
-  expect(scrolledBox!.y).toBeGreaterThanOrEqual(0);
-  expect(scrolledBox!.y + scrolledBox!.height).toBeLessThanOrEqual(844);
+  await expect(dialog.getByText("Serviço · Sofia Silvestre · 26/09/2026", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Serviço · Inês Maria · 26/09/2026", { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Guardar", exact: true }).click();
 
-  await newest.scrollIntoViewIfNeeded();
-  await expect(newest).toBeVisible();
+  expect(createBodies.at(-1)?.eventLinks).toEqual([
+    { eventType: "external_event", eventId: externalEvents[0].id },
+    { eventType: "external_event", eventId: externalEvents[1].id },
+  ]);
+  const totalCard = page.getByText("Total saídas", { exact: true }).locator("xpath=ancestor::div[contains(@class,'rounded-xl')][1]");
+  await expect(totalCard.getByText("50,00 €", { exact: true })).toBeVisible();
+  await expect(page.getByText("Associada a 2 eventos", { exact: true })).toBeVisible();
+
+  // Sem associação.
+  dialog = await openCreate("Sem evento");
+  await saveDialog(dialog);
+  expect(createBodies.at(-1)?.eventLinks).toEqual([]);
+
+  // 1 Festa.
+  dialog = await openCreate("Uma festa");
+  await selectEvent(dialog, "iara", "Iara");
+  await saveDialog(dialog);
+  expect(createBodies.at(-1)?.eventLinks).toEqual([
+    { eventType: "venue_event", eventId: venueEvents[0].id },
+  ]);
+
+  // 1 Serviço Externo.
+  dialog = await openCreate("Um serviço");
+  await selectEvent(dialog, "sofia", "Sofia Silvestre");
+  await saveDialog(dialog);
+  expect(createBodies.at(-1)?.eventLinks).toEqual([
+    { eventType: "external_event", eventId: externalEvents[0].id },
+  ]);
+
+  // 2 Festas.
+  dialog = await openCreate("Duas festas");
+  await selectEvent(dialog, "iara", "Iara");
+  await selectEvent(dialog, "lourenco", "Lourenço");
+  await saveDialog(dialog);
+  expect(createBodies.at(-1)?.eventLinks).toEqual([
+    { eventType: "venue_event", eventId: venueEvents[0].id },
+    { eventType: "venue_event", eventId: venueEvents[1].id },
+  ]);
+
+  // Festa + Serviço Externo.
+  dialog = await openCreate("Festa e serviço");
+  await selectEvent(dialog, "iara", "Iara");
+  await selectEvent(dialog, "sofia", "Sofia Silvestre");
+  await saveDialog(dialog);
+  expect(createBodies.at(-1)?.eventLinks).toEqual([
+    { eventType: "venue_event", eventId: venueEvents[0].id },
+    { eventType: "external_event", eventId: externalEvents[0].id },
+  ]);
+
+  // Editar: remover a Festa e adicionar outro Serviço.
+  const mixedCard = page.getByText("Festa e serviço", { exact: true }).locator("xpath=ancestor::div[.//button[contains(.,'Editar')]][1]");
+  await mixedCard.getByRole("button", { name: "Editar" }).click();
+  const editDialog = page.getByRole("dialog", { name: "Editar despesa" });
+  await expect(editDialog.getByText("Festa · Iara · 26/09/2026", { exact: true })).toBeVisible();
+  await editDialog.getByRole("button", { name: "Remover Iara" }).click();
+  await selectEvent(editDialog, "ines", "Inês Maria");
+  await saveDialog(editDialog);
+
+  await expect.poll(() => lastPatchBody).not.toBeNull();
+  expect(lastPatchBody?.eventLinks).toEqual([
+    { eventType: "external_event", eventId: externalEvents[0].id },
+    { eventType: "external_event", eventId: externalEvents[1].id },
+  ]);
 });

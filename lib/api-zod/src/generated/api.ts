@@ -2361,6 +2361,17 @@ export const ListExpensesResponseItem = zod.object({
   notes: zod.string().nullable(),
   venueEventId: zod.string().uuid().nullable(),
   venueEventLabel: zod.string().nullable(),
+  eventLinks: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      eventType: zod.enum(["venue_event", "external_event"]),
+      eventId: zod.string().uuid(),
+      eventDate: zod.coerce.date(),
+      customerName: zod.string(),
+      birthdayChildName: zod.string().nullable(),
+      label: zod.string(),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -2380,7 +2391,19 @@ export const CreateExpenseBody = zod.object({
   expenseType: zod.enum(["operational", "investment"]),
   supplier: zod.string().nullish(),
   notes: zod.string().nullish(),
-  venueEventId: zod.string().uuid().nullish(),
+  venueEventId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe("Legacy compatibility field. Use eventLinks for new clients."),
+  eventLinks: zod
+    .array(
+      zod.object({
+        eventType: zod.enum(["venue_event", "external_event"]),
+        eventId: zod.string().uuid(),
+      }),
+    )
+    .optional(),
 });
 
 /**
@@ -2400,7 +2423,19 @@ export const UpdateExpenseBody = zod.object({
   expenseType: zod.enum(["operational", "investment"]).optional(),
   supplier: zod.string().nullish(),
   notes: zod.string().nullish(),
-  venueEventId: zod.string().uuid().nullish(),
+  venueEventId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe("Legacy compatibility field. Use eventLinks for new clients."),
+  eventLinks: zod
+    .array(
+      zod.object({
+        eventType: zod.enum(["venue_event", "external_event"]),
+        eventId: zod.string().uuid(),
+      }),
+    )
+    .optional(),
 });
 
 export const updateExpenseResponseAmountExclusiveMin = 0;
@@ -2417,6 +2452,17 @@ export const UpdateExpenseResponse = zod.object({
   notes: zod.string().nullable(),
   venueEventId: zod.string().uuid().nullable(),
   venueEventLabel: zod.string().nullable(),
+  eventLinks: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      eventType: zod.enum(["venue_event", "external_event"]),
+      eventId: zod.string().uuid(),
+      eventDate: zod.coerce.date(),
+      customerName: zod.string(),
+      birthdayChildName: zod.string().nullable(),
+      label: zod.string(),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });

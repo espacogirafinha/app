@@ -5,6 +5,7 @@
  * EspaÃ§o Girafinha reservation management API
  * OpenAPI spec version: 0.1.0
  */
+import type { ExpenseEventLinkInput } from "./expenseEventLinkInput";
 import type { ExpenseType } from "./expenseType";
 
 export interface CreateExpenseBody {
@@ -19,6 +20,11 @@ export interface CreateExpenseBody {
   supplier?: string | null;
   /** @nullable */
   notes?: string | null;
-  /** @nullable */
+  /**
+   * Legacy compatibility field. Use eventLinks for new clients.
+   * @deprecated
+   * @nullable
+   */
   venueEventId?: string | null;
+  eventLinks?: ExpenseEventLinkInput[];
 }

@@ -58,6 +58,20 @@ test("expense summary separates operations and investments", () => {
   assert.equal(result.byCategory.find((item) => item.label === "Renda")?.total, 750);
 });
 
+test("one 50 euro expense stays 50 even when traced to multiple events", () => {
+  const result = summarizeExpenses([
+    {
+      amount: 50,
+      expenseType: "operational",
+      categoryName: "Pessoal / Colaboradores",
+      supplier: null,
+    },
+  ]);
+
+  assert.equal(result.operational, 50);
+  assert.equal(result.totalOutflows, 50);
+});
+
 test("management result never subtracts estimated pack or extra costs", () => {
   assert.deepEqual(managementResult(2000, 900, 300), {
     eventRevenue: 2000,

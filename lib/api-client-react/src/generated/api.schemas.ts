@@ -1573,6 +1573,30 @@ export interface UpdateExpenseCategoryBody {
   sortOrder?: number;
 }
 
+export type ExpenseEventType =
+  (typeof ExpenseEventType)[keyof typeof ExpenseEventType];
+
+export const ExpenseEventType = {
+  venue_event: "venue_event",
+  external_event: "external_event",
+} as const;
+
+export interface ExpenseEventLinkInput {
+  eventType: ExpenseEventType;
+  eventId: string;
+}
+
+export interface ExpenseEventLink {
+  id: string;
+  eventType: ExpenseEventType;
+  eventId: string;
+  eventDate: string;
+  customerName: string;
+  /** @nullable */
+  birthdayChildName: string | null;
+  label: string;
+}
+
 export interface Expense {
   id: string;
   expenseDate: string;
@@ -1590,6 +1614,7 @@ export interface Expense {
   venueEventId: string | null;
   /** @nullable */
   venueEventLabel: string | null;
+  eventLinks: ExpenseEventLink[];
   createdAt: string;
   updatedAt: string;
 }
@@ -1606,8 +1631,13 @@ export interface CreateExpenseBody {
   supplier?: string | null;
   /** @nullable */
   notes?: string | null;
-  /** @nullable */
+  /**
+   * Legacy compatibility field. Use eventLinks for new clients.
+   * @deprecated
+   * @nullable
+   */
   venueEventId?: string | null;
+  eventLinks?: ExpenseEventLinkInput[];
 }
 
 export interface UpdateExpenseBody {
@@ -1622,8 +1652,13 @@ export interface UpdateExpenseBody {
   supplier?: string | null;
   /** @nullable */
   notes?: string | null;
-  /** @nullable */
+  /**
+   * Legacy compatibility field. Use eventLinks for new clients.
+   * @deprecated
+   * @nullable
+   */
   venueEventId?: string | null;
+  eventLinks?: ExpenseEventLinkInput[];
 }
 
 export interface ReportsV2ExpenseBreakdown {

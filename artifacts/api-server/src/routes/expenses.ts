@@ -6,6 +6,7 @@ import {
   eq,
   gte,
   ilike,
+  inArray,
   isNull,
   lte,
   or,
@@ -13,7 +14,9 @@ import {
 import {
   db,
   expenseCategoriesTable,
+  expenseEventLinksTable,
   expensesTable,
+  externalEventsTable,
   venueEventsTable,
 } from "@workspace/db";
 import {
@@ -29,6 +32,19 @@ import {
 import { requireSettingsAdmin } from "../lib/settings-access";
 
 const router: IRouter = Router();
+
+type ExpenseEventLinkInput = {
+  eventType: "venue_event" | "external_event";
+  eventId: string;
+};
+
+type ExpenseEventLinkResponse = ExpenseEventLinkInput & {
+  id: string;
+  eventDate: string;
+  customerName: string;
+  birthdayChildName: string | null;
+  label: string;
+};
 
 function money(value: unknown) {
   return Number.parseFloat(String(value ?? 0));
@@ -69,18 +85,144 @@ async function categoryExists(id: string, requireActive = false) {
   return Boolean(row && (!requireActive || row.isActive));
 }
 
-async function venueEventExists(id: string) {
-  const [row] = await db
-    .select({ id: venueEventsTable.id })
-    .from(venueEventsTable)
-    .where(eq(venueEventsTable.id, id))
-    .limit(1);
-  return Boolean(row);
+function normalizeEventLinks(links: ExpenseEventLinkInput[]) {
+  const unique = new Map<string, ExpenseEventLinkInput>();
+  for (const link of links) {
+    unique.set(`${link.eventType}:${link.eventId}`, link);
+  }
+  return [...unique.values()];
 }
 
-function expenseLabel(childName: string | null, customerName: string | null, eventDate: string | null) {
-  if (!customerName || !eventDate) return null;
-  return `${childName || customerName} · ${eventDate}`;
+function requestedEventLinks(data: {
+  eventLinks?: ExpenseEventLinkInput[];
+  venueEventId?: string | null;
+}) {
+  if (data.eventLinks !== undefined) {
+    return normalizeEventLinks(data.eventLinks);
+  }
+  if (data.venueEventId !== undefined) {
+    return data.venueEventId
+      ? [{ eventType: "venue_event" as const, eventId: data.venueEventId }]
+      : [];
+  }
+  return undefined;
+}
+
+function legacyVenueProjection(links: ExpenseEventLinkInput[]) {
+  return links.length === 1 && links[0].eventType === "venue_event"
+    ? links[0].eventId
+    : null;
+}
+
+async function eventLinksExist(links: ExpenseEventLinkInput[]) {
+  const venueIds = links.filter((link) => link.eventType === "venue_event").map((link) => link.eventId);
+  const externalIds = links.filter((link) => link.eventType === "external_event").map((link) => link.eventId);
+
+  const [venueRows, externalRows] = await Promise.all([
+    venueIds.length
+      ? db.select({ id: venueEventsTable.id }).from(venueEventsTable).where(inArray(venueEventsTable.id, venueIds))
+      : Promise.resolve([]),
+    externalIds.length
+      ? db.select({ id: externalEventsTable.id }).from(externalEventsTable).where(inArray(externalEventsTable.id, externalIds))
+      : Promise.resolve([]),
+  ]);
+
+  return venueRows.length === venueIds.length && externalRows.length === externalIds.length;
+}
+
+async function loadExpenseLinks(expenseIds: string[]) {
+  const grouped = new Map<string, ExpenseEventLinkResponse[]>();
+  if (expenseIds.length === 0) return grouped;
+
+  const rows = await db
+    .select({
+      id: expenseEventLinksTable.id,
+      expenseId: expenseEventLinksTable.expenseId,
+      venueEventId: expenseEventLinksTable.venueEventId,
+      externalEventId: expenseEventLinksTable.externalEventId,
+      venueEventDate: venueEventsTable.eventDate,
+      venueCustomerName: venueEventsTable.customerName,
+      birthdayChildName: venueEventsTable.birthdayChildName,
+      externalEventDate: externalEventsTable.eventDate,
+      externalCustomerName: externalEventsTable.customerName,
+    })
+    .from(expenseEventLinksTable)
+    .leftJoin(venueEventsTable, eq(expenseEventLinksTable.venueEventId, venueEventsTable.id))
+    .leftJoin(externalEventsTable, eq(expenseEventLinksTable.externalEventId, externalEventsTable.id))
+    .where(inArray(expenseEventLinksTable.expenseId, expenseIds))
+    .orderBy(asc(expenseEventLinksTable.createdAt), asc(expenseEventLinksTable.id));
+
+  for (const row of rows) {
+    let link: ExpenseEventLinkResponse | null = null;
+    if (row.venueEventId && row.venueEventDate && row.venueCustomerName) {
+      const displayName = row.birthdayChildName || row.venueCustomerName;
+      link = {
+        id: row.id,
+        eventType: "venue_event",
+        eventId: row.venueEventId,
+        eventDate: row.venueEventDate,
+        customerName: row.venueCustomerName,
+        birthdayChildName: row.birthdayChildName,
+        label: `Festa · ${row.venueEventDate} · ${displayName}`,
+      };
+    } else if (row.externalEventId && row.externalEventDate && row.externalCustomerName) {
+      link = {
+        id: row.id,
+        eventType: "external_event",
+        eventId: row.externalEventId,
+        eventDate: row.externalEventDate,
+        customerName: row.externalCustomerName,
+        birthdayChildName: null,
+        label: `Serviço Externo · ${row.externalEventDate} · ${row.externalCustomerName}`,
+      };
+    }
+    if (!link) continue;
+    const current = grouped.get(row.expenseId) ?? [];
+    current.push(link);
+    grouped.set(row.expenseId, current);
+  }
+
+  return grouped;
+}
+
+function expenseResponse(
+  row: {
+    id: string;
+    expenseDate: string;
+    description: string;
+    amount: string;
+    categoryId: string;
+    categoryName: string;
+    expenseType: string;
+    supplier: string | null;
+    notes: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  eventLinks: ExpenseEventLinkResponse[],
+) {
+  const legacyVenue = eventLinks.length === 1 && eventLinks[0].eventType === "venue_event"
+    ? eventLinks[0]
+    : null;
+
+  return {
+    id: row.id,
+    expenseDate: row.expenseDate,
+    description: row.description,
+    amount: money(row.amount),
+    categoryId: row.categoryId,
+    categoryName: row.categoryName,
+    expenseType: row.expenseType as "operational" | "investment",
+    supplier: row.supplier,
+    notes: row.notes,
+    venueEventId: legacyVenue?.eventId ?? null,
+    venueEventLabel: legacyVenue
+      ? `${legacyVenue.birthdayChildName || legacyVenue.customerName} · ${legacyVenue.eventDate}`
+      : null,
+    eventLinks,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  };
 }
 
 async function loadExpense(id: string) {
@@ -95,36 +237,17 @@ async function loadExpense(id: string) {
       expenseType: expensesTable.expenseType,
       supplier: expensesTable.supplier,
       notes: expensesTable.notes,
-      venueEventId: expensesTable.venueEventId,
-      customerName: venueEventsTable.customerName,
-      birthdayChildName: venueEventsTable.birthdayChildName,
-      eventDate: venueEventsTable.eventDate,
       createdAt: expensesTable.createdAt,
       updatedAt: expensesTable.updatedAt,
     })
     .from(expensesTable)
     .innerJoin(expenseCategoriesTable, eq(expensesTable.categoryId, expenseCategoriesTable.id))
-    .leftJoin(venueEventsTable, eq(expensesTable.venueEventId, venueEventsTable.id))
     .where(and(eq(expensesTable.id, id), isNull(expensesTable.deletedAt)))
     .limit(1);
 
   if (!row) return null;
-
-  return {
-    id: row.id,
-    expenseDate: row.expenseDate,
-    description: row.description,
-    amount: money(row.amount),
-    categoryId: row.categoryId,
-    categoryName: row.categoryName,
-    expenseType: row.expenseType as "operational" | "investment",
-    supplier: row.supplier,
-    notes: row.notes,
-    venueEventId: row.venueEventId,
-    venueEventLabel: expenseLabel(row.birthdayChildName, row.customerName, row.eventDate),
-    createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-  };
+  const linksByExpense = await loadExpenseLinks([row.id]);
+  return expenseResponse(row, linksByExpense.get(row.id) ?? []);
 }
 
 router.get("/settings/expense-categories", async (_req, res): Promise<void> => {
@@ -236,34 +359,16 @@ router.get("/expenses", async (req, res): Promise<void> => {
       expenseType: expensesTable.expenseType,
       supplier: expensesTable.supplier,
       notes: expensesTable.notes,
-      venueEventId: expensesTable.venueEventId,
-      customerName: venueEventsTable.customerName,
-      birthdayChildName: venueEventsTable.birthdayChildName,
-      eventDate: venueEventsTable.eventDate,
       createdAt: expensesTable.createdAt,
       updatedAt: expensesTable.updatedAt,
     })
     .from(expensesTable)
     .innerJoin(expenseCategoriesTable, eq(expensesTable.categoryId, expenseCategoriesTable.id))
-    .leftJoin(venueEventsTable, eq(expensesTable.venueEventId, venueEventsTable.id))
     .where(and(...conditions))
     .orderBy(desc(expensesTable.expenseDate), desc(expensesTable.createdAt));
 
-  res.json(rows.map((row) => ({
-    id: row.id,
-    expenseDate: row.expenseDate,
-    description: row.description,
-    amount: money(row.amount),
-    categoryId: row.categoryId,
-    categoryName: row.categoryName,
-    expenseType: row.expenseType as "operational" | "investment",
-    supplier: row.supplier,
-    notes: row.notes,
-    venueEventId: row.venueEventId,
-    venueEventLabel: expenseLabel(row.birthdayChildName, row.customerName, row.eventDate),
-    createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-  })));
+  const linksByExpense = await loadExpenseLinks(rows.map((row) => row.id));
+  res.json(rows.map((row) => expenseResponse(row, linksByExpense.get(row.id) ?? [])));
 });
 
 router.post("/expenses", async (req, res): Promise<void> => {
@@ -277,26 +382,50 @@ router.post("/expenses", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Expense category is inactive or does not exist" });
     return;
   }
-  if (parsed.data.venueEventId && !(await venueEventExists(parsed.data.venueEventId))) {
-    res.status(400).json({ error: "Venue event does not exist" });
+
+  const links = requestedEventLinks(parsed.data) ?? [];
+  if (!(await eventLinksExist(links))) {
+    res.status(400).json({ error: "One or more associated events do not exist" });
     return;
   }
 
-  const [created] = await db
-    .insert(expensesTable)
-    .values({
-      expenseDate: dateOnly(parsed.data.expenseDate),
-      description: parsed.data.description.trim(),
-      amount: String(parsed.data.amount),
-      categoryId: parsed.data.categoryId,
-      expenseType: parsed.data.expenseType,
-      supplier: nullableText(parsed.data.supplier),
-      notes: nullableText(parsed.data.notes),
-      venueEventId: parsed.data.venueEventId ?? null,
-    })
-    .returning({ id: expensesTable.id });
+  const createdId = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(expensesTable)
+      .values({
+        expenseDate: dateOnly(parsed.data.expenseDate),
+        description: parsed.data.description.trim(),
+        amount: String(parsed.data.amount),
+        categoryId: parsed.data.categoryId,
+        expenseType: parsed.data.expenseType,
+        supplier: nullableText(parsed.data.supplier),
+        notes: nullableText(parsed.data.notes),
+        venueEventId: null,
+      })
+      .returning({ id: expensesTable.id });
 
-  res.status(201).json(await loadExpense(created.id));
+    if (links.length > 0) {
+      await tx.insert(expenseEventLinksTable).values(
+        links.map((link) => ({
+          expenseId: created.id,
+          venueEventId: link.eventType === "venue_event" ? link.eventId : null,
+          externalEventId: link.eventType === "external_event" ? link.eventId : null,
+        })),
+      );
+    }
+
+    const legacyVenueEventId = legacyVenueProjection(links);
+    if (legacyVenueEventId) {
+      await tx
+        .update(expensesTable)
+        .set({ venueEventId: legacyVenueEventId })
+        .where(eq(expensesTable.id, created.id));
+    }
+
+    return created.id;
+  });
+
+  res.status(201).json(await loadExpense(createdId));
 });
 
 router.patch("/expenses/:id", async (req, res): Promise<void> => {
@@ -315,8 +444,21 @@ router.patch("/expenses/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Expense category is inactive or does not exist" });
     return;
   }
-  if (body.data.venueEventId && !(await venueEventExists(body.data.venueEventId))) {
-    res.status(400).json({ error: "Venue event does not exist" });
+
+  const links = requestedEventLinks(body.data);
+  if (links !== undefined && !(await eventLinksExist(links))) {
+    res.status(400).json({ error: "One or more associated events do not exist" });
+    return;
+  }
+
+  const [existing] = await db
+    .select({ id: expensesTable.id })
+    .from(expensesTable)
+    .where(and(eq(expensesTable.id, params.data.id), isNull(expensesTable.deletedAt)))
+    .limit(1);
+
+  if (!existing) {
+    res.status(404).json({ error: "Expense not found" });
     return;
   }
 
@@ -328,20 +470,34 @@ router.patch("/expenses/:id", async (req, res): Promise<void> => {
   if (body.data.expenseType !== undefined) update.expenseType = body.data.expenseType;
   if (body.data.supplier !== undefined) update.supplier = nullableText(body.data.supplier);
   if (body.data.notes !== undefined) update.notes = nullableText(body.data.notes);
-  if (body.data.venueEventId !== undefined) update.venueEventId = body.data.venueEventId;
+  if (links !== undefined) update.venueEventId = legacyVenueProjection(links);
 
-  const [updated] = await db
-    .update(expensesTable)
-    .set(update)
-    .where(and(eq(expensesTable.id, params.data.id), isNull(expensesTable.deletedAt)))
-    .returning({ id: expensesTable.id });
+  await db.transaction(async (tx) => {
+    if (Object.keys(update).length > 0) {
+      await tx
+        .update(expensesTable)
+        .set(update)
+        .where(eq(expensesTable.id, params.data.id));
+    }
 
-  if (!updated) {
-    res.status(404).json({ error: "Expense not found" });
-    return;
-  }
+    if (links !== undefined) {
+      await tx
+        .delete(expenseEventLinksTable)
+        .where(eq(expenseEventLinksTable.expenseId, params.data.id));
 
-  res.json(await loadExpense(updated.id));
+      if (links.length > 0) {
+        await tx.insert(expenseEventLinksTable).values(
+          links.map((link) => ({
+            expenseId: params.data.id,
+            venueEventId: link.eventType === "venue_event" ? link.eventId : null,
+            externalEventId: link.eventType === "external_event" ? link.eventId : null,
+          })),
+        );
+      }
+    }
+  });
+
+  res.json(await loadExpense(params.data.id));
 });
 
 router.delete("/expenses/:id", async (req, res): Promise<void> => {
