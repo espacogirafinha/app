@@ -660,6 +660,7 @@ function ExpenseEventMultiSelect({
             type="button"
             variant="outline"
             role="combobox"
+            aria-label="Associar a eventos"
             aria-expanded={open}
             className="min-h-11 w-full justify-between font-normal"
           >
