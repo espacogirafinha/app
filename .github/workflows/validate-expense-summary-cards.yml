@@ -39,11 +39,24 @@ jobs:
           done
           cat /tmp/girafinha-expenses.log
           exit 1
-      - name: Expense E2E
+      - name: Existing expense E2E
+        id: existing_e2e
+        continue-on-error: true
         env:
           E2E_BASE_URL: http://127.0.0.1:4175
+        run: corepack pnpm exec playwright test tests/e2e/expenses-flow.local.spec.ts --project=chromium --no-deps
+      - name: Summary card E2E
+        id: summary_e2e
+        continue-on-error: true
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4175
+        run: corepack pnpm exec playwright test tests/e2e/expenses-summary-cards.local.spec.ts --project=chromium --no-deps
+      - name: Verify expense E2E results
         run: |
-          corepack pnpm exec playwright test             tests/e2e/expenses-flow.local.spec.ts             tests/e2e/expenses-summary-cards.local.spec.ts             --project=chromium --no-deps
+          echo "existing=${{ steps.existing_e2e.outcome }}"
+          echo "summary=${{ steps.summary_e2e.outcome }}"
+          test "${{ steps.existing_e2e.outcome }}" = "success"
+          test "${{ steps.summary_e2e.outcome }}" = "success"
       - name: Stop server
         if: always()
         run: |
