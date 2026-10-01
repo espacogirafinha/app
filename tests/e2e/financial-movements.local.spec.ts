@@ -158,10 +158,10 @@ test("Movimentos financeiros: conferência, filtros, resumo e histórico sem dat
   await page.getByLabel("Período pela data do pagamento").click();
   await page.getByRole("option", { name: "Tudo" }).click();
 
-  const receivedSummary = page.getByText("Recebido no período", { exact: true }).locator("..");
-  const movementSummary = page.getByText("Movimentos", { exact: true }).locator("..");
-  const pendingSummary = page.getByText("Por conferir", { exact: true }).first().locator("..");
-  const reconciledSummary = page.getByText("Conferidos", { exact: true }).first().locator("..");
+  const receivedSummary = page.getByTestId("summary-received");
+  const movementSummary = page.getByTestId("summary-movements");
+  const pendingSummary = page.getByTestId("summary-pending");
+  const reconciledSummary = page.getByTestId("summary-reconciled");
 
   await expect(receivedSummary).toContainText("790,00");
   await expect(movementSummary).toContainText("3");
@@ -245,9 +245,7 @@ test("Movimentos financeiros mobile: ação de conferência fica disponível no 
   await page.getByLabel("Período pela data do pagamento").click();
   await page.getByRole("option", { name: "Tudo" }).click();
 
-  const ruiCard = page
-    .getByText("Rui Santos", { exact: true })
-    .locator("xpath=ancestor::div[.//button[contains(.,'Marcar como conferido')]][1]");
+  const ruiCard = page.getByTestId("mobile-movement-cash-external");
   await expect(ruiCard.getByText("Por conferir", { exact: true })).toBeVisible();
   const action = ruiCard.getByRole("button", { name: "Marcar como conferido" });
   await expect(action).toBeVisible();
