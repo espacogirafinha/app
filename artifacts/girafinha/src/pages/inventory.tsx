@@ -669,7 +669,7 @@ function MovementDialog({
         data: {
           movementType: state.type,
           quantity: value,
-          occurredAt: new Date(occurredAt),
+          occurredAt: new Date(occurredAt).toISOString(),
           reason: reason.trim() || null,
         },
       });
