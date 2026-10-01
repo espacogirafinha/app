@@ -7,6 +7,7 @@ import type {
 export type MovementPeriodMode = "this_month" | "previous_month" | "all" | "custom";
 export type MovementMethodFilter = EventPaymentMethod | "all";
 export type MovementOriginFilter = EventPaymentModule | "all";
+export type MovementReconciliationFilter = "all" | "pending" | "reconciled";
 
 export type FinancialMovementFilters = {
   search: string;
@@ -15,6 +16,7 @@ export type FinancialMovementFilters = {
   customEnd: string;
   method: MovementMethodFilter;
   origin: MovementOriginFilter;
+  reconciliation: MovementReconciliationFilter;
 };
 
 const PORTUGAL_TIME_ZONE = "Europe/Lisbon";
@@ -98,6 +100,8 @@ export function filterFinancialMovements(
 
   return movements.filter((movement) => {
     if (!movement.paidAt || !matchesCommonFilters(movement, filters)) return false;
+    if (filters.reconciliation === "pending" && movement.reconciledAt !== null) return false;
+    if (filters.reconciliation === "reconciled" && movement.reconciledAt === null) return false;
     if (!range) return true;
     const paymentDate = lisbonDateKey(movement.paidAt);
     if (range.startDate && paymentDate < range.startDate) return false;
@@ -113,9 +117,24 @@ export function filterUndatedFinancialMovements(
   return movements.filter((movement) => matchesCommonFilters(movement, filters));
 }
 
+function roundMoney(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 export function summarizeFinancialMovements(movements: FinancialMovement[]) {
+  const reconciled = movements.filter((movement) => movement.reconciledAt !== null);
+  const pending = movements.filter((movement) => movement.reconciledAt === null);
+
   return {
-    received: Math.round(movements.reduce((sum, movement) => sum + movement.amount, 0) * 100) / 100,
+    received: roundMoney(movements.reduce((sum, movement) => sum + movement.amount, 0)),
     count: movements.length,
+    pending: {
+      amount: roundMoney(pending.reduce((sum, movement) => sum + movement.amount, 0)),
+      count: pending.length,
+    },
+    reconciled: {
+      amount: roundMoney(reconciled.reduce((sum, movement) => sum + movement.amount, 0)),
+      count: reconciled.length,
+    },
   };
 }
