@@ -12,6 +12,7 @@ export type FinancialMovementRow = {
   amount: number;
   paymentMethod: EventPaymentMethod | null;
   paidAt: Date | null;
+  reconciledAt: Date | null;
   notes: string | null;
   createdAt: Date;
   deletedAt: Date | null;
@@ -70,6 +71,7 @@ export function buildFinancialMovements(rows: FinancialMovementRow[]): Financial
         amount: row.amount,
         paymentMethod: row.paymentMethod,
         paidAt: row.paidAt,
+        reconciledAt: row.reconciledAt,
         notes: row.notes,
         createdAt: row.createdAt,
       };
