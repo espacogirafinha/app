@@ -83,6 +83,10 @@ async function mockFinancialMovements(page: Page) {
 
   await page.route("**/api/event-payments/*", async (route) => {
     const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+    if (pathname === "/api/event-payments/movements") {
+      return route.fallback();
+    }
     if (request.method() !== "PATCH") {
       return route.fulfill({
         status: 404,
@@ -241,7 +245,9 @@ test("Movimentos financeiros mobile: ação de conferência fica disponível no 
   await page.getByLabel("Período pela data do pagamento").click();
   await page.getByRole("option", { name: "Tudo" }).click();
 
-  const ruiCard = page.locator(".md\\:hidden > div").filter({ hasText: "Rui Santos" });
+  const ruiCard = page
+    .getByText("Rui Santos", { exact: true })
+    .locator("xpath=ancestor::div[.//button[contains(.,'Marcar como conferido')]][1]");
   await expect(ruiCard.getByText("Por conferir", { exact: true })).toBeVisible();
   const action = ruiCard.getByRole("button", { name: "Marcar como conferido" });
   await expect(action).toBeVisible();
