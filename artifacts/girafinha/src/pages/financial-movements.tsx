@@ -264,14 +264,16 @@ export default function FinancialMovementsPage() {
       </Card>
 
       <section className="grid grid-cols-2 gap-2.5 md:gap-4 xl:grid-cols-4">
-        <SummaryCard label="Recebido no período" value={euro(summary.received)} />
-        <SummaryCard label="Movimentos" value={String(summary.count)} />
+        <SummaryCard testId="summary-received" label="Recebido no período" value={euro(summary.received)} />
+        <SummaryCard testId="summary-movements" label="Movimentos" value={String(summary.count)} />
         <SummaryCard
+          testId="summary-pending"
           label="Por conferir"
           value={euro(summary.pending.amount)}
           detail={movementCountLabel(summary.pending.count)}
         />
         <SummaryCard
+          testId="summary-reconciled"
           label="Conferidos"
           value={euro(summary.reconciled.amount)}
           detail={movementCountLabel(summary.reconciled.count)}
@@ -346,7 +348,11 @@ export default function FinancialMovementsPage() {
 
               <div className="divide-y divide-border/60 md:hidden">
                 {movements.map((movement) => (
-                  <div key={movement.id} className="space-y-2 p-4">
+                  <div
+                    key={movement.id}
+                    data-testid={`mobile-movement-${movement.id}`}
+                    className="space-y-2 p-4"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-muted-foreground">
@@ -471,16 +477,18 @@ function movementCountLabel(count: number) {
 }
 
 function SummaryCard({
+  testId,
   label,
   value,
   detail,
 }: {
+  testId: string;
   label: string;
   value: string;
   detail?: string;
 }) {
   return (
-    <Card className="border-border/70 shadow-sm">
+    <Card data-testid={testId} className="border-border/70 shadow-sm">
       <CardContent className="p-3 md:p-4">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         <p className="mt-1 text-xl font-bold md:text-2xl">{value}</p>
