@@ -1,0 +1,97 @@
+name: Validate production white screen fix
+
+on:
+  push:
+    branches:
+      - fix/production-white-screen
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+      - name: Build
+        run: corepack pnpm run build
+      - name: Verify chunk graph
+        run: |
+          if grep -R "radix-ui-" artifacts/girafinha/dist/public/index.html artifacts/girafinha/dist/public/assets/index-*.js; then
+            echo "Unexpected standalone radix-ui chunk reference"
+            exit 1
+          fi
+          echo "No standalone radix-ui chunk reference in entry bundle"
+      - name: Confirm Vercel function count
+        run: |
+          count=$(find api -type f -name '*.mjs' | wc -l | tr -d ' ')
+          echo "Vercel function files: $count"
+          test "$count" -le 12
+      - name: Install WebKit
+        run: corepack pnpm exec playwright install --with-deps webkit
+      - name: Serve built frontend
+        run: |
+          cd artifacts/girafinha/dist/public
+          python3 -m http.server 4176 --bind 127.0.0.1 >/tmp/girafinha-preview.log 2>&1 &
+          echo $! >/tmp/girafinha-preview.pid
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4176/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/girafinha-preview.log
+          exit 1
+      - name: Browser render check Chrome and WebKit
+        env:
+          URL: http://127.0.0.1:4176/
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium, webkit } from "@playwright/test";
+
+          const engines = [
+            ["chrome", chromium, { channel: "chrome" }],
+            ["webkit", webkit, {}],
+          ];
+
+          for (const [name, engine, launchOptions] of engines) {
+            const browser = await engine.launch({ headless: true, ...launchOptions });
+            const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+            const page = await context.newPage();
+            const events = [];
+            page.on("pageerror", error => events.push({ type: "pageerror", text: error.stack || error.message }));
+            page.on("console", msg => {
+              if (msg.type() === "error") events.push({ type: "console-error", text: msg.text() });
+            });
+            page.on("requestfailed", req => events.push({ type: "requestfailed", url: req.url(), failure: req.failure()?.errorText }));
+
+            const response = await page.goto(process.env.URL, { waitUntil: "domcontentloaded", timeout: 30000 });
+            await page.waitForTimeout(3000);
+            const snapshot = await page.evaluate(() => ({
+              title: document.title,
+              rootHtmlLength: document.getElementById("root")?.innerHTML.length ?? -1,
+              rootText: document.getElementById("root")?.textContent?.slice(0, 500) ?? "",
+              bodyText: document.body?.innerText?.slice(0, 800) ?? "",
+            }));
+            await page.screenshot({ path: `/tmp/${name}-fixed.png`, fullPage: true });
+
+            console.log(JSON.stringify({ name, status: response?.status(), snapshot, events }, null, 2));
+
+            if ((response?.status() ?? 0) !== 200) throw new Error(`${name}: HTML did not return 200`);
+            if (snapshot.rootHtmlLength <= 0) throw new Error(`${name}: React root is empty`);
+            if (events.some(event => event.type === "pageerror")) {
+              throw new Error(`${name}: pageerror detected: ${JSON.stringify(events)}`);
+            }
+
+            await context.close();
+            await browser.close();
+          }
+          NODE
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/girafinha-preview.pid ]; then kill $(cat /tmp/girafinha-preview.pid) || true; fi
+          cat /tmp/girafinha-preview.log || true
