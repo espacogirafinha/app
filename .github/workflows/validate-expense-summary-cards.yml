@@ -35,6 +35,23 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Create unauthenticated local Playwright config
+        run: |
+          cat > playwright.expenses.config.mjs <<'EOF'
+          import { defineConfig, devices } from '@playwright/test';
+          export default defineConfig({
+            testDir: './tests/e2e',
+            outputDir: 'test-results/e2e',
+            retries: 0,
+            reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+            use: {
+              baseURL: process.env.E2E_BASE_URL,
+              screenshot: 'only-on-failure',
+              trace: 'retain-on-failure',
+            },
+            projects: [{ name: 'chromium-local', use: { ...devices['Desktop Chrome'] } }],
+          });
+          EOF
       - name: Start server
         env:
           PORT: "4175"
@@ -50,7 +67,7 @@ jobs:
       - name: Existing expense E2E
         env:
           E2E_BASE_URL: http://127.0.0.1:4175
-        run: corepack pnpm exec playwright test tests/e2e/expenses-flow.local.spec.ts --project=chromium --no-deps
+        run: corepack pnpm exec playwright test tests/e2e/expenses-flow.local.spec.ts --config=playwright.expenses.config.mjs --project=chromium-local
       - name: Upload existing failure details
         if: failure()
         uses: actions/upload-artifact@v4
@@ -71,6 +88,23 @@ jobs:
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Create unauthenticated local Playwright config
+        run: |
+          cat > playwright.expenses.config.mjs <<'EOF'
+          import { defineConfig, devices } from '@playwright/test';
+          export default defineConfig({
+            testDir: './tests/e2e',
+            outputDir: 'test-results/e2e',
+            retries: 0,
+            reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+            use: {
+              baseURL: process.env.E2E_BASE_URL,
+              screenshot: 'only-on-failure',
+              trace: 'retain-on-failure',
+            },
+            projects: [{ name: 'chromium-local', use: { ...devices['Desktop Chrome'] } }],
+          });
+          EOF
       - name: Start server
         env:
           PORT: "4175"
@@ -86,7 +120,7 @@ jobs:
       - name: Summary card E2E
         env:
           E2E_BASE_URL: http://127.0.0.1:4175
-        run: corepack pnpm exec playwright test tests/e2e/expenses-summary-cards.local.spec.ts --project=chromium --no-deps
+        run: corepack pnpm exec playwright test tests/e2e/expenses-summary-cards.local.spec.ts --config=playwright.expenses.config.mjs --project=chromium-local
       - name: Upload summary failure details
         if: failure()
         uses: actions/upload-artifact@v4
