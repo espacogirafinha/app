@@ -2486,6 +2486,246 @@ export const DeleteExpenseParams = zod.object({
 });
 
 /**
+ * @summary List inventory items
+ */
+export const ListInventoryItemsQueryParams = zod.object({
+  itemType: zod.enum(["consumable", "material"]).optional(),
+  search: zod.coerce.string().optional(),
+  category: zod.coerce.string().optional(),
+  location: zod.coerce.string().optional(),
+  condition: zod.enum(["bom", "danificado", "em_reparacao"]).optional(),
+  active: zod.coerce.boolean().optional(),
+  lowStock: zod.coerce.boolean().optional(),
+});
+
+export const ListInventoryItemsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  itemType: zod.enum(["consumable", "material"]),
+  name: zod.string(),
+  category: zod.string(),
+  quantityCurrent: zod.number(),
+  unit: zod.enum([
+    "un",
+    "pacote",
+    "caixa",
+    "garrafa",
+    "lata",
+    "kg",
+    "g",
+    "L",
+    "ml",
+    "conjunto",
+    "outro",
+  ]),
+  minimumStock: zod.number().nullable(),
+  unitCost: zod.number().nullable(),
+  photoPath: zod.string().nullable(),
+  color: zod.string().nullable(),
+  theme: zod.string().nullable(),
+  location: zod.string().nullable(),
+  condition: zod.union([
+    zod.enum(["bom", "danificado", "em_reparacao"]),
+    zod.null(),
+  ]),
+  purchaseCost: zod.number().nullable(),
+  notes: zod.string().nullable(),
+  isActive: zod.boolean(),
+  isLowStock: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListInventoryItemsResponse = zod.array(
+  ListInventoryItemsResponseItem,
+);
+
+/**
+ * @summary Create an inventory item
+ */
+
+export const createInventoryItemBodyQuantityDefault = 0;
+export const createInventoryItemBodyQuantityMin = 0;
+
+export const createInventoryItemBodyMinimumStockMin = 0;
+
+export const createInventoryItemBodyUnitCostMin = 0;
+
+export const createInventoryItemBodyPurchaseCostMin = 0;
+
+export const createInventoryItemBodyIsActiveDefault = true;
+
+export const CreateInventoryItemBody = zod.object({
+  itemType: zod.enum(["consumable", "material"]),
+  name: zod.string().min(1),
+  category: zod.string().min(1),
+  quantity: zod
+    .number()
+    .min(createInventoryItemBodyQuantityMin)
+    .default(createInventoryItemBodyQuantityDefault),
+  unit: zod.enum([
+    "un",
+    "pacote",
+    "caixa",
+    "garrafa",
+    "lata",
+    "kg",
+    "g",
+    "L",
+    "ml",
+    "conjunto",
+    "outro",
+  ]),
+  minimumStock: zod
+    .number()
+    .min(createInventoryItemBodyMinimumStockMin)
+    .nullish(),
+  unitCost: zod.number().min(createInventoryItemBodyUnitCostMin).nullish(),
+  photoPath: zod.string().nullish(),
+  color: zod.string().nullish(),
+  theme: zod.string().nullish(),
+  location: zod.string().nullish(),
+  condition: zod
+    .union([zod.enum(["bom", "danificado", "em_reparacao"]), zod.null()])
+    .optional(),
+  purchaseCost: zod
+    .number()
+    .min(createInventoryItemBodyPurchaseCostMin)
+    .nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean().default(createInventoryItemBodyIsActiveDefault),
+});
+
+/**
+ * @summary Update inventory item metadata
+ */
+export const UpdateInventoryItemParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const updateInventoryItemBodyMinimumStockMin = 0;
+
+export const updateInventoryItemBodyUnitCostMin = 0;
+
+export const updateInventoryItemBodyPurchaseCostMin = 0;
+
+export const UpdateInventoryItemBody = zod.object({
+  name: zod.string().min(1).optional(),
+  category: zod.string().min(1).optional(),
+  unit: zod
+    .enum([
+      "un",
+      "pacote",
+      "caixa",
+      "garrafa",
+      "lata",
+      "kg",
+      "g",
+      "L",
+      "ml",
+      "conjunto",
+      "outro",
+    ])
+    .optional(),
+  minimumStock: zod
+    .number()
+    .min(updateInventoryItemBodyMinimumStockMin)
+    .nullish(),
+  unitCost: zod.number().min(updateInventoryItemBodyUnitCostMin).nullish(),
+  photoPath: zod.string().nullish(),
+  color: zod.string().nullish(),
+  theme: zod.string().nullish(),
+  location: zod.string().nullish(),
+  condition: zod
+    .union([zod.enum(["bom", "danificado", "em_reparacao"]), zod.null()])
+    .optional(),
+  purchaseCost: zod
+    .number()
+    .min(updateInventoryItemBodyPurchaseCostMin)
+    .nullish(),
+  notes: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdateInventoryItemResponse = zod.object({
+  id: zod.string().uuid(),
+  itemType: zod.enum(["consumable", "material"]),
+  name: zod.string(),
+  category: zod.string(),
+  quantityCurrent: zod.number(),
+  unit: zod.enum([
+    "un",
+    "pacote",
+    "caixa",
+    "garrafa",
+    "lata",
+    "kg",
+    "g",
+    "L",
+    "ml",
+    "conjunto",
+    "outro",
+  ]),
+  minimumStock: zod.number().nullable(),
+  unitCost: zod.number().nullable(),
+  photoPath: zod.string().nullable(),
+  color: zod.string().nullable(),
+  theme: zod.string().nullable(),
+  location: zod.string().nullable(),
+  condition: zod.union([
+    zod.enum(["bom", "danificado", "em_reparacao"]),
+    zod.null(),
+  ]),
+  purchaseCost: zod.number().nullable(),
+  notes: zod.string().nullable(),
+  isActive: zod.boolean(),
+  isLowStock: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List movement history for an inventory item
+ */
+export const ListInventoryMovementsParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const ListInventoryMovementsResponseItem = zod.object({
+  id: zod.string().uuid(),
+  itemId: zod.string().uuid(),
+  movementType: zod.enum(["entry", "exit", "adjustment"]),
+  quantityDelta: zod.number(),
+  quantityBefore: zod.number(),
+  quantityAfter: zod.number(),
+  occurredAt: zod.coerce.date(),
+  reason: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+});
+export const ListInventoryMovementsResponse = zod.array(
+  ListInventoryMovementsResponseItem,
+);
+
+/**
+ * @summary Register a manual inventory movement
+ */
+export const CreateInventoryMovementParams = zod.object({
+  id: zod.coerce.string().uuid(),
+});
+
+export const createInventoryMovementBodyQuantityMin = 0;
+
+export const CreateInventoryMovementBody = zod.object({
+  movementType: zod.enum(["entry", "exit", "adjustment"]),
+  quantity: zod
+    .number()
+    .min(createInventoryMovementBodyQuantityMin)
+    .describe(
+      "For entry\/exit this is the amount moved. For adjustment this is the target physical quantity.",
+    ),
+  occurredAt: zod.coerce.date().optional(),
+  reason: zod.string().nullish(),
+});
+
+/**
  * Aggregates venue events, external events, services, workshops and participants for the V2 dashboard.
  * @summary Get V2 dashboard aggregate
  */
