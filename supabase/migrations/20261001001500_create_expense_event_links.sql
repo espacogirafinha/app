@@ -35,7 +35,34 @@ from public.expenses
 where venue_event_id is not null
 on conflict do nothing;
 
-do $$
+create or replace function public.sync_legacy_expense_venue_event_link()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  delete from public.expense_event_links
+  where expense_id = new.id;
+
+  if new.venue_event_id is not null then
+    insert into public.expense_event_links (expense_id, venue_event_id)
+    values (new.id, new.venue_event_id)
+    on conflict do nothing;
+  end if;
+
+  return new;
+end;
+$;
+
+drop trigger if exists expenses_sync_legacy_event_link on public.expenses;
+create trigger expenses_sync_legacy_event_link
+after insert or update of venue_event_id on public.expenses
+for each row execute function public.sync_legacy_expense_venue_event_link();
+
+comment on function public.sync_legacy_expense_venue_event_link() is
+  'Compatibility bridge for legacy writers of expenses.venue_event_id. New application code writes expense_event_links directly.';
+
+do $
 begin
   if exists (
     select 1
