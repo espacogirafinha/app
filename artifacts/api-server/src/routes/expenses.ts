@@ -400,7 +400,7 @@ router.post("/expenses", async (req, res): Promise<void> => {
         expenseType: parsed.data.expenseType,
         supplier: nullableText(parsed.data.supplier),
         notes: nullableText(parsed.data.notes),
-        venueEventId: legacyVenueProjection(links),
+        venueEventId: null,
       })
       .returning({ id: expensesTable.id });
 
@@ -413,6 +413,15 @@ router.post("/expenses", async (req, res): Promise<void> => {
         })),
       );
     }
+
+    const legacyVenueEventId = legacyVenueProjection(links);
+    if (legacyVenueEventId) {
+      await tx
+        .update(expensesTable)
+        .set({ venueEventId: legacyVenueEventId })
+        .where(eq(expensesTable.id, created.id));
+    }
+
     return created.id;
   });
 
