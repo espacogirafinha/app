@@ -51,6 +51,15 @@ jobs:
         env:
           E2E_BASE_URL: http://127.0.0.1:4175
         run: corepack pnpm exec playwright test tests/e2e/expenses-flow.local.spec.ts --project=chromium --no-deps
+      - name: Upload existing failure details
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: existing-expense-failure
+          path: |
+            test-results/e2e
+            playwright-report
+          if-no-files-found: warn
 
   summary-card-e2e:
     runs-on: ubuntu-latest
@@ -78,3 +87,12 @@ jobs:
         env:
           E2E_BASE_URL: http://127.0.0.1:4175
         run: corepack pnpm exec playwright test tests/e2e/expenses-summary-cards.local.spec.ts --project=chromium --no-deps
+      - name: Upload summary failure details
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: summary-card-failure
+          path: |
+            test-results/e2e
+            playwright-report
+          if-no-files-found: warn
