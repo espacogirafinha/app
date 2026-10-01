@@ -39,7 +39,7 @@ create or replace function public.sync_legacy_expense_venue_event_link()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $$
 begin
   delete from public.expense_event_links
   where expense_id = new.id;
@@ -52,7 +52,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists expenses_sync_legacy_event_link on public.expenses;
 create trigger expenses_sync_legacy_event_link
@@ -62,7 +62,7 @@ for each row execute function public.sync_legacy_expense_venue_event_link();
 comment on function public.sync_legacy_expense_venue_event_link() is
   'Compatibility bridge for legacy writers of expenses.venue_event_id. New application code writes expense_event_links directly.';
 
-do $
+do $$
 begin
   if exists (
     select 1
