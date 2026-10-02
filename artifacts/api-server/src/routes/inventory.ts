@@ -85,8 +85,18 @@ function validPhotoPath(itemId: string, path: string) {
   return path.startsWith(`material/${itemId}/`) && !path.includes("..");
 }
 
+function booleanQuery(value: unknown) {
+  if (value === "true" || value === true) return true;
+  if (value === "false" || value === false) return false;
+  return value;
+}
+
 router.get("/inventory/items", async (req, res): Promise<void> => {
-  const parsed = ListInventoryItemsQueryParams.safeParse(req.query);
+  const parsed = ListInventoryItemsQueryParams.safeParse({
+    ...req.query,
+    active: booleanQuery(req.query.active),
+    lowStock: booleanQuery(req.query.lowStock),
+  });
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
@@ -306,7 +316,7 @@ router.post("/inventory/items/:id/movements", async (req, res): Promise<void> =>
         .returning();
 
       return { item: itemResponse(updatedItem), movement: movementResponse(movement) };
-    }, { isolationLevel: "serializable" });
+    });
 
     if (!result) {
       res.status(404).json({ error: "Inventory item not found" });
