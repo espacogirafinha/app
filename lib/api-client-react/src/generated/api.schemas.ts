@@ -1670,6 +1670,181 @@ export interface UpdateExpenseBody {
   eventLinks?: ExpenseEventLinkInput[];
 }
 
+export type InventoryItemType =
+  (typeof InventoryItemType)[keyof typeof InventoryItemType];
+
+export const InventoryItemType = {
+  consumable: "consumable",
+  material: "material",
+} as const;
+
+export type InventoryUnit = (typeof InventoryUnit)[keyof typeof InventoryUnit];
+
+export const InventoryUnit = {
+  un: "un",
+  pacote: "pacote",
+  caixa: "caixa",
+  garrafa: "garrafa",
+  lata: "lata",
+  kg: "kg",
+  g: "g",
+  L: "L",
+  ml: "ml",
+  conjunto: "conjunto",
+  outro: "outro",
+} as const;
+
+export type InventoryCondition =
+  (typeof InventoryCondition)[keyof typeof InventoryCondition];
+
+export const InventoryCondition = {
+  bom: "bom",
+  danificado: "danificado",
+  em_reparacao: "em_reparacao",
+} as const;
+
+export type InventoryMovementType =
+  (typeof InventoryMovementType)[keyof typeof InventoryMovementType];
+
+export const InventoryMovementType = {
+  entry: "entry",
+  exit: "exit",
+  adjustment: "adjustment",
+} as const;
+
+export interface InventoryItem {
+  id: string;
+  itemType: InventoryItemType;
+  name: string;
+  category: string;
+  quantityCurrent: number;
+  unit: InventoryUnit;
+  /** @nullable */
+  minimumStock: number | null;
+  /** @nullable */
+  unitCost: number | null;
+  /** @nullable */
+  photoPath: string | null;
+  /** @nullable */
+  color: string | null;
+  /** @nullable */
+  theme: string | null;
+  /** @nullable */
+  location: string | null;
+  condition: InventoryCondition | null;
+  /** @nullable */
+  purchaseCost: number | null;
+  /** @nullable */
+  notes: string | null;
+  isActive: boolean;
+  isLowStock: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateInventoryItemBody {
+  itemType: InventoryItemType;
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  category: string;
+  /** @minimum 0 */
+  quantity?: number;
+  unit: InventoryUnit;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  minimumStock?: number | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  unitCost?: number | null;
+  /** @nullable */
+  photoPath?: string | null;
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  theme?: string | null;
+  /** @nullable */
+  location?: string | null;
+  condition?: InventoryCondition | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  purchaseCost?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateInventoryItemBody {
+  /** @minLength 1 */
+  name?: string;
+  /** @minLength 1 */
+  category?: string;
+  unit?: InventoryUnit;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  minimumStock?: number | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  unitCost?: number | null;
+  /** @nullable */
+  photoPath?: string | null;
+  /** @nullable */
+  color?: string | null;
+  /** @nullable */
+  theme?: string | null;
+  /** @nullable */
+  location?: string | null;
+  condition?: InventoryCondition | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  purchaseCost?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  isActive?: boolean;
+}
+
+export interface InventoryMovement {
+  id: string;
+  itemId: string;
+  movementType: InventoryMovementType;
+  quantityDelta: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  occurredAt: string;
+  /** @nullable */
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface CreateInventoryMovementBody {
+  movementType: InventoryMovementType;
+  /**
+   * For entry/exit this is the amount moved. For adjustment this is the target physical quantity.
+   * @minimum 0
+   */
+  quantity: number;
+  occurredAt?: string;
+  /** @nullable */
+  reason?: string | null;
+}
+
+export interface InventoryMovementResult {
+  item: InventoryItem;
+  movement: InventoryMovement;
+}
+
 export interface ReportsV2ExpenseBreakdown {
   label: string;
   count: number;
@@ -2137,6 +2312,16 @@ export type ListExpensesParams = {
   search?: string;
   categoryId?: string;
   expenseType?: ExpenseType;
+};
+
+export type ListInventoryItemsParams = {
+  itemType?: InventoryItemType;
+  search?: string;
+  category?: string;
+  location?: string;
+  condition?: InventoryCondition;
+  active?: boolean;
+  lowStock?: boolean;
 };
 
 export type GetCalendarV2Params = {

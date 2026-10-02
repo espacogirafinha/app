@@ -33,3 +33,4 @@ export * from "./user-roles";
 export * from "./google-form-imports";
 
 export * from "./expenses";
+export * from "./inventory";

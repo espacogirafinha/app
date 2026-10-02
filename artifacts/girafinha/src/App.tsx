@@ -16,6 +16,7 @@ const ExternalEventsPage = lazy(() => import("@/pages/external-events"));
 const CalendarPage = lazy(() => import("@/pages/calendar"));
 const ReportsPage = lazy(() => import("@/pages/reports"));
 const ExpensesPage = lazy(() => import("@/pages/expenses"));
+const InventoryPage = lazy(() => import("@/pages/inventory"));
 const FinancialMovementsPage = lazy(() => import("@/pages/financial-movements"));
 const WorkshopsPage = lazy(() => import("@/pages/workshops"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
@@ -50,6 +51,7 @@ function AuthedRoutes() {
           <Route path="/reports" component={ReportsPage} />
           <Route path="/financial-movements" component={FinancialMovementsPage} />
           <Route path="/expenses" component={ExpensesPage} />
+          <Route path="/inventory" component={InventoryPage} />
           <Route path="/settings" component={SettingsPage} />
           <Route component={NotFound} />
         </Switch>

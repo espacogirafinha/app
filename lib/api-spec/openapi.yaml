@@ -22,6 +22,8 @@ tags:
     description: Operational settings catalogs
   - name: dashboard
     description: Dashboard and analytics
+  - name: inventory
+    description: Inventory management
 
 paths:
   /healthz:
@@ -1461,6 +1463,170 @@ paths:
           description: Expense annulled
         "404":
           description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+  /inventory/items:
+    get:
+      operationId: listInventoryItems
+      tags: [inventory]
+      summary: List inventory items
+      parameters:
+        - name: itemType
+          in: query
+          schema:
+            $ref: "#/components/schemas/InventoryItemType"
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: condition
+          in: query
+          schema:
+            $ref: "#/components/schemas/InventoryCondition"
+        - name: active
+          in: query
+          schema:
+            type: boolean
+        - name: lowStock
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+    post:
+      operationId: createInventoryItem
+      tags: [inventory]
+      summary: Create an inventory item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInventoryItemBody"
+      responses:
+        "201":
+          description: Inventory item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "400":
+          description: Invalid inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /inventory/items/{id}:
+    patch:
+      operationId: updateInventoryItem
+      tags: [inventory]
+      summary: Update inventory item metadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInventoryItemBody"
+      responses:
+        "200":
+          description: Inventory item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "404":
+          description: Inventory item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /inventory/items/{id}/movements:
+    get:
+      operationId: listInventoryMovements
+      tags: [inventory]
+      summary: List movement history for an inventory item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Inventory movement history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryMovement"
+        "404":
+          description: Inventory item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createInventoryMovement
+      tags: [inventory]
+      summary: Register a manual inventory movement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInventoryMovementBody"
+      responses:
+        "201":
+          description: Inventory movement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryMovementResult"
+        "400":
+          description: Invalid movement or negative stock attempt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Inventory item not found
           content:
             application/json:
               schema:
@@ -4448,6 +4614,205 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExpenseEventLinkInput"
+
+
+    InventoryItemType:
+      type: string
+      enum: [consumable, material]
+
+    InventoryUnit:
+      type: string
+      enum: [un, pacote, caixa, garrafa, lata, kg, g, L, ml, conjunto, outro]
+
+    InventoryCondition:
+      type: string
+      enum: [bom, danificado, em_reparacao]
+
+    InventoryMovementType:
+      type: string
+      enum: [entry, exit, adjustment]
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        itemType:
+          $ref: "#/components/schemas/InventoryItemType"
+        name:
+          type: string
+        category:
+          type: string
+        quantityCurrent:
+          type: number
+        unit:
+          $ref: "#/components/schemas/InventoryUnit"
+        minimumStock:
+          type: ["number", "null"]
+        unitCost:
+          type: ["number", "null"]
+        photoPath:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        theme:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        condition:
+          anyOf:
+            - $ref: "#/components/schemas/InventoryCondition"
+            - type: "null"
+        purchaseCost:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        isLowStock:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, itemType, name, category, quantityCurrent, unit, minimumStock, unitCost, photoPath, color, theme, location, condition, purchaseCost, notes, isActive, isLowStock, createdAt, updatedAt]
+
+    CreateInventoryItemBody:
+      type: object
+      properties:
+        itemType:
+          $ref: "#/components/schemas/InventoryItemType"
+        name:
+          type: string
+          minLength: 1
+        category:
+          type: string
+          minLength: 1
+        quantity:
+          type: number
+          minimum: 0
+          default: 0
+        unit:
+          $ref: "#/components/schemas/InventoryUnit"
+        minimumStock:
+          type: ["number", "null"]
+          minimum: 0
+        unitCost:
+          type: ["number", "null"]
+          minimum: 0
+        photoPath:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        theme:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        condition:
+          anyOf:
+            - $ref: "#/components/schemas/InventoryCondition"
+            - type: "null"
+        purchaseCost:
+          type: ["number", "null"]
+          minimum: 0
+        notes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+          default: true
+      required: [itemType, name, category, unit]
+
+    UpdateInventoryItemBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        category:
+          type: string
+          minLength: 1
+        unit:
+          $ref: "#/components/schemas/InventoryUnit"
+        minimumStock:
+          type: ["number", "null"]
+          minimum: 0
+        unitCost:
+          type: ["number", "null"]
+          minimum: 0
+        photoPath:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        theme:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        condition:
+          anyOf:
+            - $ref: "#/components/schemas/InventoryCondition"
+            - type: "null"
+        purchaseCost:
+          type: ["number", "null"]
+          minimum: 0
+        notes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+
+    InventoryMovement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+          format: uuid
+        movementType:
+          $ref: "#/components/schemas/InventoryMovementType"
+        quantityDelta:
+          type: number
+        quantityBefore:
+          type: number
+        quantityAfter:
+          type: number
+        occurredAt:
+          type: string
+          format: date-time
+        reason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, itemId, movementType, quantityDelta, quantityBefore, quantityAfter, occurredAt, reason, createdAt]
+
+    CreateInventoryMovementBody:
+      type: object
+      properties:
+        movementType:
+          $ref: "#/components/schemas/InventoryMovementType"
+        quantity:
+          type: number
+          minimum: 0
+          description: For entry/exit this is the amount moved. For adjustment this is the target physical quantity.
+        occurredAt:
+          type: string
+          format: date-time
+        reason:
+          type: ["string", "null"]
+      required: [movementType, quantity]
+
+    InventoryMovementResult:
+      type: object
+      properties:
+        item:
+          $ref: "#/components/schemas/InventoryItem"
+        movement:
+          $ref: "#/components/schemas/InventoryMovement"
+      required: [item, movement]
 
     ReportsV2ExpenseBreakdown:
       type: object
