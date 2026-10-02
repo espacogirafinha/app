@@ -27,3 +27,26 @@ jobs:
           count=$(find api -type f -name '*.mjs' | wc -l | tr -d ' ')
           echo "Vercel function files: $count"
           test "$count" -le 12
+      - name: Install Chromium
+        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Start Girafinha test server
+        env:
+          PORT: "4175"
+          VITE_SUPABASE_URL: "http://127.0.0.1:4175/mock-supabase"
+          VITE_SUPABASE_ANON_KEY: "inventory-test-anon-key"
+        run: |
+          corepack pnpm --filter @workspace/girafinha dev >/tmp/girafinha-inventory.log 2>&1 &
+          echo $! >/tmp/girafinha-inventory.pid
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4175/inventory-flow-test.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/girafinha-inventory.log
+          exit 1
+      - name: Inventory E2E
+        run: corepack pnpm exec playwright test --config=playwright.inventory.config.ts
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/girafinha-inventory.pid ]; then kill $(cat /tmp/girafinha-inventory.pid) || true; fi
+          cat /tmp/girafinha-inventory.log || true
