@@ -3,6 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BellOff, CheckCheck, Loader2, Smartphone } from "lucide-react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
+import { toast } from "@/hooks/use-toast";
+import {
+  getPushRegistration,
+  isIosInstallRequired,
+  PushActivationError,
+  pushActivationMessage,
+  supportsPushEnvironment,
+  withTimeout,
+} from "@/lib/push-activation";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -58,6 +67,7 @@ export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [pushState, setPushState] = useState<PushState>("checking");
   const [pushBusy, setPushBusy] = useState(false);
+  const [pushError, setPushError] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ["notifications"],
@@ -92,41 +102,130 @@ export function NotificationCenter() {
   }
 
   async function enablePush() {
+    if (pushBusy) return;
     setPushBusy(true);
+    setPushError(null);
+
     try {
       if (isIosInstallRequired()) {
         setPushState("ios-install-required");
         return;
       }
-      if (!supportsPush()) {
+      if (!supportsPushEnvironment()) {
         setPushState("unsupported");
         return;
       }
-      const permission = await Notification.requestPermission();
+
+      let permission = Notification.permission;
+      if (permission === "denied") {
+        setPushState("blocked");
+        return;
+      }
+      if (permission !== "granted") {
+        try {
+          permission = await Notification.requestPermission();
+        } catch {
+          throw new PushActivationError(
+            "permission",
+            "Notification.requestPermission falhou.",
+          );
+        }
+      }
       if (permission !== "granted") {
         setPushState(permission === "denied" ? "blocked" : "disabled");
+        if (permission === "denied") {
+          setPushError(
+            "A permissão está bloqueada. Ativa as notificações nas definições do iPhone para esta app.",
+          );
+        }
         return;
       }
-      const registration = await navigator.serviceWorker.ready;
-      const config = await apiRequest<{ configured: boolean; publicKey: string }>(
-        "/api/notifications/push-config",
-      );
+      logPushStage("permission_granted");
+
+      const registration = await getPushRegistration();
+      logPushStage("service_worker_ready");
+
+      let config: { configured: boolean; publicKey: string };
+      try {
+        config = await withTimeout(
+          apiRequest<{ configured: boolean; publicKey: string }>(
+            "/api/notifications/push-config",
+          ),
+          8_000,
+          "push_config",
+        );
+      } catch (error) {
+        if (error instanceof PushActivationError) throw error;
+        throw new PushActivationError(
+          "push_config",
+          "Não foi possível obter a configuração push.",
+        );
+      }
       if (!config.configured || !config.publicKey) {
-        setPushState("unsupported");
-        return;
+        throw new PushActivationError(
+          "push_config",
+          "Configuração push indisponível.",
+        );
       }
-      let subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(config.publicKey),
-        });
+
+      let subscription: PushSubscription | null;
+      try {
+        subscription = await withTimeout(
+          registration.pushManager.getSubscription(),
+          8_000,
+          "subscription",
+        );
+        if (!subscription) {
+          subscription = await withTimeout(
+            registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(config.publicKey),
+            }),
+            8_000,
+            "subscription",
+          );
+          logPushStage("subscription_created");
+        }
+      } catch (error) {
+        if (error instanceof PushActivationError) throw error;
+        throw new PushActivationError(
+          "subscription",
+          "Não foi possível criar a subscrição push.",
+        );
       }
-      await apiRequest("/api/notifications/push-subscriptions", {
-        method: "POST",
-        body: JSON.stringify(subscription.toJSON()),
-      });
+
+      try {
+        await withTimeout(
+          apiRequest("/api/notifications/push-subscriptions", {
+            method: "POST",
+            body: JSON.stringify(subscription.toJSON()),
+          }),
+          8_000,
+          "save",
+        );
+      } catch (error) {
+        if (error instanceof PushActivationError) throw error;
+        throw new PushActivationError(
+          "save",
+          "Não foi possível guardar a subscrição push.",
+        );
+      }
+
+      logPushStage("subscription_saved");
       setPushState("active");
+      setPushError(null);
+    } catch (error) {
+      const feedback = pushActivationMessage(error);
+      const stage =
+        error instanceof PushActivationError ? error.stage : "unknown";
+      logPushFailure(stage);
+      setPushState(Notification.permission === "denied" ? "blocked" : "disabled");
+      setPushError(`${feedback.title} ${feedback.detail}`);
+      toast({
+        variant: "destructive",
+        title: feedback.title,
+        description: feedback.detail,
+      });
     } finally {
       setPushBusy(false);
     }
@@ -135,7 +234,7 @@ export function NotificationCenter() {
   async function disablePush() {
     setPushBusy(true);
     try {
-      if (!supportsPush()) return;
+      if (!supportsPushEnvironment()) return;
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
@@ -225,6 +324,7 @@ export function NotificationCenter() {
         <PushControls
           state={pushState}
           busy={pushBusy}
+          error={pushError}
           onEnable={() => void enablePush()}
           onDisable={() => void disablePush()}
         />
@@ -236,11 +336,13 @@ export function NotificationCenter() {
 function PushControls({
   state,
   busy,
+  error,
   onEnable,
   onDisable,
 }: {
   state: PushState;
   busy: boolean;
+  error: string | null;
   onEnable: () => void;
   onDisable: () => void;
 }) {
@@ -264,13 +366,18 @@ function PushControls({
         )}
         <span>{text}</span>
       </div>
+      {error && (
+        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          {error}
+        </p>
+      )}
       {state === "active" ? (
         <Button variant="outline" size="sm" className="w-full" disabled={busy} onClick={onDisable}>
           {busy ? "A atualizar…" : "Desativar neste dispositivo"}
         </Button>
       ) : state === "disabled" ? (
         <Button size="sm" className="w-full" disabled={busy} onClick={onEnable}>
-          {busy ? "A ativar…" : "Ativar notificações neste dispositivo"}
+          {busy ? "A ativar…" : error ? "Tentar novamente" : "Ativar notificações neste dispositivo"}
         </Button>
       ) : null}
     </div>
@@ -279,31 +386,34 @@ function PushControls({
 
 async function detectPushState(): Promise<PushState> {
   if (isIosInstallRequired()) return "ios-install-required";
-  if (!supportsPush()) return "unsupported";
+  if (!supportsPushEnvironment()) return "unsupported";
   if (Notification.permission === "denied") return "blocked";
   if (Notification.permission !== "granted") return "disabled";
   try {
-    const registration = await navigator.serviceWorker.ready;
-    return (await registration.pushManager.getSubscription()) ? "active" : "disabled";
+    const registration = await withTimeout(
+      navigator.serviceWorker.getRegistration("/"),
+      2_000,
+      "service_worker",
+    );
+    if (!registration?.pushManager) return "disabled";
+    return (await withTimeout(
+      registration.pushManager.getSubscription(),
+      2_000,
+      "subscription",
+    ))
+      ? "active"
+      : "disabled";
   } catch {
-    return "unsupported";
+    return "disabled";
   }
 }
 
-function supportsPush() {
-  return (
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window
-  );
+function logPushStage(stage: string) {
+  console.info(`[push] ${stage}`);
 }
 
-function isIosInstallRequired() {
-  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const standalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-  return isIos && !standalone;
+function logPushFailure(stage: string) {
+  console.warn(`[push] activation_failed:${stage}`);
 }
 
 function urlBase64ToUint8Array(value: string) {
