@@ -17,6 +17,7 @@ import googleFormsReviewRouter from "./google-forms-review";
 import eventPaymentsRouter from "./event-payments";
 import expensesRouter from "./expenses";
 import inventoryRouter from "./inventory";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(googleFormsReviewRouter);
 router.use(eventPaymentsRouter);
 router.use(expensesRouter);
 router.use(inventoryRouter);
+router.use(notificationsRouter);
 
 export default router;
