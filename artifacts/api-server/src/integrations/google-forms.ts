@@ -45,6 +45,10 @@ export function parseMoney(v: unknown): number | null {
   );
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
+function time(h: number, min: number) {
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
 export function parseTimeRange(
   v: unknown,
 ): { startTime: string; endTime: string } | null {
@@ -61,9 +65,41 @@ export function parseTimeRange(
   ];
   if (a > 23 || c > 23 || b > 59 || d > 59 || a * 60 + b >= c * 60 + d)
     return null;
-  const time = (h: number, min: number) =>
-    `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
   return { startTime: time(a, b), endTime: time(c, d) };
+}
+
+export function parsePackDurationMinutes(v: unknown): number | null {
+  const matches = [...value(v).matchAll(/\((\d{1,2})(?::(\d{2}))?h\)/gi)];
+  if (matches.length !== 1) return null;
+  const hours = Number(matches[0][1]);
+  const minutes = Number(matches[0][2] ?? 0);
+  if (hours < 0 || hours > 12 || minutes > 59) return null;
+  const total = hours * 60 + minutes;
+  return total > 0 ? total : null;
+}
+
+export function parseEventTime(
+  v: unknown,
+  pack: unknown,
+): { startTime: string; endTime: string | null } | null {
+  const range = parseTimeRange(v);
+  if (range) return range;
+
+  const isolated = /^\s*(\d{1,2})(?::(\d{2})h?|h(\d{2}))\s*$/i.exec(value(v));
+  if (!isolated) return null;
+  const hours = Number(isolated[1]);
+  const minutes = Number(isolated[2] ?? isolated[3]);
+  if (hours > 23 || minutes > 59) return null;
+
+  const startMinutes = hours * 60 + minutes;
+  const duration = parsePackDurationMinutes(pack);
+  if (duration === null) return { startTime: time(hours, minutes), endTime: null };
+  const endMinutes = startMinutes + duration;
+  if (endMinutes >= 24 * 60) return { startTime: time(hours, minutes), endTime: null };
+  return {
+    startTime: time(hours, minutes),
+    endTime: time(Math.floor(endMinutes / 60), endMinutes % 60),
+  };
 }
 export function normalizePack(
   v: unknown,
@@ -142,6 +178,17 @@ export function parseTerms(v: unknown): boolean | null {
   if (/^(não|nao|false)$/i.test(s)) return false;
   return null;
 }
+export function isNegativeFreeTextResponse(v: unknown): boolean {
+  const normalized = value(v)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[.!?]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return /^(nao|nenhum|nenhuma|sem pedidos?|nada)$/.test(normalized);
+}
+
 export function normalizeSubmission(s: Submission) {
   const f = s.fields;
   return {
@@ -150,7 +197,7 @@ export function normalizeSubmission(s: Submission) {
     email: field(f, "email", "oldEmail") || null,
     nif: field(f, "nif") || null,
     eventDate: parseDate(f.eventDate),
-    ...parseTimeRange(field(f, "time", "oldTime")),
+    ...parseEventTime(field(f, "time", "oldTime"), f.pack),
     packName: normalizePack(f.pack),
     birthdayChildName: field(f, "birthdayChildName") || null,
     birthdayChildAge: parseAge(f.birthdayChildAge),
@@ -264,7 +311,8 @@ export function planImport(
     )
   )
     reasons.push("catering requires review");
-  if (n.decorationNotes) reasons.push("decoration requires review");
+  if (n.decorationNotes && !isNegativeFreeTextResponse(n.decorationNotes))
+    reasons.push("decoration requires review");
   const requested = [
     field(s.fields, "requestedExtras"),
     field(s.fields, "requestedService"),
@@ -410,11 +458,12 @@ type Tx = {
 export async function importSubmission(
   s: Submission,
   store: { transact: <T>(fn: (tx: Tx) => Promise<T>) => Promise<T> },
+  options: { reprocessExisting?: boolean } = {},
 ): Promise<ImportResult> {
   return store.transact(async (tx) => {
     const key = `${s.formId}:${s.submissionId}`;
     const previous = await tx.findImport(key);
-    if (previous)
+    if (previous && !options.reprocessExisting)
       return {
         status:
           previous.status === "needs_review"
@@ -423,6 +472,22 @@ export async function importSubmission(
         venueEventId: previous.venueEventId ?? undefined,
       };
     const p = planImport(s, await tx.listExtras(), await tx.listPacks());
+    if (previous?.venueEventId && options.reprocessExisting) {
+      if (p.status === "rejected")
+        return { status: "rejected", venueEventId: previous.venueEventId, reasons: p.reasons };
+      await tx.saveImport(
+        key,
+        p.status,
+        p.status === "needs_review",
+        p.reasons,
+        previous.venueEventId,
+      );
+      return {
+        status: p.status,
+        venueEventId: previous.venueEventId,
+        reasons: p.reasons.length ? p.reasons : undefined,
+      };
+    }
     if (p.status === "rejected")
       return { status: "rejected", reasons: p.reasons };
     const n = normalizeSubmission(s);
