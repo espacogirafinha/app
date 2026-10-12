@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 async function loadServiceWorker() {
   const source = await fs.readFile(
-    new URL("../../artifacts/girafinha/public/sw.js", import.meta.url),
+    new URL("../artifacts/girafinha/public/sw.js", import.meta.url),
     "utf8",
   );
   const handlers = new Map();
