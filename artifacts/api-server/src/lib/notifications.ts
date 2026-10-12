@@ -1,18 +1,14 @@
 import { eq } from "drizzle-orm";
-import webPush, { type PushSubscription as WebPushSubscription } from "web-push";
+import webPush from "web-push";
 import {
   db,
   notificationsTable,
   pushSubscriptionsTable,
 } from "@workspace/db";
 import { logger } from "./logger.ts";
+import { deliverPushToSubscriptions, type PushSender } from "./push-delivery.ts";
 
 export { buildGoogleFormNotification } from "./notification-content.ts";
-
-type PushSender = (
-  subscription: WebPushSubscription,
-  payload: string,
-) => Promise<unknown>;
 
 export async function sendPushForNotification(
   notificationId: string,
@@ -60,6 +56,9 @@ export async function sendPushForNotification(
         .delete(pushSubscriptionsTable)
         .where(eq(pushSubscriptionsTable.id, id));
     },
+    (statusCode) => {
+      logger.warn({ statusCode }, "Web push delivery failed");
+    },
   );
 }
 
@@ -77,44 +76,3 @@ function createPushSender(): PushSender | null {
 }
 
 
-export async function deliverPushToSubscriptions(
-  subscriptions: Array<{
-    id: string;
-    endpoint: string;
-    p256dh: string;
-    auth: string;
-  }>,
-  payload: string,
-  sender: PushSender,
-  removeInvalid: (id: string) => Promise<void>,
-) {
-  let sent = 0;
-  let removed = 0;
-  for (const subscription of subscriptions) {
-    try {
-      await sender(
-        {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.p256dh,
-            auth: subscription.auth,
-          },
-        },
-        payload,
-      );
-      sent += 1;
-    } catch (error) {
-      const statusCode =
-        typeof error === "object" && error !== null && "statusCode" in error
-          ? Number((error as { statusCode?: unknown }).statusCode)
-          : null;
-      if (statusCode === 404 || statusCode === 410) {
-        await removeInvalid(subscription.id);
-        removed += 1;
-      } else {
-        logger.warn({ statusCode }, "Web push delivery failed");
-      }
-    }
-  }
-  return { sent, removed, skipped: false };
-}
