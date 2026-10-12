@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Router as WouterRouter } from "wouter";
 import { NotificationCenter } from "@/components/notification-center";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
 import { supabase } from "@/lib/supabase";
 import "@/index.css";
 
@@ -30,6 +31,7 @@ createRoot(document.getElementById("root")!).render(
           <NotificationCenter />
         </div>
       </WouterRouter>
+      <Toaster />
     </TooltipProvider>
   </QueryClientProvider>,
 );
