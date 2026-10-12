@@ -230,8 +230,9 @@ router.post(
               },
             });
           }),
+        },
         reprocessImportId ? { reprocessImportId } : undefined,
-      });
+      );
       res
         .status(
           result.status === "created"
