@@ -428,6 +428,15 @@ export type ImportResult = {
   status: "created" | "already_exists" | "needs_review" | "rejected";
   venueEventId?: string;
   reasons?: string[];
+  notificationId?: string;
+};
+
+export type InitialImportNotificationInput = {
+  importId: string;
+  status: "created" | "already_exists" | "needs_review";
+  venueEventId?: string;
+  eventDate?: string | null;
+  packName?: string | null;
 };
 type Tx = {
   findImport: (
@@ -442,7 +451,10 @@ type Tx = {
     needsReview: boolean,
     reasons: string[],
     eventId?: string,
-  ) => Promise<void>;
+  ) => Promise<string>;
+  createNotification: (
+    input: InitialImportNotificationInput,
+  ) => Promise<string | undefined>;
   createEvent: (
     event: NonNullable<ReturnType<typeof planImport>["event"]>,
   ) => Promise<string>;
@@ -497,28 +509,64 @@ export async function importSubmission(
     if (n.eventDate && n.phone) {
       const existing = await tx.findEvent(n.eventDate, n.phone);
       if (existing) {
-        await tx.saveImport(
+        const importId = await tx.saveImport(
           key,
           "already_exists",
           true,
           ["matching date and phone"],
           existing.id,
         );
-        return { status: "already_exists", venueEventId: existing.id };
+        const notificationId = await tx.createNotification({
+          importId,
+          status: "already_exists",
+          venueEventId: existing.id,
+          eventDate: n.eventDate,
+          packName: n.packName,
+        });
+        return {
+          status: "already_exists",
+          venueEventId: existing.id,
+          notificationId,
+        };
       }
     }
     if (!p.event) {
-      await tx.saveImport(key, "needs_review", true, p.reasons);
-      return { status: "needs_review", reasons: p.reasons };
+      const importId = await tx.saveImport(key, "needs_review", true, p.reasons);
+      const notificationId = await tx.createNotification({
+        importId,
+        status: "needs_review",
+        eventDate: n.eventDate,
+        packName: n.packName,
+      });
+      return { status: "needs_review", reasons: p.reasons, notificationId };
     }
     const id = await tx.createEvent(p.event);
     await tx.createExtras(id, p.extras);
     if (p.deposit) await tx.createPayment(id, p.deposit);
     if (p.status === "needs_review") {
-      await tx.saveImport(key, "needs_review", true, p.reasons, id);
-      return { status: "needs_review", venueEventId: id, reasons: p.reasons };
+      const importId = await tx.saveImport(key, "needs_review", true, p.reasons, id);
+      const notificationId = await tx.createNotification({
+        importId,
+        status: "needs_review",
+        venueEventId: id,
+        eventDate: p.event.eventDate,
+        packName: p.event.packName,
+      });
+      return {
+        status: "needs_review",
+        venueEventId: id,
+        reasons: p.reasons,
+        notificationId,
+      };
     }
-    await tx.saveImport(key, "created", false, [], id);
-    return { status: "created", venueEventId: id };
+    const importId = await tx.saveImport(key, "created", false, [], id);
+    const notificationId = await tx.createNotification({
+      importId,
+      status: "created",
+      venueEventId: id,
+      eventDate: p.event.eventDate,
+      packName: p.event.packName,
+    });
+    return { status: "created", venueEventId: id, notificationId };
   });
 }
