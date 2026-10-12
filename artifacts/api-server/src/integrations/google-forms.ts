@@ -476,6 +476,8 @@ export async function importSubmission(
     const key = `${s.formId}:${s.submissionId}`;
     const previous = await tx.findImport(key);
     const reprocessing = Boolean(options.reprocessImportId);
+    const createInitialNotification = (input: InitialImportNotificationInput) =>
+      reprocessing ? Promise.resolve(undefined) : tx.createNotification(input);
     if (reprocessing && (!previous || previous.id !== options.reprocessImportId))
       return { status: "rejected", reasons: ["reprocess import mismatch"] };
     if (previous && !reprocessing)
@@ -516,7 +518,7 @@ export async function importSubmission(
           ["matching date and phone"],
           existing.id,
         );
-        const notificationId = await tx.createNotification({
+        const notificationId = await createInitialNotification({
           importId,
           status: "already_exists",
           venueEventId: existing.id,
@@ -532,7 +534,7 @@ export async function importSubmission(
     }
     if (!p.event) {
       const importId = await tx.saveImport(key, "needs_review", true, p.reasons);
-      const notificationId = await tx.createNotification({
+      const notificationId = await createInitialNotification({
         importId,
         status: "needs_review",
         eventDate: n.eventDate,
@@ -545,7 +547,7 @@ export async function importSubmission(
     if (p.deposit) await tx.createPayment(id, p.deposit);
     if (p.status === "needs_review") {
       const importId = await tx.saveImport(key, "needs_review", true, p.reasons, id);
-      const notificationId = await tx.createNotification({
+      const notificationId = await createInitialNotification({
         importId,
         status: "needs_review",
         venueEventId: id,
@@ -560,7 +562,7 @@ export async function importSubmission(
       };
     }
     const importId = await tx.saveImport(key, "created", false, [], id);
-    const notificationId = await tx.createNotification({
+    const notificationId = await createInitialNotification({
       importId,
       status: "created",
       venueEventId: id,
