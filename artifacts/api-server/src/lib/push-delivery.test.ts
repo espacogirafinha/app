@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { deliverPushToSubscriptions } from "./notifications.ts";
+import { deliverPushToSubscriptions } from "./push-delivery.ts";
 
 const subscriptions = [
   { id: "sub-1", endpoint: "https://push.example/1", p256dh: "a".repeat(32), auth: "b".repeat(16) },
