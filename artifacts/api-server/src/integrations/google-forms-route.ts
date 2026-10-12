@@ -32,73 +32,62 @@ const RECOVERY_IMPORT_IDS = new Set([
 ]);
 
 router.post(
-  "/integrations/google-forms/recover-targeted",
-  async (req, res): Promise<void> => {
-    const integrationSecret = process.env.GOOGLE_FORMS_INTEGRATION_SECRET;
-    const importId =
-      req.body && typeof req.body === "object" && !Array.isArray(req.body)
-        ? (req.body as Record<string, unknown>).importId
-        : undefined;
-
-    if (req.get("x-girafinha-recovery") !== "confirmed-two-imports") {
-      res.status(401).json({ status: "rejected", reason: "recovery confirmation missing" });
-      return;
-    }
-    if (
-      typeof importId !== "string" ||
-      !RECOVERY_IMPORT_IDS.has(importId)
-    ) {
-      res.status(400).json({ status: "rejected", reason: "import not allowlisted" });
-      return;
-    }
-    if (!integrationSecret) {
-      res.status(503).json({ status: "rejected", reason: "integration unavailable" });
-      return;
-    }
-
-    const [record] = await db
-      .select({ payload: googleFormImportsTable.payload })
-      .from(googleFormImportsTable)
-      .where(eq(googleFormImportsTable.id, importId))
-      .limit(1);
-    if (!record) {
-      res.status(404).json({ status: "rejected", reason: "import not found" });
-      return;
-    }
-
-    const raw = JSON.stringify(record.payload);
-    const timestamp = String(Math.floor(Date.now() / 1000));
-    const signature = createHmac("sha256", integrationSecret)
-      .update(`${timestamp}.${raw}`)
-      .digest("hex");
-    const host = req.get("host");
-    if (!host) {
-      res.status(500).json({ status: "rejected", reason: "host unavailable" });
-      return;
-    }
-
-    const response = await fetch(
-      `https://${host}/api/integrations/google-forms/venue-event?reprocessImportId=${encodeURIComponent(importId)}`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-girafinha-timestamp": timestamp,
-          "x-girafinha-signature": signature,
-        },
-        body: raw,
-      },
-    );
-    const result = await response.json();
-    res.status(response.status).json(result);
-  },
-);
-
-router.post(
   "/integrations/google-forms/venue-event",
   async (req, res): Promise<void> => {
     const secret = process.env.GOOGLE_FORMS_INTEGRATION_SECRET;
     const raw = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+
+    if (req.get("x-girafinha-recovery") === "confirmed-two-imports") {
+      if (!secret) {
+        res.status(503).json({ status: "rejected", reason: "integration unavailable" });
+        return;
+      }
+      let importId: string | undefined;
+      try {
+        const recovery = JSON.parse(raw.toString("utf8")) as { importId?: unknown };
+        if (typeof recovery.importId === "string") importId = recovery.importId;
+      } catch {
+        // handled below
+      }
+      if (!importId || !RECOVERY_IMPORT_IDS.has(importId)) {
+        res.status(400).json({ status: "rejected", reason: "import not allowlisted" });
+        return;
+      }
+      const [record] = await db
+        .select({ payload: googleFormImportsTable.payload })
+        .from(googleFormImportsTable)
+        .where(eq(googleFormImportsTable.id, importId))
+        .limit(1);
+      if (!record) {
+        res.status(404).json({ status: "rejected", reason: "import not found" });
+        return;
+      }
+      const signedRaw = JSON.stringify(record.payload);
+      const timestamp = String(Math.floor(Date.now() / 1000));
+      const signature = createHmac("sha256", secret)
+        .update(`${timestamp}.${signedRaw}`)
+        .digest("hex");
+      const host = req.get("host");
+      if (!host) {
+        res.status(500).json({ status: "rejected", reason: "host unavailable" });
+        return;
+      }
+      const response = await fetch(
+        `https://${host}/api/integrations/google-forms/venue-event?reprocessImportId=${encodeURIComponent(importId)}`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-girafinha-timestamp": timestamp,
+            "x-girafinha-signature": signature,
+          },
+          body: signedRaw,
+        },
+      );
+      const result = await response.json();
+      res.status(response.status).json(result);
+      return;
+    }
     if (!secret) {
       res
         .status(503)
