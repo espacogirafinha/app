@@ -157,7 +157,7 @@ async function installBrowserPushMock(page: Page, scenario: PushScenario) {
 
 async function installApiMock(page: Page, scenario: PushScenario) {
   const state = { reads: [] as string[], readAll: 0, saves: 0 };
-  await page.route("**/api/notifications**", async (route: Route) => {
+  await page.route("**/api/**", async (route: Route) => {
     const request = route.request();
     const url = new URL(request.url());
     const method = request.method();
