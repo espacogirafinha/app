@@ -26,6 +26,8 @@ export const notificationsTable = appPrivateSchema.table(
   (table) => [
     uniqueIndex("notifications_source_key_uidx").on(table.sourceKey),
     index("notifications_created_at_idx").on(table.createdAt),
+    index("notifications_google_form_import_id_idx").on(table.googleFormImportId),
+    index("notifications_venue_event_id_idx").on(table.venueEventId),
   ],
 );
 
