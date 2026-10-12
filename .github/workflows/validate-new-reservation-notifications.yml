@@ -48,3 +48,19 @@ jobs:
           count=$(find api -type f -name '*.mjs' | wc -l | tr -d ' ')
           echo "Vercel function files: $count"
           test "$count" -le 12
+      - name: Install Playwright Chromium
+        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Start notification UI harness
+        run: |
+          PORT=4176 VITE_SUPABASE_URL=https://example.supabase.co VITE_SUPABASE_ANON_KEY=test-anon \
+            corepack pnpm --filter @workspace/girafinha dev > /tmp/notifications-vite.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4176/notification-center-test.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/notifications-vite.log
+          exit 1
+      - name: Notification center E2E
+        run: corepack pnpm exec playwright test --config=playwright.notifications.config.ts
