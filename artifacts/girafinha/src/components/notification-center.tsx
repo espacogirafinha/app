@@ -149,7 +149,7 @@ export function NotificationCenter() {
       try {
         config = await withTimeout(
           apiRequest<{ configured: boolean; publicKey: string }>(
-            "/api/notifications/push-config",
+            "/api/push-config",
           ),
           8_000,
           "push_config",
@@ -196,7 +196,7 @@ export function NotificationCenter() {
 
       try {
         await withTimeout(
-          apiRequest("/api/notifications/push-subscriptions", {
+          apiRequest("/api/push-subscriptions", {
             method: "POST",
             body: JSON.stringify(subscription.toJSON()),
           }),
@@ -238,7 +238,7 @@ export function NotificationCenter() {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
-        await apiRequest<void>("/api/notifications/push-subscriptions", {
+        await apiRequest<void>("/api/push-subscriptions", {
           method: "DELETE",
           body: JSON.stringify({ endpoint: subscription.endpoint }),
         });
