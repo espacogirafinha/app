@@ -16,6 +16,10 @@ create unique index notifications_source_key_uidx
   on app_private.notifications(source_key);
 create index notifications_created_at_idx
   on app_private.notifications(created_at desc);
+create index notifications_google_form_import_id_idx
+  on app_private.notifications(google_form_import_id);
+create index notifications_venue_event_id_idx
+  on app_private.notifications(venue_event_id);
 
 create table app_private.notification_reads (
   notification_id uuid not null
