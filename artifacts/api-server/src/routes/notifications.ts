@@ -7,7 +7,53 @@ import {
   pushSubscriptionsTable,
 } from "@workspace/db";
 
-const router: IRouter = Router();
+type PushRouteDeps = {
+  publicKey: () => string;
+  saveSubscription: (
+    userId: string,
+    body: { endpoint: string; keys: { p256dh: string; auth: string } },
+  ) => Promise<void>;
+  deleteSubscription: (userId: string, endpoint: string) => Promise<void>;
+};
+
+const defaultPushRouteDeps: PushRouteDeps = {
+  publicKey: () => process.env.WEB_PUSH_VAPID_PUBLIC_KEY ?? "",
+  async saveSubscription(userId, body) {
+    await db
+      .insert(pushSubscriptionsTable)
+      .values({
+        userId,
+        endpoint: body.endpoint,
+        p256dh: body.keys.p256dh,
+        auth: body.keys.auth,
+      })
+      .onConflictDoUpdate({
+        target: pushSubscriptionsTable.endpoint,
+        set: {
+          userId,
+          p256dh: body.keys.p256dh,
+          auth: body.keys.auth,
+          updatedAt: new Date(),
+        },
+      });
+  },
+  async deleteSubscription(userId, endpoint) {
+    await db
+      .delete(pushSubscriptionsTable)
+      .where(
+        and(
+          eq(pushSubscriptionsTable.userId, userId),
+          eq(pushSubscriptionsTable.endpoint, endpoint),
+        ),
+      );
+  },
+};
+
+export function createNotificationsRouter(
+  pushDeps: PushRouteDeps = defaultPushRouteDeps,
+): IRouter {
+  const router: IRouter = Router();
+
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -95,7 +141,7 @@ router.post("/notifications/read-all", async (_req, res): Promise<void> => {
 });
 
 router.get("/push-config", async (_req, res): Promise<void> => {
-  const publicKey = process.env.WEB_PUSH_VAPID_PUBLIC_KEY ?? "";
+  const publicKey = pushDeps.publicKey();
   res.json({ configured: Boolean(publicKey), publicKey });
 });
 
@@ -109,23 +155,7 @@ router.post(
       return;
     }
 
-    await db
-      .insert(pushSubscriptionsTable)
-      .values({
-        userId,
-        endpoint: body.endpoint,
-        p256dh: body.keys.p256dh,
-        auth: body.keys.auth,
-      })
-      .onConflictDoUpdate({
-        target: pushSubscriptionsTable.endpoint,
-        set: {
-          userId,
-          p256dh: body.keys.p256dh,
-          auth: body.keys.auth,
-          updatedAt: new Date(),
-        },
-      });
+    await pushDeps.saveSubscription(userId, body);
     res.status(201).json({ ok: true });
   },
 );
@@ -146,14 +176,7 @@ router.delete(
       return;
     }
 
-    await db
-      .delete(pushSubscriptionsTable)
-      .where(
-        and(
-          eq(pushSubscriptionsTable.userId, userId),
-          eq(pushSubscriptionsTable.endpoint, endpoint),
-        ),
-      );
+    await pushDeps.deleteSubscription(userId, endpoint);
     res.sendStatus(204);
   },
 );
@@ -186,5 +209,10 @@ function isValidEndpoint(value: unknown): value is string {
     return false;
   }
 }
+
+  return router;
+}
+
+const router = createNotificationsRouter();
 
 export default router;
