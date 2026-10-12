@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildGoogleFormNotification } from "./notifications.ts";
+import { buildGoogleFormNotification } from "./notification-content.ts";
 
 test("created Google Forms party builds reservation notification", () => {
   const value = buildGoogleFormNotification({
