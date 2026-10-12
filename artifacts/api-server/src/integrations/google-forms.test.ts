@@ -224,6 +224,7 @@ test("same submission twice creates one party and one deposit payment", async ()
   const seen = new Set<string>();
   let created = 0;
   let payments = 0;
+  let notifications = 0;
   const store = {
     async transact(fn: any) {
       return fn({
@@ -240,6 +241,10 @@ test("same submission twice creates one party and one deposit payment", async ()
           return "id";
         },
         createExtras: async () => {},
+        createNotification: async () => {
+          notifications++;
+          return "notification-1";
+        },
         createPayment: async () => {
           payments++;
         },
@@ -250,6 +255,7 @@ test("same submission twice creates one party and one deposit payment", async ()
   const second = await importSubmission(base, store);
   assert.equal(created, 1);
   assert.equal(payments, 1);
+  assert.equal(notifications, 1);
   assert.equal(second.status, "already_exists");
 });
 test("existing phone and date never overwritten or paid reduced", async () => {
@@ -270,6 +276,7 @@ test("existing phone and date never overwritten or paid reduced", async () => {
         createExtras: async () => {
           throw Error("overwrite");
         },
+        createNotification: async () => undefined,
         createPayment: async () => {
           throw Error("duplicate payment");
         },
@@ -491,6 +498,7 @@ test("retry of a needs-review import stays needs_review without duplicating its 
           return "review-party";
         },
         createExtras: async () => {},
+        createNotification: async () => undefined,
         createPayment: async () => {
           throw Error("invalid deposit must not create a payment");
         },
@@ -590,6 +598,7 @@ test("form without a received deposit creates no event payment", async () => {
         saveImport: async () => {},
         createEvent: async () => "no-deposit-event",
         createExtras: async () => {},
+        createNotification: async () => undefined,
         createPayment: async () => {
           payments++;
         },
@@ -618,6 +627,7 @@ test("existing party never receives an automatic duplicate deposit", async () =>
         createExtras: async () => {
           throw Error("must not create extras");
         },
+        createNotification: async () => undefined,
         createPayment: async () => {
           payments++;
         },
@@ -648,6 +658,7 @@ test("historical imported party is not backfilled by new webhook logic", async (
         createExtras: async () => {
           throw Error("historical import must not create extras");
         },
+        createNotification: async () => undefined,
         createPayment: async () => {
           payments++;
         },
@@ -706,7 +717,8 @@ test("Google Forms event, extras, deposit and import record are one atomic unit"
           createExtras: async () => {
             state.extras.push("extras-complete");
           },
-          createPayment: async () => {
+          createNotification: async () => undefined,
+        createPayment: async () => {
             state.payments.push("deposit-started");
             throw new Error("payment write failed");
           },
@@ -855,6 +867,7 @@ test("reprocessing linked import reevaluates review without creating party payme
         createExtras: async () => {
           extras++;
         },
+        createNotification: async () => undefined,
         createPayment: async () => {
           payments++;
         },
@@ -927,6 +940,7 @@ test("reprocessing unlinked needs-review import can create base party and paymen
         createExtras: async (_id: string, rows: unknown[]) => {
           extras += rows.length;
         },
+        createNotification: async () => undefined,
         createPayment: async (_id: string, payment: any) => {
           payments++;
           assert.equal(payment.amount, 50);
@@ -968,6 +982,7 @@ test("reprocess id mismatch is rejected without writes", async () => {
         saveImport: async () => { writes++; },
         createEvent: async () => { writes++; return "event"; },
         createExtras: async () => { writes++; },
+        createNotification: async () => undefined,
         createPayment: async () => { writes++; },
       });
     },
@@ -978,4 +993,72 @@ test("reprocess id mismatch is rejected without writes", async () => {
   assert.equal(result.status, "rejected");
   assert.deepEqual(result.reasons, ["reprocess import mismatch"]);
   assert.equal(writes, 0);
+});
+
+
+test("needs-review import without party creates one review notification", async () => {
+  let notifications = 0;
+  const submission = {
+    ...base,
+    submissionId: "notification-no-party",
+    fields: { ...base.fields, time: "", oldTime: "" },
+  };
+  const store = {
+    async transact(fn: any) {
+      return fn({
+        findImport: async () => null,
+        findEvent: async () => null,
+        listExtras: async () => [],
+        listPacks: async () => packs,
+        saveImport: async () => "import-review",
+        createNotification: async (input: any) => {
+          notifications++;
+          assert.equal(input.importId, "import-review");
+          assert.equal(input.status, "needs_review");
+          assert.equal(input.venueEventId, undefined);
+          return "notification-review";
+        },
+        createEvent: async () => {
+          throw Error("invalid required fields must not create party");
+        },
+        createExtras: async () => {},
+        createPayment: async () => {},
+      });
+    },
+  };
+  const result = await importSubmission(submission, store);
+  assert.equal(result.status, "needs_review");
+  assert.equal(result.notificationId, "notification-review");
+  assert.equal(notifications, 1);
+});
+
+test("reprocessing an old unlinked import never creates a new notification", async () => {
+  const importId = "00000000-0000-4000-8000-000000000010";
+  let notifications = 0;
+  const store = {
+    async transact(fn: any) {
+      return fn({
+        findImport: async () => ({
+          id: importId,
+          status: "needs_review",
+          venueEventId: null,
+        }),
+        findEvent: async () => null,
+        listExtras: async () => [],
+        listPacks: async () => packs,
+        saveImport: async () => importId,
+        createNotification: async () => {
+          notifications++;
+          return "should-not-exist";
+        },
+        createEvent: async () => "reprocessed-event",
+        createExtras: async () => {},
+        createPayment: async () => {},
+      });
+    },
+  };
+  const result = await importSubmission(base, store, { reprocessImportId: importId });
+  assert.equal(result.status, "created");
+  assert.equal(result.notificationId, undefined);
+  assert.equal(notifications, 0);
 });

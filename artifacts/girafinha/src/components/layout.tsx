@@ -17,6 +17,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { NotificationCenter } from "@/components/notification-center";
 import {
   Sheet,
   SheetClose,
@@ -59,10 +60,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen w-full flex-col bg-background md:flex-row">
       {!isMobile && (
         <aside className="hidden w-64 flex-col border-r border-border bg-card md:flex">
-          <div className="flex h-16 items-center border-b border-border px-6">
-            <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-primary">
+          <div className="flex h-16 items-center justify-between gap-2 border-b border-border px-4">
+            <Link href="/dashboard" className="min-w-0 truncate font-bold text-xl text-primary">
               Espaço Girafinha
             </Link>
+            <NotificationCenter />
           </div>
           <nav className="flex-1 space-y-2 p-4">
             {NAV_ITEMS.map((item) => {
@@ -104,15 +106,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg text-primary">
               Espaço Girafinha
             </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={logout}
-              aria-label="Sair"
-              className="h-9 w-9 text-muted-foreground hover:text-destructive"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <NotificationCenter />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={logout}
+                aria-label="Sair"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </header>
         )}
         <main className={`flex-1 overflow-auto p-4 md:p-8 ${isMobile ? "pb-[calc(5.5rem+env(safe-area-inset-bottom))]" : ""}`}>
