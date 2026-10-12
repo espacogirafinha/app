@@ -5,6 +5,8 @@ import {
   normalizePhone,
   parseMoney,
   parseTimeRange,
+  parseEventTime,
+  isNegativeFreeTextResponse,
   normalizePack,
   normalizeImageAuthorization,
   normalizePaymentMethod,
@@ -758,4 +760,222 @@ test("Google Forms deposit maps explicitly to reservation_deposit ledger input",
       sourceReference: `google_forms:${base.formId}:ledger-map:deposit`,
     },
   );
+});
+
+
+test("negative decoration answers do not require review", () => {
+  for (const decorationNotes of ["Nao.", "Não", "Nada", "Nenhum", "Nenhuma", "Sem pedidos", "Sem pedido"]) {
+    assert.equal(isNegativeFreeTextResponse(decorationNotes), true);
+    const result = planImport({
+      ...base,
+      submissionId: "negative-decoration-" + decorationNotes,
+      fields: { ...base.fields, decorationNotes },
+    }, [], packs);
+    assert.equal(result.reasons.includes("decoration requires review"), false);
+  }
+});
+
+test("real decoration information still requires review", () => {
+  const result = planImport({
+    ...base,
+    submissionId: "real-decoration",
+    fields: { ...base.fields, decorationNotes: "Nos levamos a decoração" },
+  }, [], packs);
+  assert.equal(result.status, "needs_review");
+  assert.equal(result.reasons.includes("decoration requires review"), true);
+  assert.ok(result.event);
+});
+
+test("isolated 16:30 plus Essencial 2:30h produces 16:30-19:00", () => {
+  assert.deepEqual(parseEventTime("16:30", "Pack Essencial (2:30h)"), {
+    startTime: "16:30",
+    endTime: "19:00",
+  });
+  assert.deepEqual(parseEventTime("16:30h", "Pack Essencial (2:30h)"), {
+    startTime: "16:30",
+    endTime: "19:00",
+  });
+  assert.deepEqual(parseEventTime("16h30", "Pack Essencial (2:30h)"), {
+    startTime: "16:30",
+    endTime: "19:00",
+  });
+});
+
+test("isolated time with ambiguous pack duration never invents end time", () => {
+  assert.deepEqual(parseEventTime("16:30", "Pack Essencial"), {
+    startTime: "16:30",
+    endTime: null,
+  });
+  const result = planImport({
+    ...base,
+    submissionId: "ambiguous-duration",
+    fields: {
+      ...base.fields,
+      time: "16:30",
+      pack: "Pack Essencial",
+    },
+  }, [], packs);
+  assert.equal(result.status, "needs_review");
+  assert.equal(result.event, null);
+  assert.deepEqual(result.reasons, ["required event fields invalid"]);
+});
+
+test("reprocessing linked import reevaluates review without creating party payment or extras", async () => {
+  let saves = 0;
+  let created = 0;
+  let payments = 0;
+  let extras = 0;
+  let saved: unknown = null;
+  const submission = {
+    ...base,
+    submissionId: "linked-review",
+    fields: { ...base.fields, decorationNotes: "Nao." },
+  };
+  const store = {
+    async transact(fn: any) {
+      return fn({
+        findImport: async () => ({
+          id: "ba9cace3-5124-4c97-9018-f50311c7b1bc",
+          status: "needs_review",
+          venueEventId: "existing-event",
+        }),
+        findEvent: async () => {
+          throw Error("linked import must not deduplicate against another event");
+        },
+        listExtras: async () => [],
+        listPacks: async () => packs,
+        saveImport: async (...args: unknown[]) => {
+          saves++;
+          saved = args;
+        },
+        createEvent: async () => {
+          created++;
+          return "duplicate";
+        },
+        createExtras: async () => {
+          extras++;
+        },
+        createPayment: async () => {
+          payments++;
+        },
+      });
+    },
+  };
+
+  const result = await importSubmission(submission, store, {
+    reprocessImportId: "ba9cace3-5124-4c97-9018-f50311c7b1bc",
+  });
+  assert.deepEqual(result, { status: "created", venueEventId: "existing-event", reasons: undefined });
+  assert.equal(saves, 1);
+  assert.equal(created, 0);
+  assert.equal(payments, 0);
+  assert.equal(extras, 0);
+  assert.deepEqual(saved, [
+    submission.formId + ":" + submission.submissionId,
+    "created",
+    false,
+    [],
+    "existing-event",
+  ]);
+});
+
+test("reprocessing unlinked needs-review import can create base party and payment once", async () => {
+  const importId = "fa9013ef-10bd-4a31-a323-ef1595a76503";
+  const submission = {
+    ...base,
+    submissionId: "unlinked-review",
+    fields: {
+      ...base.fields,
+      eventDate: "2026/11/05",
+      time: "16:30",
+      oldTime: "16:30",
+      pack: "Pack Essencial (2:30h)",
+      deposit: "50€",
+      paymentMethod: "Transferência bancária",
+      decorationNotes: "Nos levamos a decoração",
+      termsAccepted: "Sim",
+    },
+  };
+  let currentImport = {
+    id: importId,
+    status: "needs_review",
+    venueEventId: null as string | null,
+  };
+  let events = 0;
+  let payments = 0;
+  let extras = 0;
+  const store = {
+    async transact(fn: any) {
+      return fn({
+        findImport: async () => currentImport,
+        findEvent: async () => null,
+        listExtras: async () => [],
+        listPacks: async () => packs,
+        saveImport: async (_key: string, status: string, _needsReview: boolean, _reasons: string[], eventId?: string) => {
+          currentImport = { ...currentImport, status, venueEventId: eventId ?? null };
+        },
+        createEvent: async (event: any) => {
+          events++;
+          assert.equal(event.eventDate, "2026-11-05");
+          assert.equal(event.startTime, "16:30");
+          assert.equal(event.endTime, "19:00");
+          assert.equal(event.packName, "Essencial");
+          assert.equal(event.totalPrice, 250);
+          assert.equal(event.expectedReservationDepositAmount, 50);
+          return "new-event";
+        },
+        createExtras: async (_id: string, rows: unknown[]) => {
+          extras += rows.length;
+        },
+        createPayment: async (_id: string, payment: any) => {
+          payments++;
+          assert.equal(payment.amount, 50);
+          assert.equal(payment.paymentMethod, "bank_transfer");
+        },
+      });
+    },
+  };
+
+  const first = await importSubmission(submission, store, { reprocessImportId: importId });
+  assert.equal(first.status, "needs_review");
+  assert.equal(first.venueEventId, "new-event");
+  assert.equal(first.reasons?.includes("decoration requires review"), true);
+  assert.equal(events, 1);
+  assert.equal(payments, 1);
+  assert.equal(extras, 0);
+
+  const second = await importSubmission(submission, store, { reprocessImportId: importId });
+  assert.equal(second.status, "needs_review");
+  assert.equal(second.venueEventId, "new-event");
+  assert.equal(events, 1);
+  assert.equal(payments, 1);
+  assert.equal(extras, 0);
+});
+
+test("reprocess id mismatch is rejected without writes", async () => {
+  let writes = 0;
+  const store = {
+    async transact(fn: any) {
+      return fn({
+        findImport: async () => ({
+          id: "00000000-0000-4000-8000-000000000001",
+          status: "needs_review",
+          venueEventId: null,
+        }),
+        findEvent: async () => null,
+        listExtras: async () => [],
+        listPacks: async () => packs,
+        saveImport: async () => { writes++; },
+        createEvent: async () => { writes++; return "event"; },
+        createExtras: async () => { writes++; },
+        createPayment: async () => { writes++; },
+      });
+    },
+  };
+  const result = await importSubmission(base, store, {
+    reprocessImportId: "00000000-0000-4000-8000-000000000002",
+  });
+  assert.equal(result.status, "rejected");
+  assert.deepEqual(result.reasons, ["reprocess import mismatch"]);
+  assert.equal(writes, 0);
 });
