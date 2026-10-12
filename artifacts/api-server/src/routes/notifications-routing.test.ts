@@ -59,8 +59,8 @@ test("push endpoints are flat routes served by the root /api function", async ()
     "postgresql://unit-test:unit-test@127.0.0.1:5432/unit-test";
 
   try {
-    const { createNotificationsRouter } = await import("./notifications.ts");
-    const router = createNotificationsRouter({
+    const { createPushRouter } = await import("./push-routes.ts");
+    const router = createPushRouter({
       publicKey: () => "public-test-key",
       saveSubscription: async () => {},
       deleteSubscription: async () => {},
@@ -93,8 +93,8 @@ test("GET /push-config returns configured public key only", async () => {
     "postgresql://unit-test:unit-test@127.0.0.1:5432/unit-test";
 
   try {
-    const { createNotificationsRouter } = await import("./notifications.ts");
-    const router = createNotificationsRouter({
+    const { createPushRouter } = await import("./push-routes.ts");
+    const router = createPushRouter({
       publicKey: () => "public-test-key",
       saveSubscription: async () => {},
       deleteSubscription: async () => {},
@@ -123,8 +123,8 @@ test("POST /push-subscriptions is idempotent at the route contract", async () =>
 
   const saves: Array<{ userId: string; endpoint: string }> = [];
   try {
-    const { createNotificationsRouter } = await import("./notifications.ts");
-    const router = createNotificationsRouter({
+    const { createPushRouter } = await import("./push-routes.ts");
+    const router = createPushRouter({
       publicKey: () => "public-test-key",
       saveSubscription: async (userId, subscription) => {
         const existing = saves.find((entry) => entry.endpoint === subscription.endpoint);
@@ -171,8 +171,8 @@ test("DELETE /push-subscriptions deletes only the current user's endpoint", asyn
 
   const deletes: Array<{ userId: string; endpoint: string }> = [];
   try {
-    const { createNotificationsRouter } = await import("./notifications.ts");
-    const router = createNotificationsRouter({
+    const { createPushRouter } = await import("./push-routes.ts");
+    const router = createPushRouter({
       publicKey: () => "public-test-key",
       saveSubscription: async () => {},
       deleteSubscription: async (userId, endpoint) => {
