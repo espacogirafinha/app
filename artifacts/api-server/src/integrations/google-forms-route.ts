@@ -76,6 +76,18 @@ router.post(
       res.status(400).json({ status: "rejected", reason: "invalid payload" });
       return;
     }
+    const reprocessImportId =
+      typeof req.query.reprocessImportId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        req.query.reprocessImportId,
+      )
+        ? req.query.reprocessImportId
+        : undefined;
+    if (req.query.reprocessImportId !== undefined && !reprocessImportId) {
+      res.status(400).json({ status: "rejected", reason: "invalid reprocess import id" });
+      return;
+    }
+
     try {
       const result = await importSubmission(payload, {
         transact: (fn) =>
@@ -94,6 +106,7 @@ router.post(
               findImport: async () => {
                 const [previous] = await tx
                   .select({
+                    id: googleFormImportsTable.id,
                     status: googleFormImportsTable.status,
                     venueEventId: googleFormImportsTable.venueEventId,
                   })
@@ -154,6 +167,19 @@ router.post(
                     errorMessage: reasons.join("; ") || null,
                     payload,
                     payloadHash: createHash("sha256").update(raw).digest("hex"),
+                  })
+                  .onConflictDoUpdate({
+                    target: [
+                      googleFormImportsTable.formId,
+                      googleFormImportsTable.submissionId,
+                    ],
+                    set: {
+                      venueEventId: eventId ?? null,
+                      status,
+                      needsReview,
+                      errorMessage: reasons.join("; ") || null,
+                      updatedAt: new Date(),
+                    },
                   });
               },
               createEvent: async (event) => {
@@ -204,6 +230,7 @@ router.post(
               },
             });
           }),
+        reprocessImportId ? { reprocessImportId } : undefined,
       });
       res
         .status(
