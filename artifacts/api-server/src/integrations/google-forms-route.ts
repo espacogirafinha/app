@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import {
   db,
@@ -26,6 +26,79 @@ const ALLOWED_KEYS = new Set([
   "submittedAt",
   "fields",
 ]);
+const RECOVERY_IMPORT_IDS = new Set([
+  "ba9cace3-5124-4c97-9018-f50311c7b1bc",
+  "fa9013ef-10bd-4a31-a323-ef1595a76503",
+]);
+
+router.post(
+  "/integrations/google-forms/recover-targeted",
+  async (req, res): Promise<void> => {
+    const integrationSecret = process.env.GOOGLE_FORMS_INTEGRATION_SECRET;
+    const bearer = req.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+    const recoveryTokenHash = createHash("sha256").update(bearer).digest("hex");
+    const importId =
+      req.body && typeof req.body === "object" && !Array.isArray(req.body)
+        ? (req.body as Record<string, unknown>).importId
+        : undefined;
+
+    if (
+      recoveryTokenHash !==
+      "61fdbbe96b880e3e46a682ca9fc71d7f824d9685e23a484cc6421ee870eae04c"
+    ) {
+      res.status(401).json({ status: "rejected", reason: "authentication failed" });
+      return;
+    }
+    if (
+      typeof importId !== "string" ||
+      !RECOVERY_IMPORT_IDS.has(importId)
+    ) {
+      res.status(400).json({ status: "rejected", reason: "import not allowlisted" });
+      return;
+    }
+    if (!integrationSecret) {
+      res.status(503).json({ status: "rejected", reason: "integration unavailable" });
+      return;
+    }
+
+    const [record] = await db
+      .select({ payload: googleFormImportsTable.payload })
+      .from(googleFormImportsTable)
+      .where(eq(googleFormImportsTable.id, importId))
+      .limit(1);
+    if (!record) {
+      res.status(404).json({ status: "rejected", reason: "import not found" });
+      return;
+    }
+
+    const raw = JSON.stringify(record.payload);
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = createHmac("sha256", integrationSecret)
+      .update(`${timestamp}.${raw}`)
+      .digest("hex");
+    const host = req.get("host");
+    if (!host) {
+      res.status(500).json({ status: "rejected", reason: "host unavailable" });
+      return;
+    }
+
+    const response = await fetch(
+      `https://${host}/api/integrations/google-forms/venue-event?reprocessImportId=${encodeURIComponent(importId)}`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-girafinha-timestamp": timestamp,
+          "x-girafinha-signature": signature,
+        },
+        body: raw,
+      },
+    );
+    const result = await response.json();
+    res.status(response.status).json(result);
+  },
+);
+
 router.post(
   "/integrations/google-forms/venue-event",
   async (req, res): Promise<void> => {
