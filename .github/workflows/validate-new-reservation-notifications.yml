@@ -1,0 +1,46 @@
+name: Validate reservation notifications
+
+on:
+  push:
+    branches:
+      - feat/new-reservation-notifications
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/new-reservation-notifications
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - name: Update lockfile if needed
+        run: |
+          corepack pnpm install --lockfile-only --no-frozen-lockfile
+          if ! git diff --quiet -- pnpm-lock.yaml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml
+            git commit -m "chore: update lockfile for web push"
+            git push origin HEAD:feat/new-reservation-notifications
+          fi
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Google Forms tests
+        run: node --experimental-strip-types --test artifacts/api-server/src/integrations/google-forms.test.ts
+      - name: Notification unit tests
+        run: node --experimental-strip-types --test artifacts/api-server/src/lib/notifications.test.ts
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+      - name: Build
+        run: corepack pnpm run build
+      - name: Confirm Vercel function count
+        run: |
+          count=$(find api -type f -name '*.mjs' | wc -l | tr -d ' ')
+          echo "Vercel function files: $count"
+          test "$count" -le 12
