@@ -258,7 +258,9 @@ test("falha ao registar service worker mostra erro e retry", async ({ page }) =>
     "Não foi possível preparar as notificações.",
   );
   await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeVisible();
-  await expect(page.getByText("Não foi possível preparar as notificações.")).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    "Fecha e volta a abrir a app e tenta novamente.",
+  );
 });
 
 test("serviceWorker.ready sem resolver termina com timeout e erro visível", async ({ page }) => {
