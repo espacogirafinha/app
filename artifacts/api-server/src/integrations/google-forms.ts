@@ -432,7 +432,7 @@ export type ImportResult = {
 type Tx = {
   findImport: (
     id: string,
-  ) => Promise<{ status: string; venueEventId?: string | null } | null>;
+  ) => Promise<{ id?: string; status: string; venueEventId?: string | null } | null>;
   findEvent: (date: string, phone: string) => Promise<{ id: string } | null>;
   listExtras: () => Promise<Extra[]>;
   listPacks: () => Promise<Pack[]>;
@@ -458,12 +458,15 @@ type Tx = {
 export async function importSubmission(
   s: Submission,
   store: { transact: <T>(fn: (tx: Tx) => Promise<T>) => Promise<T> },
-  options: { reprocessExisting?: boolean } = {},
+  options: { reprocessImportId?: string } = {},
 ): Promise<ImportResult> {
   return store.transact(async (tx) => {
     const key = `${s.formId}:${s.submissionId}`;
     const previous = await tx.findImport(key);
-    if (previous && !options.reprocessExisting)
+    const reprocessing = Boolean(options.reprocessImportId);
+    if (reprocessing && (!previous || previous.id !== options.reprocessImportId))
+      return { status: "rejected", reasons: ["reprocess import mismatch"] };
+    if (previous && !reprocessing)
       return {
         status:
           previous.status === "needs_review"
@@ -472,7 +475,7 @@ export async function importSubmission(
         venueEventId: previous.venueEventId ?? undefined,
       };
     const p = planImport(s, await tx.listExtras(), await tx.listPacks());
-    if (previous?.venueEventId && options.reprocessExisting) {
+    if (previous?.venueEventId && reprocessing) {
       if (p.status === "rejected")
         return { status: "rejected", venueEventId: previous.venueEventId, reasons: p.reasons };
       await tx.saveImport(
