@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ClipboardList, Loader2 } from "lucide-react";
@@ -99,6 +99,10 @@ async function requestReview<T>(path: string, init?: RequestInit): Promise<T> {
 
 export default function GoogleFormsReviewPage() {
   const queryClient = useQueryClient();
+  const linkedReviewId = useMemo(
+    () => new URLSearchParams(window.location.search).get("open"),
+    [],
+  );
   const { toast } = useToast();
   const {
     data,
@@ -119,6 +123,13 @@ export default function GoogleFormsReviewPage() {
     retry: false,
   });
   const reviews = data?.pages.flatMap((page) => page.items) ?? [];
+  useEffect(() => {
+    if (!linkedReviewId || reviews.length === 0) return;
+    document.getElementById(`review-${linkedReviewId}`)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [linkedReviewId, reviews.length]);
   const { data: events = [], isError: eventsError } = useListVenueEvents();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<Record<string, string>>(
@@ -203,7 +214,13 @@ export default function GoogleFormsReviewPage() {
             const matches = matchingReviewEvents(review.fields, events);
             const selected = selectedEvents[review.id] ?? "";
             return (
-              <Card key={review.id} className="overflow-hidden">
+              <Card
+                key={review.id}
+                id={`review-${review.id}`}
+                className={`overflow-hidden ${
+                  linkedReviewId === review.id ? "ring-2 ring-primary ring-offset-2" : ""
+                }`}
+              >
                 <CardHeader className="pb-3">
                   <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
                     <ClipboardList className="h-5 w-5 text-primary" />{" "}
