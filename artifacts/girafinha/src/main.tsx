@@ -7,6 +7,8 @@ createRoot(document.getElementById("root")!).render(<App />);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    void navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
+    void navigator.serviceWorker
+      .register("/sw.js", { updateViaCache: "none" })
+      .catch(() => console.warn("[push] activation_failed:service_worker_registration"));
   });
 }
