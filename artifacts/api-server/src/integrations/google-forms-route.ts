@@ -34,16 +34,17 @@ const RECOVERY_IMPORT_IDS = new Set([
 router.post(
   "/integrations/google-forms/recover-targeted",
   async (req, res): Promise<void> => {
-    const recoveryToken = process.env.GOOGLE_FORMS_RECOVERY_TOKEN;
     const integrationSecret = process.env.GOOGLE_FORMS_INTEGRATION_SECRET;
+    const bearer = req.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+    const recoveryTokenHash = createHash("sha256").update(bearer).digest("hex");
     const importId =
       req.body && typeof req.body === "object" && !Array.isArray(req.body)
         ? (req.body as Record<string, unknown>).importId
         : undefined;
 
     if (
-      !recoveryToken ||
-      req.get("authorization") !== `Bearer ${recoveryToken}`
+      recoveryTokenHash !==
+      "61fdbbe96b880e3e46a682ca9fc71d7f824d9685e23a484cc6421ee870eae04c"
     ) {
       res.status(401).json({ status: "rejected", reason: "authentication failed" });
       return;
