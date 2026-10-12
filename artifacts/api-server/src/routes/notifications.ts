@@ -94,13 +94,13 @@ router.post("/notifications/read-all", async (_req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.get("/notifications/push-config", async (_req, res): Promise<void> => {
+router.get("/push-config", async (_req, res): Promise<void> => {
   const publicKey = process.env.WEB_PUSH_VAPID_PUBLIC_KEY ?? "";
   res.json({ configured: Boolean(publicKey), publicKey });
 });
 
 router.post(
-  "/notifications/push-subscriptions",
+  "/push-subscriptions",
   async (req, res): Promise<void> => {
     const userId = String(res.locals.userId ?? "");
     const body = req.body as unknown;
@@ -131,7 +131,7 @@ router.post(
 );
 
 router.delete(
-  "/notifications/push-subscriptions",
+  "/push-subscriptions",
   async (req, res): Promise<void> => {
     const userId = String(res.locals.userId ?? "");
     const endpoint =
