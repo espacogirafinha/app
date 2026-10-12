@@ -157,7 +157,7 @@ async function installBrowserPushMock(page: Page, scenario: PushScenario) {
 
 async function installApiMock(page: Page, scenario: PushScenario) {
   const state = { reads: [] as string[], readAll: 0, saves: 0 };
-  await page.route("**/api/notifications**", async (route: Route) => {
+  await page.route("**/api/**", async (route: Route) => {
     const request = route.request();
     const url = new URL(request.url());
     const method = request.method();
@@ -178,7 +178,7 @@ async function installApiMock(page: Page, scenario: PushScenario) {
       state.readAll += 1;
       return route.fulfill({ status: 204, body: "" });
     }
-    if (url.pathname === "/api/notifications/push-config" && method === "GET") {
+    if (url.pathname === "/api/push-config" && method === "GET") {
       return route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -191,7 +191,7 @@ async function installApiMock(page: Page, scenario: PushScenario) {
         }),
       });
     }
-    if (url.pathname === "/api/notifications/push-subscriptions" && method === "POST") {
+    if (url.pathname === "/api/push-subscriptions" && method === "POST") {
       state.saves += 1;
       if (scenario === "save-fail") {
         return route.fulfill({
