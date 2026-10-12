@@ -178,7 +178,7 @@ async function installApiMock(page: Page, scenario: PushScenario) {
       state.readAll += 1;
       return route.fulfill({ status: 204, body: "" });
     }
-    if (url.pathname === "/api/notifications/push-config" && method === "GET") {
+    if (url.pathname === "/api/push-config" && method === "GET") {
       return route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -191,7 +191,7 @@ async function installApiMock(page: Page, scenario: PushScenario) {
         }),
       });
     }
-    if (url.pathname === "/api/notifications/push-subscriptions" && method === "POST") {
+    if (url.pathname === "/api/push-subscriptions" && method === "POST") {
       state.saves += 1;
       if (scenario === "save-fail") {
         return route.fulfill({
