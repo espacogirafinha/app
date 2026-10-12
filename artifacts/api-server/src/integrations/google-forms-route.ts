@@ -6,10 +6,15 @@ import {
   eventExtrasTable,
   eventSelectedExtrasTable,
   googleFormImportsTable,
+  notificationsTable,
   venueEventsTable,
   venuePacksTable,
 } from "@workspace/db";
 import { createEventPaymentInTransaction } from "../lib/event-payments";
+import {
+  buildGoogleFormNotification,
+  sendPushForNotification,
+} from "../lib/notifications";
 import {
   FORM_ID,
   dedupKey,
@@ -155,7 +160,7 @@ router.post(
                 reasons,
                 eventId,
               ) => {
-                await tx
+                const [saved] = await tx
                   .insert(googleFormImportsTable)
                   .values({
                     formId: payload.formId,
@@ -180,7 +185,18 @@ router.post(
                       errorMessage: reasons.join("; ") || null,
                       updatedAt: new Date(),
                     },
-                  });
+                  })
+                  .returning({ id: googleFormImportsTable.id });
+                return saved.id;
+              },
+              createNotification: async (input) => {
+                const notification = buildGoogleFormNotification(input);
+                const [created] = await tx
+                  .insert(notificationsTable)
+                  .values(notification)
+                  .onConflictDoNothing({ target: notificationsTable.sourceKey })
+                  .returning({ id: notificationsTable.id });
+                return created?.id;
               },
               createEvent: async (event) => {
                 const {
@@ -233,6 +249,13 @@ router.post(
         },
         reprocessImportId ? { reprocessImportId } : undefined,
       );
+      if (result.notificationId) {
+        try {
+          await sendPushForNotification(result.notificationId);
+        } catch (error) {
+          req.log?.warn({ err: error }, "google forms push delivery failed");
+        }
+      }
       res
         .status(
           result.status === "created"
