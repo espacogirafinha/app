@@ -4,7 +4,6 @@ import {
   db,
   notificationsTable,
   pushSubscriptionsTable,
-  userRolesTable,
 } from "@workspace/db";
 import { logger } from "./logger.ts";
 
@@ -39,54 +38,29 @@ export async function sendPushForNotification(
       p256dh: pushSubscriptionsTable.p256dh,
       auth: pushSubscriptionsTable.auth,
     })
-    .from(pushSubscriptionsTable)
-    .innerJoin(
-      userRolesTable,
-      eq(userRolesTable.userId, pushSubscriptionsTable.userId),
-    );
+    .from(pushSubscriptionsTable);
 
   if (!subscriptions.length) return { sent: 0, removed: 0, skipped: false };
 
   const pushSender = sender ?? createPushSender();
   if (!pushSender) return { sent: 0, removed: 0, skipped: true };
 
-  let sent = 0;
-  let removed = 0;
-  for (const subscription of subscriptions) {
-    try {
-      await pushSender(
-        {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.p256dh,
-            auth: subscription.auth,
-          },
-        },
-        JSON.stringify({
-          title: notification.title,
-          body: notification.message,
-          url: notification.destination,
-          tag: `girafinha-notification-${notification.id}`,
-        }),
-      );
-      sent += 1;
-    } catch (error) {
-      const statusCode =
-        typeof error === "object" && error !== null && "statusCode" in error
-          ? Number((error as { statusCode?: unknown }).statusCode)
-          : null;
-      if (statusCode === 404 || statusCode === 410) {
-        await db
-          .delete(pushSubscriptionsTable)
-          .where(eq(pushSubscriptionsTable.id, subscription.id));
-        removed += 1;
-      } else {
-        logger.warn({ statusCode }, "Web push delivery failed");
-      }
-    }
-  }
-
-  return { sent, removed, skipped: false };
+  const payload = JSON.stringify({
+    title: notification.title,
+    body: notification.message,
+    url: notification.destination,
+    tag: `girafinha-notification-${notification.id}`,
+  });
+  return deliverPushToSubscriptions(
+    subscriptions,
+    payload,
+    pushSender,
+    async (id) => {
+      await db
+        .delete(pushSubscriptionsTable)
+        .where(eq(pushSubscriptionsTable.id, id));
+    },
+  );
 }
 
 function createPushSender(): PushSender | null {
@@ -100,4 +74,47 @@ function createPushSender(): PushSender | null {
   webPush.setVapidDetails(subject, publicKey, privateKey);
   return (subscription, payload) =>
     webPush.sendNotification(subscription, payload, { TTL: 300 });
+}
+
+
+export async function deliverPushToSubscriptions(
+  subscriptions: Array<{
+    id: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+  }>,
+  payload: string,
+  sender: PushSender,
+  removeInvalid: (id: string) => Promise<void>,
+) {
+  let sent = 0;
+  let removed = 0;
+  for (const subscription of subscriptions) {
+    try {
+      await sender(
+        {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.p256dh,
+            auth: subscription.auth,
+          },
+        },
+        payload,
+      );
+      sent += 1;
+    } catch (error) {
+      const statusCode =
+        typeof error === "object" && error !== null && "statusCode" in error
+          ? Number((error as { statusCode?: unknown }).statusCode)
+          : null;
+      if (statusCode === 404 || statusCode === 410) {
+        await removeInvalid(subscription.id);
+        removed += 1;
+      } else {
+        logger.warn({ statusCode }, "Web push delivery failed");
+      }
+    }
+  }
+  return { sent, removed, skipped: false };
 }
