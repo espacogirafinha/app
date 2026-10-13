@@ -73,7 +73,7 @@ async function mockPayments(
   });
 }
 
-test("sinal ativo, mesmo com paid_at NULL, mostra confirmação preenchida", async ({
+test("confirmação usa festa de [nome] e texto neutro da criança", async ({
   page,
 }) => {
   await mockPayments(page, [payment({ paidAt: null })], {
@@ -93,19 +93,39 @@ test("sinal ativo, mesmo com paid_at NULL, mostra confirmação preenchida", asy
   await expect(link).toBeVisible();
 
   const href = await link.getAttribute("href");
-  expect(href).toBeTruthy();
   expect(href).toContain("https://wa.me/351912345678?text=");
 
   const message = decodeURIComponent(href!.split("?text=")[1]);
   expect(message).toContain("Olá Cátia 😊");
-  expect(message).toContain("A reserva da festa da Kelly está confirmada 🎉");
+  expect(message).toContain("A reserva da festa de Kelly está confirmada 🎉");
+  expect(message).not.toContain("festa da Kelly");
+  expect(message).not.toContain("festa do Kelly");
+  expect(message).toContain(
+    "Os pais e a criança podem chegar 30 minutos antes, às 15h30, para fazerem com calma os preparativos que forem necessários.",
+  );
   expect(message).toContain("📅 5 de novembro");
   expect(message).toContain("🕓 16h às 19h");
-  expect(message).toContain("às 15h30");
   expect(message).toContain("ficando 440,00 € por liquidar");
 });
 
-test("telefone inválido mantém ação desativada e explica motivo", async ({
+test("feedback ainda não aparece antes do fim da festa", async ({ page }) => {
+  await mockPayments(page, [payment()], {
+    totalPrice: 550,
+    received: 110,
+    remainingBalance: 440,
+    paymentStatus: "partial",
+  });
+
+  await page.goto(
+    "/event-payments-test.html?module=venue_events&eventDate=2026-11-05",
+  );
+
+  await expect(
+    page.getByText("Pedir feedback por WhatsApp", { exact: true }),
+  ).toHaveCount(0);
+});
+
+test("feedback aparece depois do fim e inclui nomes + Google URL codificado", async ({
   page,
 }) => {
   await mockPayments(page, [payment()], {
@@ -116,21 +136,56 @@ test("telefone inválido mantém ação desativada e explica motivo", async ({
   });
 
   await page.goto(
-    "/event-payments-test.html?module=venue_events&eventDate=2026-11-05&phone=12345",
+    "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
+  );
+
+  const link = page.getByRole("link", { name: "Pedir feedback por WhatsApp" });
+  await expect(link).toBeVisible();
+
+  const href = await link.getAttribute("href");
+  expect(href).toContain("https://wa.me/351912345678?text=");
+  const message = decodeURIComponent(href!.split("?text=")[1]);
+
+  expect(message).toContain("Olá Cátia 😊");
+  expect(message).toContain("gostado da festa de Kelly 💛");
+  expect(message).toContain("Espaço Girafinha");
+  expect(message).toContain("⭐ Deixar avaliação no Google:");
+  expect(message).toContain("https://www.google.com/search?");
+  expect(message).toContain("este dia tão especial! 🥰");
+  expect(href).toContain("%C3");
+  expect(href).toContain("%F0%9F");
+  expect(href).toContain("%0A");
+});
+
+test("telefone inválido desativa confirmação e feedback quando aplicável", async ({
+  page,
+}) => {
+  await mockPayments(page, [payment()], {
+    totalPrice: 550,
+    received: 110,
+    remainingBalance: 440,
+    paymentStatus: "partial",
+  });
+
+  await page.goto(
+    "/event-payments-test.html?module=venue_events&eventDate=2026-10-01&phone=12345",
   );
 
   await expect(
     page.getByRole("button", { name: "Enviar confirmação por WhatsApp" }),
   ).toBeDisabled();
   await expect(
+    page.getByRole("button", { name: "Pedir feedback por WhatsApp" }),
+  ).toBeDisabled();
+  await expect(
     page.getByText(
-      "Adicione um número de telefone português válido para enviar a confirmação.",
+      "Adicione um número de telefone português válido para usar o WhatsApp.",
       { exact: true },
     ),
   ).toBeVisible();
 });
 
-test("sem sinal reservation_deposit não apresenta botão de confirmação", async ({
+test("sem sinal reservation_deposit não apresenta confirmação", async ({
   page,
 }) => {
   await mockPayments(
@@ -153,7 +208,7 @@ test("sem sinal reservation_deposit não apresenta botão de confirmação", asy
   ).toHaveCount(0);
 });
 
-test("festa totalmente paga gera mensagem sem saldo por liquidar", async ({
+test("festa totalmente paga gera confirmação sem saldo pendente", async ({
   page,
 }) => {
   await mockPayments(
@@ -186,4 +241,32 @@ test("festa totalmente paga gera mensagem sem saldo por liquidar", async ({
 
   expect(message).toContain("já se encontra totalmente liquidado");
   expect(message).not.toContain("por liquidar");
+});
+
+test("mobile 390x844 mostra as duas ações sem overflow depois da festa", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockPayments(page, [payment()], {
+    totalPrice: 550,
+    received: 110,
+    remainingBalance: 440,
+    paymentStatus: "partial",
+  });
+
+  await page.goto(
+    "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
+  );
+
+  await expect(
+    page.getByRole("link", { name: "Enviar confirmação por WhatsApp" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
+  ).toBeVisible();
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
 });
