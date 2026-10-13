@@ -1,5 +1,5 @@
 export const GOOGLE_REVIEW_URL =
-  "https://www.google.com/search?sca_esv=8347cae270e83a03&hl=pt-PT&gl=pt&sxsrf=APpeQnsO-dcQ_zfJcnZ68sgd65xVnA56pA:1791931076718&q=Espaço+Girafinha+Silves,+Rua+Cândido+dos+Reis,+Urbanização+Rogério+Branco+1+r/c+direito,+Loja+A,+8300-126+Silves&si=APenkKm7iecQ4G6P-TsbSMFKIQtv3EFIqRAFw-i8uEbk55Z-_0w-pRV06U9WRR4QgGAv8xV7kdmOdQSBVKj7HPuTrFmrkfrrz0H4jrDBtkHLDsfFL3W08Bo%3D&uds=AJ5uw1-EXif9PpKvn5q4EIPxL9gZ3bkhSeIKQWpGYT7P7LmVVCIv9s_3YWXmvQPmAFn-LworgG1vw1mSLjPg3p5I0AYyk4QYVq1ahzWO_adyYAeEEFHiOqdlyuehLlfUammRTCjHdi2Js0C8aGQzFUBKO6uOwq3wh1N5dkz-3pSR3pmc-vZEDZXRjx29w47h44P0diqNoHVgSCtIyZ5e5z6KUsf3zrn1fmkXEVqygzffTVNgRevX59Q&sa=X&ved=2ahUKEwisiai6h7iXAxXeXUEAHfD3Js4Q3PALegQIHBAE&biw=1470&bih=833&dpr=2";
+  "https://maps.app.goo.gl/ofJkUSP6iVL2YH7j7?g_st=ic";
 
 export type BookingConfirmationInput = {
   customerName: string;
