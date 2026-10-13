@@ -57,6 +57,8 @@ import { useToast } from "@/hooks/use-toast";
 import { parseMoneyInput } from "@/lib/money";
 import {
   buildBookingConfirmationWhatsAppLink,
+  buildBookingFeedbackWhatsAppLink,
+  hasBookingEnded,
   type BookingConfirmationInput,
 } from "@/lib/booking-confirmation-whatsapp";
 
@@ -113,6 +115,20 @@ export function EventPaymentsPanel({
           depositAmount: reservationDepositReceived,
           totalPrice: summary.totalPrice,
           totalReceived: summary.received,
+        })
+      : null;
+  const bookingFeedbackLink =
+    bookingConfirmation &&
+    hasBookingEnded({
+      eventDate: bookingConfirmation.eventDate,
+      endTime: bookingConfirmation.endTime,
+    })
+      ? buildBookingFeedbackWhatsAppLink({
+          customerName: bookingConfirmation.customerName,
+          birthdayChildName: bookingConfirmation.birthdayChildName,
+          phone: bookingConfirmation.phone,
+          eventDate: bookingConfirmation.eventDate,
+          endTime: bookingConfirmation.endTime,
         })
       : null;
 
@@ -272,27 +288,27 @@ export function EventPaymentsPanel({
           <MoneyStat label="Por receber" value={summary.remainingBalance} emphasize={summary.remainingBalance > 0} />
         </div>
 
-        {bookingConfirmationLink ? (
-          <div className="mt-3">
-            {bookingConfirmationLink.url ? (
-              <Button
-                asChild
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 sm:w-auto"
-              >
-                <a
-                  href={bookingConfirmationLink.url}
-                  target="_blank"
-                  rel="noreferrer"
+        {bookingConfirmationLink || bookingFeedbackLink ? (
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {bookingConfirmationLink ? (
+              bookingConfirmationLink.url ? (
+                <Button
+                  asChild
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 sm:w-auto"
                 >
-                  <MessageCircle className="h-4 w-4" />
-                  Enviar confirmação por WhatsApp
-                </a>
-              </Button>
-            ) : (
-              <div className="space-y-1">
+                  <a
+                    href={bookingConfirmationLink.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Enviar confirmação por WhatsApp
+                  </a>
+                </Button>
+              ) : (
                 <Button
                   type="button"
                   variant="outline"
@@ -303,10 +319,46 @@ export function EventPaymentsPanel({
                   <MessageCircle className="h-4 w-4" />
                   Enviar confirmação por WhatsApp
                 </Button>
-                <p className="text-xs text-muted-foreground">
-                  Adicione um número de telefone português válido para enviar a confirmação.
-                </p>
-              </div>
+              )
+            ) : null}
+
+            {bookingFeedbackLink ? (
+              bookingFeedbackLink.url ? (
+                <Button
+                  asChild
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 sm:w-auto"
+                >
+                  <a
+                    href={bookingFeedbackLink.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Pedir feedback por WhatsApp
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl sm:w-auto"
+                  disabled
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Pedir feedback por WhatsApp
+                </Button>
+              )
+            ) : null}
+
+            {(bookingConfirmationLink?.phone === null ||
+              bookingFeedbackLink?.phone === null) && (
+              <p className="w-full text-xs text-muted-foreground">
+                Adicione um número de telefone português válido para usar o WhatsApp.
+              </p>
             )}
           </div>
         ) : null}
