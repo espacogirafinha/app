@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  GOOGLE_REVIEW_URL,
   buildBookingConfirmationMessage,
   buildBookingConfirmationWhatsAppLink,
+  buildBookingFeedbackMessage,
+  buildBookingFeedbackWhatsAppLink,
+  hasBookingEnded,
   normalizePortugueseWhatsAppPhone,
   subtractMinutes,
 } from "./booking-confirmation-whatsapp.ts";
@@ -20,18 +24,22 @@ const base = {
   totalReceived: 110,
 };
 
-test("mensagem normal usa sinal, dados reais e saldo por liquidar", () => {
+test("confirmação usa linguagem neutra, primeiro nome e saldo por liquidar", () => {
   const message = buildBookingConfirmationMessage(base);
 
-  assert.match(message, /^Olá Cátia 😊/);
+  assert.match(message, /^Olá Cátia 😊\n\n/);
   assert.match(
     message,
-    /pagamento dos 110,00 € de sinal\. A reserva da festa da Kelly está confirmada 🎉/,
+    /pagamento dos 110,00 € de sinal\. A reserva da festa de Kelly está confirmada 🎉/,
   );
+  assert.doesNotMatch(message, /festa da Kelly|festa do Kelly/);
   assert.match(message, /📅 5 de novembro/);
   assert.match(message, /🕓 16h às 19h/);
   assert.match(message, /🎂 Pack Premium/);
-  assert.match(message, /às 15h30/);
+  assert.match(
+    message,
+    /Os pais e a criança podem chegar 30 minutos antes, às 15h30, para fazerem com calma os preparativos que forem necessários\./,
+  );
   assert.match(
     message,
     /O valor total é de 550,00 €, ficando 440,00 € por liquidar no dia da festa, em numerário\./,
@@ -69,24 +77,72 @@ test("ausência ou telefone inválido não produz URL de WhatsApp", () => {
   assert.equal(normalizePortugueseWhatsAppPhone(""), null);
   assert.equal(normalizePortugueseWhatsAppPhone("12345"), null);
 
-  const link = buildBookingConfirmationWhatsAppLink({
+  const confirmation = buildBookingConfirmationWhatsAppLink({
     ...base,
     phone: "",
   });
-  assert.equal(link.phone, null);
-  assert.equal(link.url, null);
+  const feedback = buildBookingFeedbackWhatsAppLink({
+    customerName: base.customerName,
+    birthdayChildName: base.birthdayChildName,
+    phone: "",
+    eventDate: base.eventDate,
+    endTime: base.endTime,
+  });
+  assert.equal(confirmation.url, null);
+  assert.equal(feedback.url, null);
 });
 
-test("URL codifica corretamente português, quebras de linha e emoji", () => {
-  const link = buildBookingConfirmationWhatsAppLink(base);
-  assert.ok(link.url);
-  assert.match(link.url!, /^https:\/\/wa\.me\/351912345678\?text=/);
-  assert.match(link.url!, /%C3%A1/);
-  assert.match(link.url!, /%F0%9F/);
-  assert.match(link.url!, /%0A/);
+test("feedback usa primeiros nomes e inclui o URL Google exatamente", () => {
+  const message = buildBookingFeedbackMessage({
+    customerName: "Cátia Pinto",
+    birthdayChildName: "Kelly Pinto",
+    phone: "912345678",
+    eventDate: "2026-10-01",
+    endTime: "19:00",
+  });
 
-  const encoded = link.url!.split("?text=")[1];
-  assert.equal(decodeURIComponent(encoded), link.message);
-  assert.match(link.message, /Olá Cátia 😊/);
-  assert.match(link.message, /preferência 💛/);
+  assert.match(message, /^Olá Cátia 😊/);
+  assert.match(message, /gostado da festa de Kelly 💛/);
+  assert.match(message, /Foi um gosto receber-vos no Espaço Girafinha!/);
+  assert.match(message, /⭐ Deixar avaliação no Google:/);
+  assert.ok(message.includes(GOOGLE_REVIEW_URL));
+  assert.match(message, /este dia tão especial! 🥰$/);
+});
+
+test("feedback só fica disponível depois da data e hora de fim", () => {
+  const event = { eventDate: "2026-10-13", endTime: "19:00" };
+  assert.equal(
+    hasBookingEnded(event, new Date("2026-10-13T17:59:00.000Z")),
+    false,
+  );
+  assert.equal(
+    hasBookingEnded(event, new Date("2026-10-13T18:01:00.000Z")),
+    true,
+  );
+});
+
+test("URLs codificam acentos, emojis, quebras de linha e o link Google", () => {
+  const confirmation = buildBookingConfirmationWhatsAppLink(base);
+  const feedback = buildBookingFeedbackWhatsAppLink({
+    customerName: base.customerName,
+    birthdayChildName: base.birthdayChildName,
+    phone: base.phone,
+    eventDate: "2026-10-01",
+    endTime: base.endTime,
+  });
+
+  for (const link of [confirmation, feedback]) {
+    assert.ok(link.url);
+    assert.match(link.url!, /^https:\/\/wa\.me\/351912345678\?text=/);
+    assert.match(link.url!, /%C3%/);
+    assert.match(link.url!, /%F0%9F/);
+    assert.match(link.url!, /%0A/);
+    const encoded = link.url!.split("?text=")[1];
+    assert.equal(decodeURIComponent(encoded), link.message);
+  }
+
+  assert.ok(feedback.message.includes(GOOGLE_REVIEW_URL));
+  assert.ok(
+    feedback.url!.includes(encodeURIComponent(GOOGLE_REVIEW_URL)),
+  );
 });
