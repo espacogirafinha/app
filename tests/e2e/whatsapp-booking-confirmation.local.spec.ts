@@ -150,7 +150,7 @@ test("feedback aparece depois do fim e inclui nomes + Google URL codificado", as
   expect(message).toContain("gostado da festa de Kelly 💛");
   expect(message).toContain("Espaço Girafinha");
   expect(message).toContain("⭐ Deixar avaliação no Google:");
-  expect(message).toContain("https://www.google.com/search?");
+  expect(message).toContain("https://maps.app.goo.gl/ofJkUSP6iVL2YH7j7?g_st=ic");
   expect(message).toContain("este dia tão especial! 🥰");
   expect(href).toContain("%C3");
   expect(href).toContain("%F0%9F");
