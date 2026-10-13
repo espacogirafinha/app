@@ -269,4 +269,9 @@ test("mobile 390x844 mostra as duas ações sem overflow depois da festa", async
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
   expect(overflow).toBeLessThanOrEqual(1);
+
+  await page.screenshot({
+    path: "test-results/whatsapp-buttons-preview.png",
+    fullPage: true,
+  });
 });
