@@ -305,7 +305,7 @@ export function EventPaymentsPanel({
                     rel="noreferrer"
                   >
                     <MessageCircle className="h-4 w-4" />
-                    Enviar confirmação por WhatsApp
+                    Confirmar reserva por WhatsApp
                   </a>
                 </Button>
               ) : (
@@ -317,7 +317,7 @@ export function EventPaymentsPanel({
                   disabled
                 >
                   <MessageCircle className="h-4 w-4" />
-                  Enviar confirmação por WhatsApp
+                  Confirmar reserva por WhatsApp
                 </Button>
               )
             ) : null}
