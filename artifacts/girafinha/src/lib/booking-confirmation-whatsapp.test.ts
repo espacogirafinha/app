@@ -93,6 +93,11 @@ test("ausência ou telefone inválido não produz URL de WhatsApp", () => {
 });
 
 test("feedback usa primeiros nomes e inclui o URL Google exatamente", () => {
+  assert.equal(
+    GOOGLE_REVIEW_URL,
+    "https://maps.app.goo.gl/ofJkUSP6iVL2YH7j7?g_st=ic",
+  );
+
   const message = buildBookingFeedbackMessage({
     customerName: "Cátia Pinto",
     birthdayChildName: "Kelly Pinto",
