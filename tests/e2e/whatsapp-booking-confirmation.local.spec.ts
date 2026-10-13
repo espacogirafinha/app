@@ -88,7 +88,7 @@ test("confirmação usa festa de [nome] e texto neutro da criança", async ({
   );
 
   const link = page.getByRole("link", {
-    name: "Enviar confirmação por WhatsApp",
+    name: "Confirmar reserva por WhatsApp",
   });
   await expect(link).toBeVisible();
 
@@ -172,7 +172,7 @@ test("telefone inválido desativa confirmação e feedback quando aplicável", a
   );
 
   await expect(
-    page.getByRole("button", { name: "Enviar confirmação por WhatsApp" }),
+    page.getByRole("button", { name: "Confirmar reserva por WhatsApp" }),
   ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "Pedir feedback por WhatsApp" }),
@@ -204,7 +204,7 @@ test("sem sinal reservation_deposit não apresenta confirmação", async ({
   );
 
   await expect(
-    page.getByText("Enviar confirmação por WhatsApp", { exact: true }),
+    page.getByText("Confirmar reserva por WhatsApp", { exact: true }),
   ).toHaveCount(0);
 });
 
@@ -235,7 +235,7 @@ test("festa totalmente paga gera confirmação sem saldo pendente", async ({
   );
 
   const href = await page
-    .getByRole("link", { name: "Enviar confirmação por WhatsApp" })
+    .getByRole("link", { name: "Confirmar reserva por WhatsApp" })
     .getAttribute("href");
   const message = decodeURIComponent(href!.split("?text=")[1]);
 
@@ -259,7 +259,7 @@ test("mobile 390x844 mostra as duas ações sem overflow depois da festa", async
   );
 
   await expect(
-    page.getByRole("link", { name: "Enviar confirmação por WhatsApp" }),
+    page.getByRole("link", { name: "Confirmar reserva por WhatsApp" }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
