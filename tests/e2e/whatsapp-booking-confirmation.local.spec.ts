@@ -264,6 +264,9 @@ test("mobile 390x844 mostra as duas ações sem overflow depois da festa", async
   await expect(
     page.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
   ).toBeVisible();
+  await expect(
+    page.getByText("Copiar mensagem", { exact: true }),
+  ).toHaveCount(0);
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
