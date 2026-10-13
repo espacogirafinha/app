@@ -1,3 +1,6 @@
+export const GOOGLE_REVIEW_URL =
+  "https://www.google.com/search?sca_esv=8347cae270e83a03&hl=pt-PT&gl=pt&sxsrf=APpeQnsO-dcQ_zfJcnZ68sgd65xVnA56pA:1791931076718&q=Espaço+Girafinha+Silves,+Rua+Cândido+dos+Reis,+Urbanização+Rogério+Branco+1+r/c+direito,+Loja+A,+8300-126+Silves&si=APenkKm7iecQ4G6P-TsbSMFKIQtv3EFIqRAFw-i8uEbk55Z-_0w-pRV06U9WRR4QgGAv8xV7kdmOdQSBVKj7HPuTrFmrkfrrz0H4jrDBtkHLDsfFL3W08Bo%3D&uds=AJ5uw1-EXif9PpKvn5q4EIPxL9gZ3bkhSeIKQWpGYT7P7LmVVCIv9s_3YWXmvQPmAFn-LworgG1vw1mSLjPg3p5I0AYyk4QYVq1ahzWO_adyYAeEEFHiOqdlyuehLlfUammRTCjHdi2Js0C8aGQzFUBKO6uOwq3wh1N5dkz-3pSR3pmc-vZEDZXRjx29w47h44P0diqNoHVgSCtIyZ5e5z6KUsf3zrn1fmkXEVqygzffTVNgRevX59Q&sa=X&ved=2ahUKEwisiai6h7iXAxXeXUEAHfD3Js4Q3PALegQIHBAE&biw=1470&bih=833&dpr=2";
+
 export type BookingConfirmationInput = {
   customerName: string;
   birthdayChildName?: string | null;
@@ -11,11 +14,25 @@ export type BookingConfirmationInput = {
   totalReceived: number;
 };
 
+export type BookingFeedbackInput = {
+  customerName: string;
+  birthdayChildName?: string | null;
+  phone: string;
+  eventDate: string;
+  endTime?: string | null;
+};
+
 export type BookingConfirmationLink = {
   phone: string | null;
   message: string;
   url: string | null;
   remainingBalance: number;
+};
+
+export type BookingFeedbackLink = {
+  phone: string | null;
+  message: string;
+  url: string | null;
 };
 
 export function normalizePortugueseWhatsAppPhone(phone: string) {
@@ -39,7 +56,7 @@ export function buildBookingConfirmationMessage(input: BookingConfirmationInput)
   const arrivalTime = subtractMinutes(input.startTime, 30);
   const timeLine = endTime ? `${startTime} às ${endTime}` : startTime;
   const childConfirmation = childFirstName
-    ? `A reserva da festa da ${childFirstName} está confirmada 🎉`
+    ? `A reserva da festa de ${childFirstName} está confirmada 🎉`
     : "A reserva da festa está confirmada 🎉";
   const balanceLine =
     remainingBalance <= 0
@@ -48,18 +65,40 @@ export function buildBookingConfirmationMessage(input: BookingConfirmationInput)
 
   return [
     `Olá ${customerFirstName} 😊`,
+    "",
     `Já recebemos o formulário e o pagamento dos ${formatEuro(input.depositAmount)} de sinal. ${childConfirmation}`,
     "",
     `📅 ${formatPortugueseDate(input.eventDate)}`,
     `🕓 ${timeLine}`,
     `🎂 ${input.packName}`,
     "",
-    `Os pais e o/a aniversariante podem chegar 30 minutos antes, às ${arrivalTime}, para fazerem os preparativos que forem necessários.`,
+    `Os pais e a criança podem chegar 30 minutos antes, às ${arrivalTime}, para fazerem com calma os preparativos que forem necessários.`,
     "",
     balanceLine,
     "",
     "Obrigada pela preferência 💛",
     "Espaço Girafinha",
+  ].join("\n");
+}
+
+export function buildBookingFeedbackMessage(input: BookingFeedbackInput) {
+  const customerFirstName = firstName(input.customerName);
+  const childFirstName = firstName(input.birthdayChildName ?? "");
+  const partyReference = childFirstName
+    ? `da festa de ${childFirstName}`
+    : "da festa";
+
+  return [
+    `Olá ${customerFirstName} 😊`,
+    "",
+    `Esperamos que tenham gostado ${partyReference} 💛 Foi um gosto receber-vos no Espaço Girafinha!`,
+    "",
+    "Se tiverem um minutinho, gostaríamos muito que nos deixassem a vossa opinião no Google. Ajuda-nos muito e também ajuda outras famílias a conhecerem o nosso espaço 😊",
+    "",
+    "⭐ Deixar avaliação no Google:",
+    GOOGLE_REVIEW_URL,
+    "",
+    "Obrigada por terem escolhido o Espaço Girafinha para este dia tão especial! 🥰",
   ].join("\n");
 }
 
@@ -78,6 +117,28 @@ export function buildBookingConfirmationWhatsAppLink(
       Math.max(0, input.totalPrice - input.totalReceived),
     ),
   };
+}
+
+export function buildBookingFeedbackWhatsAppLink(
+  input: BookingFeedbackInput,
+): BookingFeedbackLink {
+  const phone = normalizePortugueseWhatsAppPhone(input.phone);
+  const message = buildBookingFeedbackMessage(input);
+  return {
+    phone,
+    message,
+    url: phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+      : null,
+  };
+}
+
+export function hasBookingEnded(
+  input: Pick<BookingFeedbackInput, "eventDate" | "endTime">,
+  now = new Date(),
+) {
+  const endKey = `${input.eventDate}T${normalizeTimeKey(input.endTime ?? "23:59")}`;
+  return endKey <= getPortugalDateTimeKey(now);
 }
 
 export function formatPortugueseDate(value: string) {
@@ -113,6 +174,27 @@ export function formatPortugueseTime(value: string) {
   return parsed.minutes === 0
     ? `${parsed.hours}h`
     : `${parsed.hours}h${String(parsed.minutes).padStart(2, "0")}`;
+}
+
+function normalizeTimeKey(value: string) {
+  const parsed = parseTime(value);
+  if (!parsed) return "23:59";
+  return `${String(parsed.hours).padStart(2, "0")}:${String(parsed.minutes).padStart(2, "0")}`;
+}
+
+function getPortugalDateTimeKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Lisbon",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
 }
 
 function parseTime(value: string) {
