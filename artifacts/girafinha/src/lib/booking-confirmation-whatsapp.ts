@@ -9,7 +9,7 @@ export type BookingConfirmationInput = {
   startTime: string;
   endTime?: string | null;
   packName: string;
-  depositAmount: number;
+  depositAmount: number | null;
   totalPrice: number;
   totalReceived: number;
 };
@@ -63,10 +63,15 @@ export function buildBookingConfirmationMessage(input: BookingConfirmationInput)
       ? `O valor total é de ${formatEuro(input.totalPrice)} e já se encontra totalmente liquidado.`
       : `O valor total é de ${formatEuro(input.totalPrice)}, ficando ${formatEuro(remainingBalance)} por liquidar no dia da festa, em numerário.`;
 
+  const confirmationLead =
+    input.depositAmount === null
+      ? `Temos um pagamento registado. ${childConfirmation}`
+      : `Já recebemos o formulário e o pagamento dos ${formatEuro(input.depositAmount)} de sinal. ${childConfirmation}`;
+
   return [
     `Olá ${customerFirstName} 😊`,
     "",
-    `Já recebemos o formulário e o pagamento dos ${formatEuro(input.depositAmount)} de sinal. ${childConfirmation}`,
+    confirmationLead,
     "",
     `📅 ${formatPortugueseDate(input.eventDate)}`,
     `🕓 ${timeLine}`,
@@ -139,6 +144,54 @@ export function hasBookingEnded(
 ) {
   const endKey = `${input.eventDate}T${normalizeTimeKey(input.endTime ?? "23:59")}`;
   return endKey <= getPortugalDateTimeKey(now);
+}
+
+export function resolveBookingConfirmationPayment(input: {
+  eventDate: string;
+  endTime?: string | null;
+  payments: Array<{ paymentType: string; amount: number }>;
+  now?: Date;
+}) {
+  const reservationDepositReceived = input.payments
+    .filter(
+      (payment) =>
+        payment.paymentType === "reservation_deposit" && payment.amount > 0,
+    )
+    .reduce((total, payment) => total + payment.amount, 0);
+
+  if (reservationDepositReceived > 0) {
+    return {
+      eligible: true as const,
+      depositAmount: reservationDepositReceived,
+      source: "reservation_deposit" as const,
+    };
+  }
+
+  const legacyReceived = input.payments
+    .filter(
+      (payment) => payment.paymentType === "legacy_payment" && payment.amount > 0,
+    )
+    .reduce((total, payment) => total + payment.amount, 0);
+
+  if (
+    legacyReceived > 0 &&
+    hasBookingEnded(
+      { eventDate: input.eventDate, endTime: input.endTime },
+      input.now,
+    )
+  ) {
+    return {
+      eligible: true as const,
+      depositAmount: null,
+      source: "legacy_payment" as const,
+    };
+  }
+
+  return {
+    eligible: false as const,
+    depositAmount: null,
+    source: null,
+  };
 }
 
 export function formatPortugueseDate(value: string) {
