@@ -481,8 +481,10 @@ function VenueWhatsAppActions({
     [event.id],
   );
   const paymentsQuery = useListEventPayments(paymentParams, {
-    enabled: event.amountPaid > 0,
-    queryKey: getListEventPaymentsQueryKey(paymentParams),
+    query: {
+      enabled: event.amountPaid > 0,
+      queryKey: getListEventPaymentsQueryKey(paymentParams),
+    },
   });
   const payments = paymentsQuery.data?.items ?? [];
   const summary = paymentsQuery.data?.summary;
