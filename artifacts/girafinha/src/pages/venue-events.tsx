@@ -563,7 +563,7 @@ function VenueWhatsAppActions({
           >
             <a href={confirmationLink.url} target="_blank" rel="noreferrer">
               <MessageCircle className="h-3.5 w-3.5" />
-              Confirmar reserva
+              Confirmar reserva por WhatsApp
             </a>
           </Button>
         ) : (
@@ -576,7 +576,7 @@ function VenueWhatsAppActions({
             title="Telefone inválido"
           >
             <MessageCircle className="h-3.5 w-3.5" />
-            Confirmar reserva
+            Confirmar reserva por WhatsApp
           </Button>
         )
       ) : null}
@@ -592,7 +592,7 @@ function VenueWhatsAppActions({
           >
             <a href={feedbackLink.url} target="_blank" rel="noreferrer">
               <MessageCircle className="h-3.5 w-3.5" />
-              Pedir feedback
+              Pedir feedback por WhatsApp
             </a>
           </Button>
         ) : (
@@ -605,7 +605,7 @@ function VenueWhatsAppActions({
             title="Telefone inválido"
           >
             <MessageCircle className="h-3.5 w-3.5" />
-            Pedir feedback
+            Pedir feedback por WhatsApp
           </Button>
         )
       ) : null}
