@@ -176,7 +176,7 @@ test("Festas no Espaço: pesquisa local por cliente, criança, telefone e festas
 });
 
 
-test("desktop: ações WhatsApp históricas estão acessíveis sem expandir a festa", async ({ page }) => {
+test("desktop: festa histórica apresenta apenas feedback sem expandir a festa", async ({ page }) => {
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -255,7 +255,7 @@ test("desktop: ações WhatsApp históricas estão acessíveis sem expandir a fe
   ).toHaveCount(0);
   await expect(
     row.getByRole("link", { name: "Confirmar reserva por WhatsApp" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     row.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
   ).toBeVisible();
@@ -267,7 +267,7 @@ test("desktop: ações WhatsApp históricas estão acessíveis sem expandir a fe
   });
 });
 
-test("mobile: ações WhatsApp aparecem no cartão sem expandir e sem overflow", async ({ page }) => {
+test("mobile: festa histórica apresenta apenas feedback sem expandir e sem overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
   await page.route("**/api/**", async (route) => {
@@ -345,7 +345,7 @@ test("mobile: ações WhatsApp aparecem no cartão sem expandir e sem overflow",
   await expect(row.locator('button[aria-controls="venue-event-details-22222222-2222-4222-8222-222222222222"][aria-expanded="false"]')).toBeVisible();
   await expect(
     row.getByRole("link", { name: "Confirmar reserva por WhatsApp" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     row.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
   ).toBeVisible();
