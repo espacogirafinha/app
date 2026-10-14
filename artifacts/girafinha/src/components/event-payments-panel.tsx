@@ -59,6 +59,7 @@ import {
   buildBookingConfirmationWhatsAppLink,
   buildBookingFeedbackWhatsAppLink,
   hasBookingEnded,
+  resolveBookingConfirmationPayment,
   type BookingConfirmationInput,
 } from "@/lib/booking-confirmation-whatsapp";
 
@@ -102,17 +103,18 @@ export function EventPaymentsPanel({
   const payments = result?.items ?? [];
   const isMutating =
     createPayment.isPending || updatePayment.isPending || deletePayment.isPending;
-  const reservationDepositReceived = payments
-    .filter(
-      (payment) =>
-        payment.paymentType === "reservation_deposit" && payment.amount > 0,
-    )
-    .reduce((total, payment) => total + payment.amount, 0);
+  const confirmationPayment = bookingConfirmation
+    ? resolveBookingConfirmationPayment({
+        eventDate: bookingConfirmation.eventDate,
+        endTime: bookingConfirmation.endTime,
+        payments,
+      })
+    : null;
   const bookingConfirmationLink =
-    bookingConfirmation && summary && reservationDepositReceived > 0
+    bookingConfirmation && summary && confirmationPayment?.eligible
       ? buildBookingConfirmationWhatsAppLink({
           ...bookingConfirmation,
-          depositAmount: reservationDepositReceived,
+          depositAmount: confirmationPayment.depositAmount,
           totalPrice: summary.totalPrice,
           totalReceived: summary.received,
         })
