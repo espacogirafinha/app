@@ -360,3 +360,50 @@ test("mobile: festa histórica apresenta apenas feedback sem expandir e sem over
     fullPage: true,
   });
 });
+
+test("festa no próprio dia alterna exclusivamente na hora de fim em Lisboa", async ({ page }) => {
+  const today = venueEvent({
+    id: "44444444-4444-4444-8444-444444444444",
+    customerName: "Beatriz Silva",
+    eventDate: "2026-10-14",
+    startTime: "16:00",
+    endTime: "19:00",
+    amountPaid: 110,
+  });
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/api/venue-events") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([today]) });
+    }
+    if (url.pathname === "/api/event-payments") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [{
+            id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            paymentType: "reservation_deposit", amount: 110,
+            paidAt: null, deletedAt: null,
+          }],
+          summary: {
+            totalPrice: 550, received: 110, remainingBalance: 440,
+            paymentStatus: "partial", expectedDeposit: 110,
+            depositReceived: 110, depositRemaining: 0, historicalOverpayment: 0,
+          },
+        }),
+      });
+    }
+    return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+  });
+
+  await page.clock.setFixedTime(new Date("2026-10-14T17:59:00.000Z"));
+  await page.goto("/venue-events-search-test.html");
+  const row = page.locator("#venue-event-44444444-4444-4444-8444-444444444444");
+  await expect(row.getByRole("link", { name: "Confirmar reserva por WhatsApp" })).toBeVisible();
+  await expect(row.getByText("Pedir feedback por WhatsApp", { exact: true })).toHaveCount(0);
+
+  await page.clock.setFixedTime(new Date("2026-10-14T18:01:00.000Z"));
+  await page.reload();
+  await expect(row.getByRole("link", { name: "Pedir feedback por WhatsApp" })).toBeVisible();
+  await expect(row.getByText("Confirmar reserva por WhatsApp", { exact: true })).toHaveCount(0);
+});
