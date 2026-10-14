@@ -1,5 +1,6 @@
 name: PR63 Temporary Validation
 on:
+  pull_request:
   push:
     branches:
       - feat/whatsapp-booking-confirmation
