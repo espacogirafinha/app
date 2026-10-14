@@ -493,8 +493,12 @@ function VenueWhatsAppActions({
     endTime: event.endTime,
     payments,
   });
+  const bookingEnded = hasBookingEnded({
+    eventDate: event.eventDate,
+    endTime: event.endTime,
+  });
   const confirmationLink =
-    summary && confirmationPayment.eligible
+    !bookingEnded && summary && confirmationPayment.eligible
       ? buildBookingConfirmationWhatsAppLink({
           customerName: event.customerName,
           birthdayChildName: event.birthdayChildName,
@@ -508,10 +512,7 @@ function VenueWhatsAppActions({
           totalReceived: summary.received,
         })
       : null;
-  const feedbackLink = hasBookingEnded({
-    eventDate: event.eventDate,
-    endTime: event.endTime,
-  })
+  const feedbackLink = bookingEnded
     ? buildBookingFeedbackWhatsAppLink({
         customerName: event.customerName,
         birthdayChildName: event.birthdayChildName,
