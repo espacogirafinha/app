@@ -157,6 +157,86 @@ test("feedback aparece depois do fim e inclui nomes + Google URL codificado", as
   expect(href).toContain("%0A");
 });
 
+test("festa antiga terminada com legacy_payment mostra confirmação segura", async ({
+  page,
+}) => {
+  await mockPayments(
+    page,
+    [payment({ paymentType: "legacy_payment", amount: 110, paidAt: null })],
+    {
+      totalPrice: 550,
+      received: 110,
+      remainingBalance: 440,
+      paymentStatus: "partial",
+    },
+  );
+
+  await page.goto(
+    "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
+  );
+
+  const confirmation = page.getByRole("link", {
+    name: "Confirmar reserva por WhatsApp",
+  });
+  await expect(confirmation).toBeVisible();
+
+  const href = await confirmation.getAttribute("href");
+  const message = decodeURIComponent(href!.split("?text=")[1]);
+  expect(message).toContain(
+    "Temos um pagamento registado. A reserva da festa de Kelly está confirmada 🎉",
+  );
+  expect(message).not.toContain("de sinal");
+  expect(message).not.toContain("pagamento dos 110,00 €");
+});
+
+test("festa antiga sem qualquer pagamento não mostra confirmação", async ({
+  page,
+}) => {
+  await mockPayments(page, [], {
+    totalPrice: 550,
+    received: 0,
+    remainingBalance: 550,
+    paymentStatus: "unpaid",
+  });
+
+  await page.goto(
+    "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
+  );
+
+  await expect(
+    page.getByText("Confirmar reserva por WhatsApp", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
+  ).toBeVisible();
+});
+
+test("festa antiga elegível mostra confirmação e feedback simultaneamente", async ({
+  page,
+}) => {
+  await mockPayments(
+    page,
+    [payment({ paymentType: "legacy_payment", amount: 110, paidAt: null })],
+    {
+      totalPrice: 550,
+      received: 110,
+      remainingBalance: 440,
+      paymentStatus: "partial",
+    },
+  );
+
+  await page.goto(
+    "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
+  );
+
+  await expect(
+    page.getByRole("link", { name: "Confirmar reserva por WhatsApp" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
+  ).toBeVisible();
+});
+
 test("telefone inválido desativa confirmação e feedback quando aplicável", async ({
   page,
 }) => {
