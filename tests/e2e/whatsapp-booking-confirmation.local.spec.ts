@@ -327,12 +327,16 @@ test("mobile 390x844 mostra as duas ações sem overflow depois da festa", async
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await mockPayments(page, [payment()], {
-    totalPrice: 550,
-    received: 110,
-    remainingBalance: 440,
-    paymentStatus: "partial",
-  });
+  await mockPayments(
+    page,
+    [payment({ paymentType: "legacy_payment", amount: 110, paidAt: null })],
+    {
+      totalPrice: 550,
+      received: 110,
+      remainingBalance: 440,
+      paymentStatus: "partial",
+    },
+  );
 
   await page.goto(
     "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
