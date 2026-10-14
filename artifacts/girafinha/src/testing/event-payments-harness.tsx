@@ -9,6 +9,7 @@ import "@/index.css";
 const params = new URLSearchParams(window.location.search);
 const module = (params.get("module") || "venue_events") as EventPaymentModule;
 const eventDate = params.get("eventDate") || "2099-01-01";
+const phone = params.get("phone") ?? "912345678";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -17,7 +18,24 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <EventPaymentsPanel module={module} entityId="11111111-1111-4111-8111-111111111111" eventDate={eventDate} />
+      <EventPaymentsPanel
+        module={module}
+        entityId="11111111-1111-4111-8111-111111111111"
+        eventDate={eventDate}
+        bookingConfirmation={
+          module === "venue_events"
+            ? {
+                customerName: "Cátia Pinto",
+                birthdayChildName: "Kelly Pinto",
+                phone,
+                eventDate,
+                startTime: "16:00",
+                endTime: "19:00",
+                packName: "Pack Premium",
+              }
+            : undefined
+        }
+      />
       <Toaster />
     </TooltipProvider>
   </QueryClientProvider>,

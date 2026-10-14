@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CreditCard, Pencil, Plus, Trash2 } from "lucide-react";
+import { CreditCard, MessageCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getListEventPaymentsQueryKey,
@@ -55,6 +55,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { parseMoneyInput } from "@/lib/money";
+import {
+  buildBookingConfirmationWhatsAppLink,
+  buildBookingFeedbackWhatsAppLink,
+  hasBookingEnded,
+  resolveBookingConfirmationPayment,
+  type BookingConfirmationInput,
+} from "@/lib/booking-confirmation-whatsapp";
 
 type EditorState = {
   mode: "create" | "edit";
@@ -71,10 +78,15 @@ export function EventPaymentsPanel({
   module,
   entityId,
   eventDate,
+  bookingConfirmation,
 }: {
   module: EventPaymentModule;
   entityId: string;
   eventDate: string;
+  bookingConfirmation?: Omit<
+    BookingConfirmationInput,
+    "depositAmount" | "totalPrice" | "totalReceived"
+  >;
 }) {
   const params = useMemo(() => ({ module, entityId }), [entityId, module]);
   const paymentsQuery = useListEventPayments(params);
@@ -91,6 +103,38 @@ export function EventPaymentsPanel({
   const payments = result?.items ?? [];
   const isMutating =
     createPayment.isPending || updatePayment.isPending || deletePayment.isPending;
+  const confirmationPayment = bookingConfirmation
+    ? resolveBookingConfirmationPayment({
+        eventDate: bookingConfirmation.eventDate,
+        endTime: bookingConfirmation.endTime,
+        payments,
+      })
+    : null;
+  const bookingEnded = bookingConfirmation
+    ? hasBookingEnded({
+        eventDate: bookingConfirmation.eventDate,
+        endTime: bookingConfirmation.endTime,
+      })
+    : false;
+  const bookingConfirmationLink =
+    !bookingEnded && bookingConfirmation && summary && confirmationPayment?.eligible
+      ? buildBookingConfirmationWhatsAppLink({
+          ...bookingConfirmation,
+          depositAmount: confirmationPayment.depositAmount,
+          totalPrice: summary.totalPrice,
+          totalReceived: summary.received,
+        })
+      : null;
+  const bookingFeedbackLink =
+    bookingEnded && bookingConfirmation
+      ? buildBookingFeedbackWhatsAppLink({
+          customerName: bookingConfirmation.customerName,
+          birthdayChildName: bookingConfirmation.birthdayChildName,
+          phone: bookingConfirmation.phone,
+          eventDate: bookingConfirmation.eventDate,
+          endTime: bookingConfirmation.endTime,
+        })
+      : null;
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: getListEventPaymentsQueryKey(params) });
@@ -247,6 +291,81 @@ export function EventPaymentsPanel({
           <MoneyStat label="Recebido" value={summary.received} />
           <MoneyStat label="Por receber" value={summary.remainingBalance} emphasize={summary.remainingBalance > 0} />
         </div>
+
+        {bookingConfirmationLink || bookingFeedbackLink ? (
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {bookingConfirmationLink ? (
+              bookingConfirmationLink.url ? (
+                <Button
+                  asChild
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 sm:w-auto"
+                >
+                  <a
+                    href={bookingConfirmationLink.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Confirmar reserva por WhatsApp
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl sm:w-auto"
+                  disabled
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Confirmar reserva por WhatsApp
+                </Button>
+              )
+            ) : null}
+
+            {bookingFeedbackLink ? (
+              bookingFeedbackLink.url ? (
+                <Button
+                  asChild
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 sm:w-auto"
+                >
+                  <a
+                    href={bookingFeedbackLink.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Pedir feedback por WhatsApp
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl sm:w-auto"
+                  disabled
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Pedir feedback por WhatsApp
+                </Button>
+              )
+            ) : null}
+
+            {(bookingConfirmationLink?.phone === null ||
+              bookingFeedbackLink?.phone === null) && (
+              <p className="w-full text-xs text-muted-foreground">
+                Adicione um número de telefone português válido para usar o WhatsApp.
+              </p>
+            )}
+          </div>
+        ) : null}
 
         {summary.expectedDeposit === null ? (
           <p className="mt-3 text-xs text-muted-foreground">Sinal esperado não registado.</p>

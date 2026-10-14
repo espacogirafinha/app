@@ -28,12 +28,20 @@ import { VenueQuickMarkPaidDialog } from "@/components/venue-quick-mark-paid-dia
 import { useToast } from "@/hooks/use-toast";
 import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import {
+  getListEventPaymentsQueryKey,
   getListVenueEventsQueryKey,
   useDeleteVenueEvent,
+  useListEventPayments,
   useListVenueEvents,
   useListMessageTemplates,
 } from "@workspace/api-client-react";
 import type { MessageTemplate, VenueEvent } from "@workspace/api-client-react";
+import {
+  buildBookingConfirmationWhatsAppLink,
+  buildBookingFeedbackWhatsAppLink,
+  hasBookingEnded,
+  resolveBookingConfirmationPayment,
+} from "@/lib/booking-confirmation-whatsapp";
 
 export default function VenueEventsPage() {
   const { data: events, isLoading } = useListVenueEvents();
@@ -313,12 +321,11 @@ function VenueEventRow({
             ) : null}
           </div>
 
-          <Button asChild variant="outline" size="sm" className="min-h-9 rounded-xl px-3">
-            <a href={whatsappUrl} target="_blank" rel="noreferrer">
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </a>
-          </Button>
+          <VenueWhatsAppActions
+            event={event}
+            fallbackWhatsAppUrl={whatsappUrl}
+            layout="mobile"
+          />
         </div>
       </div>
 
@@ -370,12 +377,11 @@ function VenueEventRow({
                 }
               />
             ) : null}
-            <Button asChild variant="outline" size="sm" className="rounded-xl">
-              <a href={whatsappUrl} target="_blank" rel="noreferrer">
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
-              </a>
-            </Button>
+            <VenueWhatsAppActions
+              event={event}
+              fallbackWhatsAppUrl={whatsappUrl}
+              layout="desktop"
+            />
             <Button variant="outline" size="sm" onClick={onToggle} className="rounded-xl">
               <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
               Detalhes
@@ -439,7 +445,11 @@ function VenueEventRow({
               </div>
             </DetailsBlock>
           </div>
-          <EventPaymentsPanel module="venue_events" entityId={event.id} eventDate={event.eventDate} />
+          <EventPaymentsPanel
+            module="venue_events"
+            entityId={event.id}
+            eventDate={event.eventDate}
+          />
           <EventExtrasDetails module="venue_events" entityId={event.id} supplierCostsEnabled />
           <EventAttachmentsDetails entityType="venue_event" entityId={event.id} />
           <div className="mt-4">
@@ -453,6 +463,163 @@ function VenueEventRow({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function VenueWhatsAppActions({
+  event,
+  fallbackWhatsAppUrl,
+  layout,
+}: {
+  event: VenueEvent;
+  fallbackWhatsAppUrl: string;
+  layout: "mobile" | "desktop";
+}) {
+  const paymentParams = useMemo(
+    () => ({ module: "venue_events" as const, entityId: event.id }),
+    [event.id],
+  );
+  const paymentsQuery = useListEventPayments(paymentParams, {
+    query: {
+      enabled: event.amountPaid > 0,
+      queryKey: getListEventPaymentsQueryKey(paymentParams),
+    },
+  });
+  const payments = paymentsQuery.data?.items ?? [];
+  const summary = paymentsQuery.data?.summary;
+  const confirmationPayment = resolveBookingConfirmationPayment({
+    eventDate: event.eventDate,
+    endTime: event.endTime,
+    payments,
+  });
+  const bookingEnded = hasBookingEnded({
+    eventDate: event.eventDate,
+    endTime: event.endTime,
+  });
+  const confirmationLink =
+    !bookingEnded && summary && confirmationPayment.eligible
+      ? buildBookingConfirmationWhatsAppLink({
+          customerName: event.customerName,
+          birthdayChildName: event.birthdayChildName,
+          phone: event.phone,
+          eventDate: event.eventDate,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          packName: event.packName,
+          depositAmount: confirmationPayment.depositAmount,
+          totalPrice: summary.totalPrice,
+          totalReceived: summary.received,
+        })
+      : null;
+  const feedbackLink = bookingEnded
+    ? buildBookingFeedbackWhatsAppLink({
+        customerName: event.customerName,
+        birthdayChildName: event.birthdayChildName,
+        phone: event.phone,
+        eventDate: event.eventDate,
+        endTime: event.endTime,
+      })
+    : null;
+  const loadingConfirmation =
+    event.amountPaid > 0 && paymentsQuery.isLoading && !feedbackLink;
+  const hasSpecificAction = Boolean(confirmationLink || feedbackLink);
+  const invalidPhone =
+    confirmationLink?.phone === null || feedbackLink?.phone === null;
+  const containerClass =
+    layout === "mobile"
+      ? "grid w-full gap-2 sm:grid-cols-2"
+      : "flex flex-wrap justify-start gap-1.5 lg:justify-end";
+  const actionClass =
+    layout === "mobile"
+      ? "min-h-9 w-full rounded-xl px-3 text-xs sm:w-auto"
+      : "h-8 rounded-xl px-2.5 text-xs";
+
+  if (loadingConfirmation) {
+    return (
+      <Button type="button" variant="outline" size="sm" className={actionClass} disabled>
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        A verificar…
+      </Button>
+    );
+  }
+
+  if (!hasSpecificAction) {
+    return (
+      <Button asChild variant="outline" size="sm" className={actionClass}>
+        <a href={fallbackWhatsAppUrl} target="_blank" rel="noreferrer">
+          <MessageCircle className="h-4 w-4" />
+          WhatsApp
+        </a>
+      </Button>
+    );
+  }
+
+  return (
+    <div className={containerClass}>
+      {confirmationLink ? (
+        confirmationLink.url ? (
+          <Button
+            asChild
+            type="button"
+            variant="outline"
+            size="sm"
+            className={`${actionClass} border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800`}
+          >
+            <a href={confirmationLink.url} target="_blank" rel="noreferrer">
+              <MessageCircle className="h-3.5 w-3.5" />
+              Confirmar reserva por WhatsApp
+            </a>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={actionClass}
+            disabled
+            title="Telefone inválido"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Confirmar reserva por WhatsApp
+          </Button>
+        )
+      ) : null}
+
+      {feedbackLink ? (
+        feedbackLink.url ? (
+          <Button
+            asChild
+            type="button"
+            variant="outline"
+            size="sm"
+            className={`${actionClass} border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800`}
+          >
+            <a href={feedbackLink.url} target="_blank" rel="noreferrer">
+              <MessageCircle className="h-3.5 w-3.5" />
+              Pedir feedback por WhatsApp
+            </a>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={actionClass}
+            disabled
+            title="Telefone inválido"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Pedir feedback por WhatsApp
+          </Button>
+        )
+      ) : null}
+
+      {invalidPhone && layout === "mobile" ? (
+        <p className="text-xs text-muted-foreground sm:col-span-2">
+          Telefone inválido para WhatsApp.
+        </p>
+      ) : null}
     </div>
   );
 }
