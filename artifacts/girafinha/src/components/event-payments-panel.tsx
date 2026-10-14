@@ -110,8 +110,14 @@ export function EventPaymentsPanel({
         payments,
       })
     : null;
+  const bookingEnded = bookingConfirmation
+    ? hasBookingEnded({
+        eventDate: bookingConfirmation.eventDate,
+        endTime: bookingConfirmation.endTime,
+      })
+    : false;
   const bookingConfirmationLink =
-    bookingConfirmation && summary && confirmationPayment?.eligible
+    !bookingEnded && bookingConfirmation && summary && confirmationPayment?.eligible
       ? buildBookingConfirmationWhatsAppLink({
           ...bookingConfirmation,
           depositAmount: confirmationPayment.depositAmount,
@@ -120,11 +126,7 @@ export function EventPaymentsPanel({
         })
       : null;
   const bookingFeedbackLink =
-    bookingConfirmation &&
-    hasBookingEnded({
-      eventDate: bookingConfirmation.eventDate,
-      endTime: bookingConfirmation.endTime,
-    })
+    bookingEnded && bookingConfirmation
       ? buildBookingFeedbackWhatsAppLink({
           customerName: bookingConfirmation.customerName,
           birthdayChildName: bookingConfirmation.birthdayChildName,
