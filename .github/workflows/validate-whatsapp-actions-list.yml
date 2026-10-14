@@ -34,6 +34,18 @@ jobs:
           test "$count" -le 12
       - name: Install Playwright Chromium
         run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Start payments harness
+        run: |
+          PORT=4175 VITE_SUPABASE_URL=https://example.supabase.co VITE_SUPABASE_ANON_KEY=test-anon \
+            corepack pnpm --filter @workspace/girafinha dev > /tmp/payments-vite.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4175/event-payments-test.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/payments-vite.log
+          exit 1
       - name: Payments WhatsApp E2E
         run: corepack pnpm exec playwright test --config=playwright.event-payments.config.ts
       - name: Venue list WhatsApp E2E
