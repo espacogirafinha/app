@@ -1,0 +1,63 @@
+name: PR63 Temporary Validation
+on:
+  push:
+    branches:
+      - feat/whatsapp-booking-confirmation
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.0'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Browser dependencies
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run full validation and retain individual results
+        shell: bash
+        run: |
+          mkdir -p validation-results
+          run_check() {
+            name="$1"; shift
+            echo "::group::$name"
+            "$@" > "validation-results/$name.log" 2>&1
+            result=$?
+            cat "validation-results/$name.log"
+            echo "$name=$result" | tee -a validation-results/status.txt
+            echo "::endgroup::"
+          }
+          run_check unit-whatsapp node --experimental-strip-types --test artifacts/girafinha/src/lib/booking-confirmation-whatsapp.test.ts
+          run_check typecheck pnpm run typecheck
+          run_check build pnpm run build
+          (cd artifacts/girafinha && pnpm exec vite --config vite.config.ts --host 127.0.0.1 --port 4175) > validation-results/vite.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4175/event-payments-test.html >/dev/null; then break; fi
+            sleep 2
+          done
+          run_check e2e-payments-whatsapp pnpm exec playwright test --config=playwright.event-payments.config.ts
+          cp playwright.event-payments.config.ts validation-results/listing.config.ts
+          sed -i 's/(?:event-payments-date-safety|whatsapp-booking-confirmation)\\.local\\.spec\\.ts/venue-events-search\\.local\\.spec\\.ts/' validation-results/listing.config.ts
+          run_check e2e-listing pnpm exec playwright test tests/e2e/venue-events-search.local.spec.ts --config=validation-results/listing.config.ts
+          echo "Function files:" | tee validation-results/functions.txt
+          find api -type f \\( -name '*.ts' -o -name '*.js' \\) | sort | tee -a validation-results/functions.txt
+          echo "FUNCTION_COUNT=$(find api -type f \\( -name '*.ts' -o -name '*.js' \\) | wc -l)" | tee -a validation-results/functions.txt
+          if grep -E '=[1-9][0-9]*' validation-results/status.txt; then exit 1; fi
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr63-validation
+          path: |
+            validation-results
+            test-results
+            playwright-report
+          if-no-files-found: ignore
