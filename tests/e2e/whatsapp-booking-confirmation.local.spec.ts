@@ -157,36 +157,13 @@ test("feedback aparece depois do fim e inclui nomes + Google URL codificado", as
   expect(href).toContain("%0A");
 });
 
-test("festa antiga terminada com legacy_payment mostra confirmação segura", async ({
-  page,
-}) => {
-  await mockPayments(
-    page,
-    [payment({ paymentType: "legacy_payment", amount: 110, paidAt: null })],
-    {
-      totalPrice: 550,
-      received: 110,
-      remainingBalance: 440,
-      paymentStatus: "partial",
-    },
-  );
-
-  await page.goto(
-    "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
-  );
-
-  const confirmation = page.getByRole("link", {
-    name: "Confirmar reserva por WhatsApp",
+test("festa antiga com legacy_payment mostra apenas feedback", async ({ page }) => {
+  await mockPayments(page, [payment({ paymentType: "legacy_payment", amount: 110, paidAt: null })], {
+    totalPrice: 550, received: 110, remainingBalance: 440, paymentStatus: "partial",
   });
-  await expect(confirmation).toBeVisible();
-
-  const href = await confirmation.getAttribute("href");
-  const message = decodeURIComponent(href!.split("?text=")[1]);
-  expect(message).toContain(
-    "Temos um pagamento registado. A reserva da festa de Kelly está confirmada 🎉",
-  );
-  expect(message).not.toContain("de sinal");
-  expect(message).not.toContain("pagamento dos 110,00 €");
+  await page.goto("/event-payments-test.html?module=venue_events&eventDate=2026-10-01");
+  await expect(page.getByText("Confirmar reserva por WhatsApp", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Pedir feedback por WhatsApp" })).toBeVisible();
 });
 
 test("festa antiga sem qualquer pagamento não mostra confirmação", async ({
@@ -211,33 +188,16 @@ test("festa antiga sem qualquer pagamento não mostra confirmação", async ({
   ).toBeVisible();
 });
 
-test("festa antiga elegível mostra confirmação e feedback simultaneamente", async ({
-  page,
-}) => {
-  await mockPayments(
-    page,
-    [payment({ paymentType: "legacy_payment", amount: 110, paidAt: null })],
-    {
-      totalPrice: 550,
-      received: 110,
-      remainingBalance: 440,
-      paymentStatus: "partial",
-    },
-  );
-
-  await page.goto(
-    "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
-  );
-
-  await expect(
-    page.getByRole("link", { name: "Confirmar reserva por WhatsApp" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
-  ).toBeVisible();
+test("festa terminada nunca apresenta simultaneamente confirmação e feedback", async ({ page }) => {
+  await mockPayments(page, [payment()], {
+    totalPrice: 550, received: 110, remainingBalance: 440, paymentStatus: "partial",
+  });
+  await page.goto("/event-payments-test.html?module=venue_events&eventDate=2026-10-01");
+  await expect(page.getByText("Confirmar reserva por WhatsApp", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Pedir feedback por WhatsApp" })).toBeVisible();
 });
 
-test("telefone inválido desativa confirmação e feedback quando aplicável", async ({
+test("telefone inválido desativa apenas a ação de feedback após o fim", async ({
   page,
 }) => {
   await mockPayments(page, [payment()], {
@@ -251,12 +211,8 @@ test("telefone inválido desativa confirmação e feedback quando aplicável", a
     "/event-payments-test.html?module=venue_events&eventDate=2026-10-01&phone=12345",
   );
 
-  await expect(
-    page.getByRole("button", { name: "Confirmar reserva por WhatsApp" }),
-  ).toBeDisabled();
-  await expect(
-    page.getByRole("button", { name: "Pedir feedback por WhatsApp" }),
-  ).toBeDisabled();
+  await expect(page.getByText("Confirmar reserva por WhatsApp", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Pedir feedback por WhatsApp" })).toBeDisabled();
   await expect(
     page.getByText(
       "Adicione um número de telefone português válido para usar o WhatsApp.",
@@ -323,7 +279,7 @@ test("festa totalmente paga gera confirmação sem saldo pendente", async ({
   expect(message).not.toContain("por liquidar");
 });
 
-test("mobile 390x844 mostra as duas ações sem overflow depois da festa", async ({
+test("mobile 390x844 mostra apenas feedback sem overflow depois da festa", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -342,12 +298,8 @@ test("mobile 390x844 mostra as duas ações sem overflow depois da festa", async
     "/event-payments-test.html?module=venue_events&eventDate=2026-10-01",
   );
 
-  await expect(
-    page.getByRole("link", { name: "Confirmar reserva por WhatsApp" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Pedir feedback por WhatsApp" }),
-  ).toBeVisible();
+  await expect(page.getByText("Confirmar reserva por WhatsApp", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Pedir feedback por WhatsApp" })).toBeVisible();
   await expect(
     page.getByText("Copiar mensagem", { exact: true }),
   ).toHaveCount(0);
