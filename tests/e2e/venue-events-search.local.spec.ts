@@ -152,6 +152,9 @@ test("Festas no Espaço: pesquisa local por cliente, criança, telefone e festas
   await expect(search).toBeVisible();
 
   await expect(page.locator("h3:visible", { hasText: "Diana Pedrosa" })).toBeVisible();
+  const upcomingRow = page.locator("#venue-event-11111111-1111-4111-8111-111111111111");
+  await expect(upcomingRow.getByRole("link", { name: "Confirmar reserva por WhatsApp" })).toBeVisible();
+  await expect(upcomingRow.getByText("Pedir feedback por WhatsApp", { exact: true })).toHaveCount(0);
   await expect(page.locator("h3:visible", { hasText: "Ana Costa" })).toHaveCount(0);
 
   await search.fill("PEDR");
