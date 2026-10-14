@@ -250,7 +250,9 @@ test("desktop: ações WhatsApp históricas estão acessíveis sem expandir a fe
 
   const row = page.locator("#venue-event-22222222-2222-4222-8222-222222222222");
   await expect(row).toBeVisible();
-  await expect(row.locator('button[aria-controls="venue-event-details-22222222-2222-4222-8222-222222222222"][aria-expanded="false"]')).toBeVisible();
+  await expect(
+    row.locator("#venue-event-details-22222222-2222-4222-8222-222222222222"),
+  ).toHaveCount(0);
   await expect(
     row.getByRole("link", { name: "Confirmar reserva por WhatsApp" }),
   ).toBeVisible();
