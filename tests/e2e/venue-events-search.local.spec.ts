@@ -407,6 +407,7 @@ test("festa no próprio dia alterna exclusivamente na hora de fim em Lisboa", as
 
   await page.clock.setFixedTime(new Date("2026-10-14T18:01:00.000Z"));
   await page.reload();
+  await page.getByRole("tab", { name: "Anteriores" }).click();
   await expect(row.getByRole("link", { name: "Pedir feedback por WhatsApp" })).toBeVisible();
   await expect(row.getByText("Confirmar reserva por WhatsApp", { exact: true })).toHaveCount(0);
 });
