@@ -8,6 +8,7 @@ import {
   buildBookingFeedbackWhatsAppLink,
   hasBookingEnded,
   normalizePortugueseWhatsAppPhone,
+  resolveBookingConfirmationPayment,
   subtractMinutes,
 } from "./booking-confirmation-whatsapp.ts";
 
@@ -150,4 +151,78 @@ test("URLs codificam acentos, emojis, quebras de linha e o link Google", () => {
   assert.ok(
     feedback.url!.includes(encodeURIComponent(GOOGLE_REVIEW_URL)),
   );
+});
+
+
+test("festa nova com reservation_deposit mantém confirmação normal", () => {
+  const result = resolveBookingConfirmationPayment({
+    eventDate: "2026-11-05",
+    endTime: "19:00",
+    payments: [{ paymentType: "reservation_deposit", amount: 110 }],
+    now: new Date("2026-10-14T10:00:00.000Z"),
+  });
+
+  assert.deepEqual(result, {
+    eligible: true,
+    depositAmount: 110,
+    source: "reservation_deposit",
+  });
+});
+
+test("festa antiga terminada com legacy_payment usa fallback sem inventar sinal", () => {
+  const result = resolveBookingConfirmationPayment({
+    eventDate: "2026-10-01",
+    endTime: "19:00",
+    payments: [{ paymentType: "legacy_payment", amount: 110 }],
+    now: new Date("2026-10-14T10:00:00.000Z"),
+  });
+
+  assert.deepEqual(result, {
+    eligible: true,
+    depositAmount: null,
+    source: "legacy_payment",
+  });
+
+  const message = buildBookingConfirmationMessage({
+    ...base,
+    eventDate: "2026-10-01",
+    depositAmount: null,
+  });
+
+  assert.match(
+    message,
+    /Temos um pagamento registado\. A reserva da festa de Kelly está confirmada 🎉/,
+  );
+  assert.doesNotMatch(message, /de sinal/);
+  assert.doesNotMatch(message, /pagamento dos 110,00 €/);
+});
+
+test("festa antiga sem qualquer pagamento não fica elegível para confirmação", () => {
+  const result = resolveBookingConfirmationPayment({
+    eventDate: "2026-10-01",
+    endTime: "19:00",
+    payments: [],
+    now: new Date("2026-10-14T10:00:00.000Z"),
+  });
+
+  assert.deepEqual(result, {
+    eligible: false,
+    depositAmount: null,
+    source: null,
+  });
+});
+
+test("legacy_payment não ativa fallback antes de a festa terminar", () => {
+  const result = resolveBookingConfirmationPayment({
+    eventDate: "2026-11-05",
+    endTime: "19:00",
+    payments: [{ paymentType: "legacy_payment", amount: 110 }],
+    now: new Date("2026-10-14T10:00:00.000Z"),
+  });
+
+  assert.deepEqual(result, {
+    eligible: false,
+    depositAmount: null,
+    source: null,
+  });
 });
