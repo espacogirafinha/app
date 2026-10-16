@@ -456,9 +456,6 @@ export function VenueEventModal({
             <Field label="Idade">
               <Input type="number" min="0" value={form.birthdayChildAge} onChange={(event) => patch({ birthdayChildAge: event.target.value })} />
             </Field>
-            <Field label="Nº crianças">
-              <Input type="number" min="0" value={form.childrenCount} onChange={(event) => patch({ childrenCount: event.target.value })} />
-            </Field>
             <Field label="Idades/observações">
               <Input value={form.childrenAges} onChange={(event) => patch({ childrenAges: event.target.value })} />
             </Field>
