@@ -357,9 +357,6 @@ export function ExternalEventModal({
             <Field label="Local/morada">
               <Input value={form.eventLocation} onChange={(event) => patch({ eventLocation: event.target.value })} />
             </Field>
-            <Field label="Nº pessoas/convidados">
-              <Input type="number" min="0" value={form.guestCount} onChange={(event) => patch({ guestCount: event.target.value })} />
-            </Field>
             <Field label="Tipo de evento">
               <Input value={form.eventType} onChange={(event) => patch({ eventType: event.target.value })} placeholder="Batizado, aniversário, empresa..." />
             </Field>
