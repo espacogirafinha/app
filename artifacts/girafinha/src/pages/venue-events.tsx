@@ -289,6 +289,7 @@ function VenueEventRow({
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <h3 className="mr-0.5 min-w-0 break-words font-bold leading-snug text-foreground">{event.customerName}</h3>
+            {event.nif?.trim() ? <Badge className="rounded-md bg-amber-100 text-amber-900 hover:bg-amber-100">FATURA!</Badge> : null}
             <PaymentBadge status={event.paymentStatus} />
             <StatusBadge status={event.status} ended={hasVenueEventEnded(event)} />
           </div>
@@ -340,6 +341,7 @@ function VenueEventRow({
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-bold text-foreground">{event.customerName}</h3>
+            {event.nif?.trim() ? <Badge className="rounded-md bg-amber-100 text-amber-900 hover:bg-amber-100">FATURA!</Badge> : null}
             <PaymentBadge status={event.paymentStatus} />
             <StatusBadge status={event.status} ended={hasVenueEventEnded(event)} />
           </div>
