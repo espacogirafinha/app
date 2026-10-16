@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/remove-attendee-count-fields
+  pull_request:
+    branches:
+      - main
 
 jobs:
   verify:
