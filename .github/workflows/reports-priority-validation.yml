@@ -1,0 +1,25 @@
+name: Reports priority validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+      - name: Build
+        run: corepack pnpm run build
+      - name: Confirm reports priority layout
+        run: |
+          grep -q 'Festas deste período' artifacts/girafinha/src/pages/reports.tsx
+          ! grep -q 'Receita por pack' artifacts/girafinha/src/pages/reports.tsx
