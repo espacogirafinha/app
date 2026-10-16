@@ -211,6 +211,13 @@ export default function ReportsPage() {
         <EmptyState text="Não foi possível carregar os relatórios." />
       ) : (
         <>
+          <VenueEventsPeriodList
+            events={activeVenueEventsForPeriod}
+            loading={venueEventsLoading}
+            error={venueEventsError}
+            periodLabel={period.label}
+          />
+
           <section aria-label="Indicadores principais" className="grid grid-cols-2 gap-2.5 md:grid-cols-5 md:gap-3">
             <MetricCard title="Receita" value={euro(report.summary.totalRevenue)} icon={Euro} tone="emerald" />
             <MetricCard title="Recebido" value={euro(report.summary.totalReceived)} icon={TrendingUp} tone="teal" />
@@ -265,12 +272,6 @@ export default function ReportsPage() {
           </div>
 
           <div className="hidden md:block"><AreaDetails report={report} /></div>
-          <VenueEventsPeriodList
-            events={activeVenueEventsForPeriod}
-            loading={venueEventsLoading}
-            error={venueEventsError}
-            periodLabel={period.label}
-          />
           <ExtrasReportSection
             extras={report.extras}
             reportParams={{ startDate: period.startDate, endDate: period.endDate }}
@@ -428,7 +429,6 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
           ["Por receber", euro(report.venueEvents.pending)],
         ]} />
         <RankingCard title="Packs mais vendidos" icon={Star} rows={report.venueEvents.topPacks} />
-        <RankingCard title="Receita por pack" icon={BarChart3} rows={report.venueEvents.revenueByPack} />
         <RankingCard title="Origem dos clientes" icon={Users} rows={report.venueEvents.sources} empty="Sem origem registada neste período." />
       </DetailCard>
 
