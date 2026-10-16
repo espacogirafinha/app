@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, ChevronDown, ChevronRight, Loader2, MessageCircle, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronRight, Loader2, MessageCircle, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -266,7 +266,6 @@ function VenueEventRow({
   const childSummary = [
     event.birthdayChildName,
     event.birthdayChildAge !== null && event.birthdayChildAge !== undefined ? String(event.birthdayChildAge) + " anos" : null,
-    String(event.childrenCount) + " crianças",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -294,7 +293,9 @@ function VenueEventRow({
             <StatusBadge status={event.status} ended={hasVenueEventEnded(event)} />
           </div>
 
-          <p className="mt-1.5 break-words text-sm leading-snug text-muted-foreground">{childSummary}</p>
+          {childSummary ? (
+            <p className="mt-1.5 break-words text-sm leading-snug text-muted-foreground">{childSummary}</p>
+          ) : null}
 
           <div className="mt-2 text-sm leading-snug">
             <p className="font-semibold text-foreground">{event.packName}</p>
@@ -350,7 +351,6 @@ function VenueEventRow({
           <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
             {event.birthdayChildName && <span>Aniversariante: {event.birthdayChildName}</span>}
             {event.birthdayChildAge !== null && event.birthdayChildAge !== undefined && <span>{event.birthdayChildAge} anos</span>}
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{event.childrenCount} crianças</span>
             {event.partyTheme && <span>Tema: {event.partyTheme}</span>}
           </div>
         </div>
