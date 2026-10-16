@@ -1,6 +1,6 @@
 import { differenceInDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, ChevronDown, ChevronRight, Loader2, MapPin, MessageCircle, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronRight, Loader2, MapPin, MessageCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -260,9 +260,8 @@ function ExternalEventRow({
             </p>
           ) : null}
 
-          {event.guestCount > 0 || event.eventType || event.eventTheme ? (
+          {event.eventType || event.eventTheme ? (
             <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-sm leading-snug text-muted-foreground">
-              {event.guestCount > 0 ? <span>{event.guestCount} pessoas</span> : null}
               {event.eventType ? <span className="break-words">{event.eventType}</span> : null}
               {event.eventTheme ? <span className="break-words">Tema: {event.eventTheme}</span> : null}
             </div>
@@ -316,7 +315,6 @@ function ExternalEventRow({
             <span>{event.startTime}{event.endTime ? `-${event.endTime}` : ""}</span>
             <span>{event.phone}</span>
             {event.eventLocation && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{event.eventLocation}</span>}
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{event.guestCount} pessoas</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {event.eventType && <Badge variant="outline" className="rounded-md">{event.eventType}</Badge>}
