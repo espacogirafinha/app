@@ -10,7 +10,6 @@ import {
   Euro,
   FileText,
   Loader2,
-  PackagePlus,
   PieChart as PieChartIcon,
   Star,
   TrendingUp,
@@ -420,18 +419,8 @@ function DistributionChart({ rows, compact = false }: { rows: AreaRow[]; compact
 }
 
 function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: boolean }) {
-  const externalMetrics: Array<[string, string | number]> = [
-    ["Eventos", report.externalEvents.eventCount],
-    ["Ticket médio", euro(report.externalEvents.averageTicket)],
-    ["Recebido", euro(report.externalEvents.received)],
-    ["Por receber", euro(report.externalEvents.pending)],
-  ];
-  if (report.externalEvents.heldDeposits > 0) externalMetrics.push(["Cauções em posse", euro(report.externalEvents.heldDeposits)]);
-  if (report.externalEvents.retainedDeposits > 0) externalMetrics.push(["Cauções retidas", euro(report.externalEvents.retainedDeposits)]);
-
-  const sectionClass = mobile ? "space-y-4" : "grid gap-4 xl:grid-cols-2";
   return (
-    <section className={sectionClass} aria-label="Detalhes por área">
+    <section className="space-y-4" aria-label="Detalhes por área">
       <DetailCard title="Festas no Espaço" icon={Star} empty={report.venueEvents.partyCount === 0} mobile={mobile}>
         <MetricStrip items={[
           ["Festas", report.venueEvents.partyCount],
@@ -443,13 +432,7 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
         <RankingCard title="Origem dos clientes" icon={Users} rows={report.venueEvents.sources} empty="Sem origem registada neste período." />
       </DetailCard>
 
-      <DetailCard title="Serviços Externos" icon={PackagePlus} empty={report.externalEvents.eventCount === 0} mobile={mobile}>
-        <MetricStrip items={externalMetrics} />
-        <RankingCard title="Serviços mais vendidos" icon={PackagePlus} rows={report.externalEvents.topServices} />
-        <RankingCard title="Receita por serviço" icon={BarChart3} rows={report.externalEvents.revenueByServiceType} />
-      </DetailCard>
-
-      <DetailCard title="Workshops/Formações" icon={Users} empty={report.workshops.workshopCount === 0} mobile={mobile} className="xl:col-span-2">
+      <DetailCard title="Workshops/Formações" icon={Users} empty={report.workshops.workshopCount === 0} mobile={mobile}>
         <MetricStrip items={[
           ["Workshops", report.workshops.workshopCount], ["Inscrições", report.workshops.activeRegistrations],
           ["Vagas livres", report.workshops.freeSeats], ["Taxa de ocupação", `${report.workshops.occupancyRate}%`],
