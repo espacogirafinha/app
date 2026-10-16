@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -36,11 +37,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   getGetReportsV2QueryKey,
   useGetReportsV2,
+  useListVenueEvents,
   useUpdateSelectedExtraCost,
   type ReportsV2,
   type ReportsV2AreaSummary,
   type ReportsV2ExtraOccurrence,
   type ReportsV2RevenueStat,
+  type VenueEvent,
 } from "@workspace/api-client-react";
 
 type PeriodMode = "month" | "year" | "custom";
@@ -91,6 +94,19 @@ export default function ReportsPage() {
   }, [customEnd, customStart, mode, now, selectedMonth, selectedYear]);
 
   const { data: report, isLoading, isError } = useGetReportsV2({ startDate: period.startDate, endDate: period.endDate });
+  const {
+    data: venueEventsForPeriod,
+    isLoading: venueEventsLoading,
+    isError: venueEventsError,
+  } = useListVenueEvents({ dateFrom: period.startDate, dateTo: period.endDate });
+  const activeVenueEventsForPeriod = useMemo(
+    () => [...(venueEventsForPeriod ?? [])]
+      .filter((event) => event.status !== "cancelled")
+      .sort((first, second) =>
+        `${first.eventDate}T${first.startTime}`.localeCompare(`${second.eventDate}T${second.startTime}`),
+      ),
+    [venueEventsForPeriod],
+  );
   const areaRows = useMemo<AreaRow[]>(() => report ? [
     { name: "Festas no Espaço", shortName: "Festas", ...report.areas.venueEvents },
     { name: "Serviços Externos", shortName: "Serviços", ...report.areas.externalEvents },
@@ -114,6 +130,18 @@ export default function ReportsPage() {
         [area.name, "Por receber", area.pending],
         ...(area.heldDeposits > 0 ? [[area.name, "Cauções em posse", area.heldDeposits]] : []),
         ...(area.retainedDeposits > 0 ? [[area.name, "Cauções retidas", area.retainedDeposits]] : []),
+      ]),
+      ["Festas deste período", "Data", "Cliente", "Aniversariante", "Pack", "Total", "Recebido", "Em falta", "Fatura"],
+      ...activeVenueEventsForPeriod.map((event) => [
+        "Festa",
+        event.eventDate,
+        event.customerName,
+        event.birthdayChildName ?? "",
+        event.packName,
+        event.totalPrice,
+        event.amountPaid,
+        event.remainingBalance,
+        event.nif?.trim() ? "FATURA!" : "",
       ]),
       ["Extras", "Vendidos", report.extras.soldCount],
       ["Extras", "Faturado (incluído na receita das Festas)", report.extras.revenue],
@@ -158,7 +186,7 @@ export default function ReportsPage() {
             Análise de festas, serviços externos e workshops/formações.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={exportCsv} disabled={!report} className="min-h-10 shrink-0 rounded-xl px-3 md:px-4">
+        <Button variant="outline" size="sm" onClick={exportCsv} disabled={!report || venueEventsLoading || venueEventsError} className="min-h-10 shrink-0 rounded-xl px-3 md:px-4">
           <Download className="h-4 w-4" />
           Exportar CSV
         </Button>
@@ -238,6 +266,12 @@ export default function ReportsPage() {
           </div>
 
           <div className="hidden md:block"><AreaDetails report={report} /></div>
+          <VenueEventsPeriodList
+            events={activeVenueEventsForPeriod}
+            loading={venueEventsLoading}
+            error={venueEventsError}
+            periodLabel={period.label}
+          />
           <ExtrasReportSection
             extras={report.extras}
             reportParams={{ startDate: period.startDate, endDate: period.endDate }}
@@ -400,8 +434,9 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
     <section className={sectionClass} aria-label="Detalhes por área">
       <DetailCard title="Festas no Espaço" icon={Star} empty={report.venueEvents.partyCount === 0} mobile={mobile}>
         <MetricStrip items={[
-          ["Festas", report.venueEvents.partyCount], ["Ticket médio", euro(report.areas.venueEvents.averageTicket)],
-          ["Média crianças", report.venueEvents.averageChildren], ["Por receber", euro(report.venueEvents.pending)],
+          ["Festas", report.venueEvents.partyCount],
+          ["Ticket médio", euro(report.areas.venueEvents.averageTicket)],
+          ["Por receber", euro(report.venueEvents.pending)],
         ]} />
         <RankingCard title="Packs mais vendidos" icon={Star} rows={report.venueEvents.topPacks} />
         <RankingCard title="Receita por pack" icon={BarChart3} rows={report.venueEvents.revenueByPack} />
@@ -412,7 +447,6 @@ function AreaDetails({ report, mobile = false }: { report: ReportsV2; mobile?: b
         <MetricStrip items={externalMetrics} />
         <RankingCard title="Serviços mais vendidos" icon={PackagePlus} rows={report.externalEvents.topServices} />
         <RankingCard title="Receita por serviço" icon={BarChart3} rows={report.externalEvents.revenueByServiceType} />
-        <RankingCard title="Combinações de serviços" icon={PieChartIcon} rows={report.externalEvents.serviceCombinations} />
       </DetailCard>
 
       <DetailCard title="Workshops/Formações" icon={Users} empty={report.workshops.workshopCount === 0} mobile={mobile} className="xl:col-span-2">
@@ -544,6 +578,85 @@ function FinancialReportSection({
           </CardContent>
         </Card>
       </div>
+    </section>
+  );
+}
+
+function VenueEventsPeriodList({
+  events,
+  loading,
+  error,
+  periodLabel,
+}: {
+  events: VenueEvent[];
+  loading: boolean;
+  error: boolean;
+  periodLabel: string;
+}) {
+  return (
+    <section className="space-y-3" aria-label="Festas deste período">
+      <div>
+        <h2 className="text-base font-semibold">Festas deste período</h2>
+        <p className="text-xs text-muted-foreground">
+          Festas no Espaço que compõem os totais de {periodLabel}. Festas canceladas não entram nesta lista nem nos totais.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center rounded-xl border border-border/70 p-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary/50" />
+        </div>
+      ) : error ? (
+        <EmptyState text="Não foi possível carregar a lista das festas deste período." />
+      ) : events.length === 0 ? (
+        <EmptyState text="Não há Festas no Espaço neste período." />
+      ) : (
+        <div className="grid gap-2 lg:grid-cols-2">
+          {events.map((event) => (
+            <Card key={event.id} className="border-border/70 shadow-sm">
+              <CardContent className="space-y-3 p-3 md:p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                      {format(parseISO(event.eventDate), "dd MMM yyyy", { locale: pt })} · {event.startTime}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <p className="break-words font-semibold">{event.customerName}</p>
+                      {event.nif?.trim() ? (
+                        <Badge className="rounded-md bg-amber-100 text-amber-900 hover:bg-amber-100">FATURA!</Badge>
+                      ) : null}
+                    </div>
+                    {event.birthdayChildName ? (
+                      <p className="mt-0.5 text-xs text-muted-foreground">Aniversariante: {event.birthdayChildName}</p>
+                    ) : null}
+                    <p className="mt-1 text-sm text-muted-foreground">{event.packName}</p>
+                  </div>
+                  <Button asChild variant="outline" size="sm" className="shrink-0 rounded-xl">
+                    <a href={`/venue-events?open=${encodeURIComponent(event.id)}`}>Abrir festa</a>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="rounded-lg border border-border p-2">
+                    <p className="text-muted-foreground">Total</p>
+                    <p className="mt-0.5 font-bold">{euro(event.totalPrice)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-2">
+                    <p className="text-muted-foreground">Recebido</p>
+                    <p className="mt-0.5 font-bold text-emerald-700">{euro(event.amountPaid)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-2">
+                    <p className="text-muted-foreground">Em falta</p>
+                    <p className={`mt-0.5 font-bold ${event.remainingBalance > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+                      {event.remainingBalance > 0 ? euro(event.remainingBalance) : "Pago"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
