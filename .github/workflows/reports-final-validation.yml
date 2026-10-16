@@ -1,0 +1,27 @@
+name: Reports final validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+      - name: Build
+        run: corepack pnpm run build
+      - name: Confirm final reports layout
+        run: |
+          grep -q 'Festas deste período' artifacts/girafinha/src/pages/reports.tsx
+          ! grep -q 'Média crianças' artifacts/girafinha/src/pages/reports.tsx
+          ! grep -q 'Combinações de serviços' artifacts/girafinha/src/pages/reports.tsx
+          ! grep -q 'DetailCard title="Serviços Externos"' artifacts/girafinha/src/pages/reports.tsx
