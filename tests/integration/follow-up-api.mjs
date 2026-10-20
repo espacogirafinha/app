@@ -79,7 +79,7 @@ try{
 
   // Completed event from the previous annual cycle. Both stages already due,
   // but first contact has priority until explicitly completed.
-  await venue(2,utcDay(-320),"completed","934123456","Leonor");
+  await venue(2,utcDay(-340),"completed","934123456","Leonor");
   assert.equal(await sync(),200);
   page=await request("/follow-up");
   let opportunity=page.data.reactivations.find(x=>x.source.id===uuid(2));
@@ -119,7 +119,7 @@ try{
   const c2=await counts();
   assert.equal(c2.reactivations,1);
   // Another completed event with a matching external service requires review.
-  await venue(4,utcDay(-320),"completed","961234567","Lourenço");
+  await venue(4,utcDay(-340),"completed","961234567","Lourenço");
   await pool.query("insert into public.external_events(id,customer_name,phone,event_date,status,total_price) values($1,'Outro','961234567',$2,'confirmed',200)",[uuid(5),utcDay(39)]);
   assert.equal(await sync(),200);
   page=await request("/follow-up");
