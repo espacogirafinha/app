@@ -10,6 +10,7 @@ const router: IRouter = Router();
 // Explicit activation only after the database migration is approved and applied.
 // Preview deployments never write operational data, including if the flag is set.
 const WRITES_ENABLED = process.env.FOLLOW_UP_WRITES_ENABLED === "true" && process.env.VERCEL_ENV !== "preview";
+export function followUpWritesEnabled() { return WRITES_ENABLED; }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type VenueRow = {
