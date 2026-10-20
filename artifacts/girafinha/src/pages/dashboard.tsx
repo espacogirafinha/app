@@ -13,6 +13,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { followUpApi, type FollowUpPage } from "@/lib/follow-up-api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +37,7 @@ const moneyFormatter = new Intl.NumberFormat("pt-PT", {
 
 export default function Dashboard() {
   const { data, isLoading, isError, refetch } = useGetDashboardV2();
+  const followUp = useQuery({ queryKey: ["follow-up"], queryFn: () => followUpApi<FollowUpPage>(""), staleTime: 60_000 });
 
   if (isLoading) {
     return (
@@ -84,6 +87,17 @@ export default function Dashboard() {
           <QuickLink href="/workshops" label="Novo workshop" />
         </div>
       </header>
+
+      <section className="grid grid-cols-2 gap-2" aria-label="Acompanhamento de festas e clientes">
+        <Link href="/follow-up" className="block rounded-xl border border-border bg-card p-3 hover:bg-muted/40">
+          <span className="text-xs font-semibold text-muted-foreground">Festas a preparar</span>
+          <p className="mt-1 text-2xl font-bold">{followUp.data?.preparationCount ?? "—"}</p>
+        </Link>
+        <Link href="/follow-up" className="block rounded-xl border border-border bg-card p-3 hover:bg-muted/40">
+          <span className="text-xs font-semibold text-muted-foreground">Clientes a contactar</span>
+          <p className="mt-1 text-2xl font-bold">{followUp.data?.contactCount ?? "—"}</p>
+        </Link>
+      </section>
 
       <section className="grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Indicadores gerais">
         <MetricCard title="Hoje" value={String(data.summary.todayCount)} helper="Itens marcados" icon={CalendarIcon} />
