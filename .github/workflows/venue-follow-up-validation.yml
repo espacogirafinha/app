@@ -39,3 +39,30 @@ jobs:
             test-results/
             playwright-follow-up-report/
           if-no-files-found: ignore
+  schema-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: validation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:validation@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql if missing
+        run: |
+          if ! command -v psql; then sudo apt-get update && sudo apt-get install -y postgresql-client; fi
+      - name: Create disposable schema and validate migration
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/follow-up-base.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f lib/db/migrations/20261020_venue_preparation_reactivation.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/follow-up-schema-smoke.sql
