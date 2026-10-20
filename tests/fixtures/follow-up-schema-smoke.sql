@@ -37,8 +37,8 @@ insert into public.customer_reactivations(source_venue_event_id,target_year,esti
  values ('11111111-1111-4111-8111-111111111111',2028,'2028-01-20','2027-10-20','2027-12-09')
  on conflict do nothing;
 do $$ begin
-  if (select count(*) from public.customer_reactivations)<>1
-    then raise exception 'Duplicate reactivation cycle'; end if;
+  if (select count(*) from public.customer_reactivations)<>2
+    then raise exception 'Distinct annual cycles not preserved'; end if;
 end $$;
 -- Invalid simultaneous conversion must be rejected.
 do $$ begin
