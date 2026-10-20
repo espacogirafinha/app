@@ -48,7 +48,10 @@ export type FollowUpPage = {
 
 export async function followUpApi<T>(path: string, init?: RequestInit): Promise<T> {
   const session = await supabase.auth.getSession();
-  const accessToken = session.data.session?.access_token;
+  // Isolated Vite/Playwright test harness only. Never enabled in a production build.
+  const isolatedHarness = import.meta.env.DEV &&
+    window.location.pathname.endsWith("/follow-up-test.html");
+  const accessToken = isolatedHarness ? "playwright-isolated-test" : session.data.session?.access_token;
   if (!accessToken) throw new Error("Precisas de iniciar sessão.");
   const response = await fetch("/api/follow-up" + path, {
     ...init,
