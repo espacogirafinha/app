@@ -27,7 +27,7 @@ create table if not exists public.reactivation_campaign_settings (
 );
 create table if not exists public.customer_reactivations (
   id uuid primary key default gen_random_uuid(),
-  source_venue_event_id uuid not null references public.venue_events(id) on delete cascade,
+  source_venue_event_id uuid not null references public.venue_events(id) on delete restrict,
   target_year integer not null check (target_year between 2020 and 2200),
   estimated_event_date date not null,
   first_due_date date not null,
@@ -58,7 +58,7 @@ create table if not exists public.customer_reactivations (
     check (contacted_via in ('manual','whatsapp_api')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique(source_venue_event_id),
+  unique(source_venue_event_id, target_year),
   constraint only_one_conversion check (
     num_nonnulls(new_venue_event_id,new_external_event_id) <= 1
   ),
