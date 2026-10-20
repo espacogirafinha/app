@@ -10,6 +10,7 @@ import LoginPage from "@/pages/login";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
+const FollowUpPage = lazy(() => import("@/pages/follow-up"));
 const Reservations = lazy(() => import("@/pages/reservations"));
 const VenueEventsPage = lazy(() => import("@/pages/venue-events"));
 const ExternalEventsPage = lazy(() => import("@/pages/external-events"));
@@ -42,6 +43,7 @@ function AuthedRoutes() {
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/follow-up" component={FollowUpPage} />
           <Route path="/venue-events" component={VenueEventsPage} />
           <Route path="/google-forms-review" component={GoogleFormsReviewPage} />
           <Route path="/external-events" component={ExternalEventsPage} />
