@@ -81,7 +81,7 @@ async function reconcile(today: string, venues: VenueRow[]) {
         ],
       );
     }
-    if (event.status !== "completed" || !normalizePortuguesePhone(event.phone) || !event.birthday_child_name?.trim()) continue;
+    if (event.status !== "completed" || !normalizePortuguesePhone(event.phone)) continue;
     const dates = cycleDates(source.eventDate);
     if (dates.firstDue > today) continue;
     await pool.query(
