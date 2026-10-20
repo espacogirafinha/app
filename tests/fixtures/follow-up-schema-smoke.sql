@@ -34,7 +34,7 @@ insert into public.customer_reactivations(source_venue_event_id,target_year,esti
  values ('11111111-1111-4111-8111-111111111111',2027,'2027-01-20','2026-10-20','2026-12-09')
  on conflict do nothing;
 insert into public.customer_reactivations(source_venue_event_id,target_year,estimated_event_date,first_due_date,second_due_date)
- values ('11111111-1111-4111-8111-111111111111',2027,'2027-01-20','2026-10-20','2026-12-09')
+ values ('11111111-1111-4111-8111-111111111111',2028,'2028-01-20','2027-10-20','2027-12-09')
  on conflict do nothing;
 do $$ begin
   if (select count(*) from public.customer_reactivations)<>1
