@@ -179,6 +179,63 @@ function ReactivationItem({ item }: { item: Reactivation }) {
   </Card>;
 }
 
+function CampaignDefault({ campaign }: { campaign: FollowUpPage["campaign"] }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [expanded, setExpanded] = useState(false);
+  const [type, setType] = useState(campaign.offer_type);
+  const [value, setValue] = useState(campaign.offer_value === null ? "" : String(campaign.offer_value));
+  const [description, setDescription] = useState(campaign.offer_description);
+  const [scope, setScope] = useState(campaign.offer_scope);
+  const [busy, setBusy] = useState(false);
+  async function save() {
+    setBusy(true);
+    try {
+      await followUpApi<void>("/campaign", {
+        method: "PATCH",
+        body: JSON.stringify({ type, scope, description,
+          value: type === "fixed" || type === "percent" ? Number(value) : null }),
+      });
+      await queryClient.invalidateQueries({ queryKey: ["follow-up"] });
+      setExpanded(false);
+      toast({ title: "Oferta padrão guardada" });
+    } catch {
+      toast({ title: "Não foi possível guardar a oferta padrão.", variant: "destructive" });
+    } finally { setBusy(false); }
+  }
+  return <Card>
+    <CardContent className="space-y-3 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div><p className="font-semibold">Oferta padrão da campanha</p>
+          <p className="text-xs text-muted-foreground">Aplicada apenas a novas oportunidades. Alterável por cliente.</p></div>
+        <Button size="sm" variant="outline" onClick={() => setExpanded(!expanded)}>
+          {expanded ? "Fechar" : "Configurar"}
+        </Button>
+      </div>
+      {expanded && <div className="grid gap-2">
+        <select aria-label="Tipo de oferta padrão" value={type}
+          onChange={event => setType(event.target.value as typeof type)}
+          className="w-full min-h-10 rounded-md border bg-background px-2 text-sm">
+          {OFFER_TYPES.map(([id,label])=><option key={id} value={id}>{label}</option>)}
+        </select>
+        {(type === "fixed" || type === "percent") && <Input aria-label="Valor da oferta padrão"
+          type="number" min="0" max={type === "percent" ? "100" : undefined}
+          value={value} onChange={event => setValue(event.target.value)}/>}
+        {type !== "none" && <Input aria-label="Descrição da oferta padrão"
+          value={description} onChange={event => setDescription(event.target.value)}/>}
+        <select aria-label="Âmbito da oferta padrão" value={scope}
+          onChange={event => setScope(event.target.value as typeof scope)}
+          className="w-full min-h-10 rounded-md border bg-background px-2 text-sm">
+          <option value="both">Festa no Espaço e Serviços Externos</option>
+          <option value="venue_only">Só Festa no Espaço</option>
+          <option value="external_only">Só Serviços Externos</option>
+        </select>
+        <Button onClick={() => void save()} disabled={busy}>Guardar oferta padrão</Button>
+      </div>}
+    </CardContent>
+  </Card>;
+}
+
 export default function FollowUpPage() {
   const { data, isLoading, isError, refetch } = useFollowUp();
   return <div className="space-y-7 pb-8">
@@ -204,6 +261,7 @@ export default function FollowUpPage() {
           <div className="grid gap-3 lg:grid-cols-2">{data.preparations.map(item => <PreparationItem key={item.id} item={item}/>)}</div>}
       </section>
       <section className="space-y-3">
+        <CampaignDefault campaign={data.campaign} />
         <div className="flex items-center gap-2"><CalendarClock className="h-5 w-5"/>
           <h2 className="text-lg font-bold">Reativação de clientes ({data.contactCount} por contactar)</h2></div>
         <p className="text-sm text-muted-foreground">Primeiro contacto 3 meses antes; segundo contacto 42 dias antes. Mensagens enviadas apenas manualmente.</p>
