@@ -100,6 +100,16 @@ async function reconcile(today: string, venues: VenueRow[]) {
            updated_at=now()`,
       [event.id, Number(dates.nextPartyEstimate.slice(0, 4)), dates.nextPartyEstimate, dates.firstDue, dates.secondDue],
     );
+    const resolution = resolveConversion(source, venues.map(venue), []);
+    if (resolution.status === "confirmed" && resolution.conversion.kind === "venue_event") {
+      await pool.query(
+        `update public.customer_reactivations
+         set new_venue_event_id=$3,updated_at=now()
+         where source_venue_event_id=$1 and target_year=$2
+           and new_venue_event_id is null and new_external_event_id is null`,
+        [event.id, Number(dates.nextPartyEstimate.slice(0, 4)), resolution.conversion.id],
+      );
+    }
   }
 }
 
