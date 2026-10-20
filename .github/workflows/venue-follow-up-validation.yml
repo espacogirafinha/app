@@ -73,6 +73,7 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/follow-up-base.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f lib/db/migrations/20261020_venue_preparation_reactivation.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/follow-up-schema-smoke.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "truncate public.venue_events, public.external_events, public.event_checklists, public.event_checklist_items, public.customer_reactivations, app_private.notifications cascade"
       - name: Build real Express API for integration
         run: corepack pnpm --filter @workspace/api-server build
       - name: Full integration against disposable Postgres
