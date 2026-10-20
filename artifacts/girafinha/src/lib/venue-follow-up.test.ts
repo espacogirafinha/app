@@ -52,3 +52,16 @@ test("return gift is only mentioned in second message", () => {
   assert.equal(reactivationMessage("second", "Ana Silva", "Matilde Silva", offer).includes("mimo"), true);
   assert.ok(reactivationWhatsAppUrl(previous.phone, "Olá! 💛")?.includes("wa.me/351912345678"));
 });
+
+test("offer scope limits the services advertised in second contact", () => {
+  const venue = reactivationMessage("second", "Ana Silva", "Matilde Silva", {
+    type: "fixed", value: 10, scope: "venue_only",
+  });
+  assert.match(venue, /voltar ao Espaço Girafinha/);
+  assert.doesNotMatch(venue, /serviços para outro local/);
+  const external = reactivationMessage("second", "Ana Silva", "Matilde Silva", {
+    type: "percent", value: 5, scope: "external_only",
+  });
+  assert.match(external, /serviços para outro local/);
+  assert.doesNotMatch(external, /voltar ao Espaço Girafinha/);
+});
