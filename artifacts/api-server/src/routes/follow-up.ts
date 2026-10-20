@@ -94,8 +94,9 @@ async function reconcile(today: string, venues: VenueRow[]) {
          select 'default','none','',null,'both',now()
          where not exists(select 1 from public.reactivation_campaign_settings where id='default')
        ) settings
-       on conflict(source_venue_event_id,target_year) do update
-       set estimated_event_date=excluded.estimated_event_date,
+       on conflict(source_venue_event_id) do update
+       set target_year=excluded.target_year,
+           estimated_event_date=excluded.estimated_event_date,
            first_due_date=excluded.first_due_date, second_due_date=excluded.second_due_date,
            updated_at=now()`,
       [event.id, Number(dates.nextPartyEstimate.slice(0, 4)), dates.nextPartyEstimate, dates.firstDue, dates.secondDue],
