@@ -13,6 +13,13 @@ const router: IRouter = Router();
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Keep historical D-30 notifications for deduplication but hide cancelled parties.
+const visibleNotification = sql<boolean>`(
+  ${notificationsTable.type} <> 'venue_preparation_30d'
+  or exists(select 1 from public.venue_events v
+    where v.id = ${notificationsTable.venueEventId} and v.status <> 'cancelled')
+)`;
+
 router.get("/notifications", async (_req, res): Promise<void> => {
   // The notification centre is already polled while users are in the app.
   // Synchronize D-30 notifications once per event; uniqueness is enforced in Postgres.
@@ -40,6 +47,7 @@ router.get("/notifications", async (_req, res): Promise<void> => {
         eq(notificationReadsTable.userId, userId),
       ),
     )
+    .where(visibleNotification)
     .orderBy(desc(notificationsTable.createdAt))
     .limit(50);
 
@@ -53,7 +61,7 @@ router.get("/notifications", async (_req, res): Promise<void> => {
         eq(notificationReadsTable.userId, userId),
       ),
     )
-    .where(isNull(notificationReadsTable.notificationId));
+    .where(and(isNull(notificationReadsTable.notificationId), visibleNotification));
 
   res.json({
     items: items.map((item) => ({
