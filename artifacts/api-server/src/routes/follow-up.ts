@@ -176,6 +176,11 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
         : row.new_external_event_id && validExternals.some(v => v.id === row.new_external_event_id && v.status !== "cancelled")
           ? { kind: "external_event", id: row.new_external_event_id } : null;
       const conversion = manualConversion ?? (match.status === "confirmed" ? match.conversion : null);
+      const priorCycleConverted = react.rows.some(previous =>
+        previous.source_venue_event_id === row.source_venue_event_id &&
+        Number(previous.target_year) < Number(row.target_year) &&
+        (previous.new_venue_event_id || previous.new_external_event_id)
+      );
       const noInterest = row.no_interest_at !== null;
       const stage = !row.first_contacted_at && dateString(row.first_due_date) <= today ? "first" :
         !row.second_contacted_at && dateString(row.second_due_date) <= today ? "second" : null;
@@ -184,7 +189,7 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
         estimate: dateString(row.estimated_event_date),
         firstDue: dateString(row.first_due_date), secondDue: dateString(row.second_due_date),
         firstContactedAt: row.first_contacted_at, secondContactedAt: row.second_contacted_at,
-        stage: conversion || noInterest || match.status === "needs_review" ? null : stage,
+        stage: conversion || noInterest || priorCycleConverted || match.status === "needs_review" ? null : stage,
         needsReview: match.status === "needs_review" && !conversion,
         reviewCandidates: match.status === "needs_review" ? match.candidates : [],
         converted: Boolean(conversion), conversion, noInterest,
