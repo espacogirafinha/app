@@ -54,7 +54,16 @@ async function reconcile(today: string, venues: VenueRow[]) {
     const source = venue(event);
     if (event.status !== "cancelled" && source.eventDate >= today && remainingDays(source.eventDate, today) <= 30) {
       await pool.query(
-        "insert into public.venue_preparation_states(venue_event_id) values ($1) on conflict (venue_event_id) do nothing",
+        "insert into public.event_checklists(module,entity_id,title) values ('venue_events',$1,'Preparação D-30') on conflict do nothing",
+        [event.id],
+      );
+      await pool.query(
+        `insert into public.event_checklist_items(checklist_id,label,sort_order)
+         select c.id, v.label, v.sort_order
+         from public.event_checklists c
+         cross join (values ('Convites tratados',0),('Material tratado',1)) as v(label,sort_order)
+         where c.module='venue_events' and c.entity_id=$1 and c.title='Preparação D-30'
+         on conflict do nothing`,
         [event.id],
       );
       const child = event.birthday_child_name?.trim() || "criança";
@@ -106,7 +115,13 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
     const { venues, externals } = await loadSources();
     if (WRITES_ENABLED) await reconcile(today, venues);
     const [preps, react, campaign] = await Promise.all([
-      pool.query("select * from public.venue_preparation_states"),
+      pool.query(`select c.entity_id as venue_event_id,
+           max(case when i.label='Convites tratados' and i.is_done then 1 else 0 end) as invitations_done,
+           max(case when i.label='Material tratado' and i.is_done then 1 else 0 end) as materials_done
+         from public.event_checklists c
+         join public.event_checklist_items i on i.checklist_id=c.id
+         where c.module='venue_events' and c.title='Preparação D-30'
+         group by c.entity_id`),
       pool.query("select * from public.customer_reactivations order by first_due_date"),
       pool.query("select * from public.reactivation_campaign_settings where id='default'"),
     ]);
@@ -199,14 +214,16 @@ router.patch("/follow-up/preparation/:id", async (req, res): Promise<void> => {
   if (!UUID.test(id) || !["invitations", "materials"].includes(field) || typeof done !== "boolean") {
     res.status(400).json({ error: "Pedido inválido" }); return;
   }
-  const key = field === "invitations" ? "invitations" : "materials";
+  const label = field === "invitations" ? "Convites tratados" : "Material tratado";
   try {
     const result = await pool.query(
-      `update public.venue_preparation_states set ${key}_done=$2,
-       ${key}_done_at=case when $2 then now() else null end, updated_at=now()
-       where venue_event_id=$1 and exists(
-         select 1 from public.venue_events v where v.id=$1 and v.status<>'cancelled'
-       ) returning venue_event_id`, [id, done],
+      `update public.event_checklist_items i
+       set is_done=$2, completed_at=case when $2 then now() else null end, updated_at=now()
+       from public.event_checklists c
+       where i.checklist_id=c.id and c.module='venue_events' and c.entity_id=$1
+         and c.title='Preparação D-30' and i.label=$3
+         and exists(select 1 from public.venue_events v where v.id=$1 and v.status<>'cancelled')
+       returning i.id`, [id, done, label],
     );
     if (!result.rowCount) { res.status(404).json({ error: "Tarefa não encontrada" }); return; }
     res.sendStatus(204);
