@@ -275,7 +275,11 @@ router.patch("/follow-up/reactivation/:id", async (req, res): Promise<void> => {
       res.sendStatus(204); return;
     }
     if (action === "no_interest") {
-      await pool.query("update public.customer_reactivations set no_interest_at=coalesce(no_interest_at,now()),updated_at=now() where id=$1", [id]);
+      const changed = await pool.query(
+        "update public.customer_reactivations set no_interest_at=coalesce(no_interest_at,now()),updated_at=now() where id=$1 and new_venue_event_id is null and new_external_event_id is null returning id",
+        [id],
+      );
+      if (!changed.rowCount) { res.status(409).json({error:"Oportunidade já convertida"}); return; }
       res.sendStatus(204); return;
     }
     if (action === "offer") {
@@ -289,7 +293,7 @@ router.patch("/follow-up/reactivation/:id", async (req, res): Promise<void> => {
       await pool.query(
         `update public.customer_reactivations set
           offer_type=$2, offer_description=$3, offer_value=$4, offer_scope=$5, updated_at=now()
-         where id=$1 and offer_used_at is null`,
+         where id=$1 and offer_used_at is null and offer_proposed_at is null`,
         [id,type,String(description ?? ""),["fixed","percent"].includes(type) ? value : null,scope],
       );
       res.sendStatus(204); return;
