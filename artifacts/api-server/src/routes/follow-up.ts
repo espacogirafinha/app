@@ -1,13 +1,9 @@
 import { Router, type IRouter } from "express";
 import { pool } from "@workspace/db";
-import { normalizePortugueseWhatsAppPhone } from "../../../girafinha/src/lib/booking-confirmation-whatsapp";
 import {
-  followUpDates,
-  portugalToday,
-  resolveNewBooking,
-  type VenueForFollowUp,
-  type ExternalForFollowUp,
-} from "../../../girafinha/src/lib/venue-follow-up";
+  cycleDates, todayPortugal, resolveConversion, normalizePortuguesePhone,
+  type VenueRecord as VenueForFollowUp, type ExternalRecord as ExternalForFollowUp,
+} from "../lib/follow-up-rules";
 
 const router: IRouter = Router();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -71,8 +67,8 @@ async function reconcile(today: string, venues: VenueRow[]) {
         ],
       );
     }
-    if (event.status !== "completed" || !normalizePortugueseWhatsAppPhone(event.phone) || !event.birthday_child_name?.trim()) continue;
-    const dates = followUpDates(source.eventDate);
+    if (event.status !== "completed" || !normalizePortuguesePhone(event.phone) || !event.birthday_child_name?.trim()) continue;
+    const dates = cycleDates(source.eventDate);
     if (dates.firstDue > today) continue;
     await pool.query(
       `insert into public.customer_reactivations
@@ -95,7 +91,7 @@ async function reconcile(today: string, venues: VenueRow[]) {
 
 router.get("/follow-up", async (_req, res): Promise<void> => {
   try {
-    const today = portugalToday();
+    const today = todayPortugal();
     const { venues, externals } = await loadSources();
     await reconcile(today, venues);
     const [preps, react] = await Promise.all([
@@ -122,7 +118,7 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
       const original = byId.get(row.source_venue_event_id);
       if (!original || original.status !== "completed") return [];
       const source = venue(original);
-      const match = resolveNewBooking(source, validVenues, validExternals);
+      const match = resolveConversion(source, validVenues, validExternals);
       const manualConversion = row.new_venue_event_id ? { kind: "venue_event", id: row.new_venue_event_id }
         : row.new_external_event_id ? { kind: "external_event", id: row.new_external_event_id } : null;
       const conversion = manualConversion ?? (match.status === "confirmed" ? match.conversion : null);
@@ -195,7 +191,7 @@ router.patch("/follow-up/reactivation/:id", async (req, res): Promise<void> => {
           record.new_venue_event_id || record.new_external_event_id) {
         res.status(409).json({ error: "Contacto não permitido" }); return;
       }
-      const match = resolveNewBooking(venue(sourceRow), sources.venues.map(venue), sources.externals.map(external));
+      const match = resolveConversion(venue(sourceRow), sources.venues.map(venue), sources.externals.map(external));
       if (match.status !== "none") { res.status(409).json({ error: "Nova reserva ou correspondência para rever" }); return; }
       const col = stage === "first" ? "first_contacted_at" : "second_contacted_at";
       const due = stage === "first" ? "first_due_date" : "second_due_date";
@@ -203,7 +199,7 @@ router.patch("/follow-up/reactivation/:id", async (req, res): Promise<void> => {
         `update public.customer_reactivations set ${col}=now(), updated_at=now(),
           offer_proposed_at=case when $2='second' and offer_type<>'none' then coalesce(offer_proposed_at,now()) else offer_proposed_at end
          where id=$1 and ${col} is null and ${due}<= $3::date and no_interest_at is null
-         returning id`, [id, stage, portugalToday()],
+         returning id`, [id, stage, todayPortugal()],
       );
       if (!result.rowCount) { res.status(409).json({ error: "Etapa já concluída ou ainda indisponível" }); return; }
       res.sendStatus(204); return;
