@@ -1,14 +1,14 @@
 
 -- DRAFT ONLY. DO NOT APPLY TO PRODUCTION WITHOUT EXPLICIT APPROVAL.
 -- Intended to be run once, in a reviewed database migration.
-create table if not exists public.venue_preparation_states (
-  venue_event_id uuid primary key references public.venue_events(id) on delete cascade,
-  invitations_done boolean not null default false,
-  materials_done boolean not null default false,
-  invitations_done_at timestamptz,
-  materials_done_at timestamptz,
-  updated_at timestamptz not null default now()
-);
+-- Reuse existing event checklists as the only source of task completion state.
+-- Uniqueness guarantees one D-30 checklist and one task per label.
+create unique index if not exists uq_venue_preparation_checklist
+  on public.event_checklists(module, entity_id, title)
+  where module = 'venue_events' and title = 'Preparação D-30';
+create unique index if not exists uq_venue_preparation_items
+  on public.event_checklist_items(checklist_id, label)
+  where label in ('Convites tratados', 'Material tratado');
 create table if not exists public.reactivation_campaign_settings (
   id text primary key default 'default' check (id = 'default'),
   offer_type text not null default 'none'
@@ -84,10 +84,8 @@ create unique index if not exists idx_girafinha_venue_30d_notifications
 create index if not exists idx_customer_reactivations_due
   on public.customer_reactivations(first_due_date,second_due_date);
 -- These tables are accessed exclusively via the authenticated server API.
-alter table public.venue_preparation_states enable row level security;
 alter table public.reactivation_campaign_settings enable row level security;
 alter table public.customer_reactivations enable row level security;
-revoke all on public.venue_preparation_states from anon, authenticated;
 revoke all on public.reactivation_campaign_settings from anon, authenticated;
 revoke all on public.customer_reactivations from anon, authenticated;
 -- Server connections through DATABASE_URL use the existing privileged DB connection.
