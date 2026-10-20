@@ -205,6 +205,64 @@ try{
     }finally{disabled.kill("SIGTERM")}
   }
   console.log("OPERATIONAL PROTECTION PASS: disabled and preview reject writes");
+  // Time travel is injected only into a second disposable API process, never
+  // into application code or Production. Historical 2027/2028 cycles coexist.
+  await venue(71,"2026-01-20","completed","918112233","Íris");
+  assert.equal(await sync(),200);
+  const year27 = await pool.query("select * from public.customer_reactivations where source_venue_event_id=$1 and target_year=2027",[uuid(71)]);
+  assert.equal(year27.rows.length,1,"2027 opportunity exists");
+  const cycleId=year27.rows[0].id;
+  assert.equal((await request("/follow-up/reactivation/"+cycleId,"PATCH",{action:"contact",stage:"first"})).status,204);
+  assert.equal((await request("/follow-up/reactivation/"+cycleId,"PATCH",{action:"offer",type:"gift",description:"Mimo 2027",scope:"both"})).status,204);
+  const untouched27=await pool.query("select id,first_due_date,second_due_date,first_contacted_at,second_contacted_at,no_interest_at,offer_type,offer_description,offer_proposed_at,offer_used_at,new_venue_event_id,new_external_event_id from public.customer_reactivations where id=$1",[cycleId]);
+  const frozenApi=spawn(process.execPath,["--require","./tests/integration/follow-up-clock.cjs","artifacts/api-server/dist/index.mjs"],{
+    env:{...process.env,PORT:"4886",SUPABASE_URL:"http://127.0.0.1:4882",SUPABASE_ANON_KEY:"isolated",
+      FOLLOW_UP_WRITES_ENABLED:"true",CRON_SECRET:"isolated-ci-secret",
+      VERCEL_ENV:"development",NODE_ENV:"production",DATABASE_URL:databaseUrl,
+      CI_FOLLOW_UP_CLOCK:"2027-10-21T12:00:00Z"},
+    stdio:["ignore","pipe","pipe"],
+  });
+  let frozenLogs="";frozenApi.stdout.on("data",v=>frozenLogs+=String(v));frozenApi.stderr.on("data",v=>frozenLogs+=String(v));
+  try {
+    let ready=false;
+    for(let i=0;i<90;i++){try{const r=await fetch("http://127.0.0.1:4886/api/health");if(r.status<500){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,150))}
+    assert.ok(ready,"time-shifted API startup: "+frozenLogs);
+    const frozenBase="http://127.0.0.1:4886/api";
+    async function frozenSync(){
+      const r=await fetch(frozenBase+"/internal/follow-up-sync",{headers:{Authorization:"Bearer isolated-ci-secret"}});
+      assert.equal(r.status,200,"time-shift sync "+(await r.text())+" "+frozenLogs.slice(-500));
+    }
+    await frozenSync();
+    const cycles=await pool.query("select id,target_year,first_contacted_at,offer_description from public.customer_reactivations where source_venue_event_id=$1 order by target_year",[uuid(71)]);
+    assert.deepEqual(cycles.rows.map(r=>Number(r.target_year)),[2027,2028],"independent annual 2027 and 2028 cycles");
+    assert.notEqual(cycles.rows[0].id,cycles.rows[1].id);
+    const preserved=await pool.query("select id,first_due_date,second_due_date,first_contacted_at,second_contacted_at,no_interest_at,offer_type,offer_description,offer_proposed_at,offer_used_at,new_venue_event_id,new_external_event_id from public.customer_reactivations where id=$1",[cycleId]);
+    assert.deepEqual(preserved.rows[0],untouched27.rows[0],"2027 commercial history cannot change while generating 2028");
+    const beforeCycles=await counts();
+    for(let n=0;n<3;n++) await frozenSync();
+    assert.deepEqual(await counts(),beforeCycles,"2028 cycle created exactly once");
+    console.log("MULTI_YEAR_CYCLES PASS",JSON.stringify({years:cycles.rows.map(r=>Number(r.target_year)),count:cycles.rows.length}));
+
+    // A newly reserved 2027 venue becomes the source for future 2028
+    // reactivation and blocks 2028 contact from the older party.
+    await venue(72,"2026-01-20","completed","917112233","Inês");
+    await venue(73,"2027-01-18","completed","917112233","Inês");
+    await frozenSync();
+    const superseded=await pool.query("select target_year,new_venue_event_id from public.customer_reactivations where source_venue_event_id=$1 order by target_year",[uuid(72)]);
+    assert.deepEqual(superseded.rows.map(row=>Number(row.target_year)),[2027]);
+    assert.equal(superseded.rows[0].new_venue_event_id,uuid(73));
+    const successor=await pool.query("select target_year from public.customer_reactivations where source_venue_event_id=$1",[uuid(73)]);
+    assert.ok(successor.rows.some(row=>Number(row.target_year)===2028),"new celebration can become reference");
+    const noCompetingContact=await fetch(frozenBase+"/follow-up",{headers:{authorization:"Bearer isolated-test-token"}});
+    assert.equal(noCompetingContact.status,200);
+    const state=await noCompetingContact.json();
+    assert.ok(!state.reactivations.some(row=>row.source.id===uuid(72) && row.stage!==null),"old source never creates a competing contact");
+    const complete=await counts();
+    for(let n=0;n<3;n++)await frozenSync();
+    assert.deepEqual(await counts(),complete,"no concurrency or duplicates after conversion");
+    console.log("REBOOKING_CHAIN PASS");
+  }finally{frozenApi.kill("SIGTERM")}
+
 }finally{
  child.kill("SIGTERM");await new Promise(r=>auth.close(r));await pool.end();
 }
