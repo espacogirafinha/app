@@ -134,6 +134,40 @@ try{
   for(let i=0;i<3;i++)assert.equal(await sync(),200);
   assert.deepEqual(await counts(),finalCounts,"repeated sync must not create extra records");
   console.log("INTEGRATION PASS",JSON.stringify({before:count,after:finalCounts}));
+  for(const [port,writeFlag,vercelEnvironment] of [
+    [4884,"false","development"],[4885,"true","preview"],
+  ]){
+    const disabled=spawn(process.execPath,["artifacts/api-server/dist/index.mjs"],{
+      env:{...process.env,PORT:String(port),DATABASE_URL:databaseUrl,
+        SUPABASE_URL:"http://127.0.0.1:4882",SUPABASE_ANON_KEY:"isolated",
+        FOLLOW_UP_WRITES_ENABLED:writeFlag,VERCEL_ENV:vercelEnvironment,
+        CRON_SECRET:"isolated-ci-secret",NODE_ENV:"production"},
+      stdio:"ignore",
+    });
+    try {
+      let ready=false;
+      for(let i=0;i<70;i++){
+        try{
+          const r=await fetch("http://127.0.0.1:"+port+"/api/health");
+          if(r.status<500){ready=true;break}
+        }catch{}
+        await new Promise(r=>setTimeout(r,150));
+      }
+      assert.ok(ready,"disabled/preview API must start");
+      const base="http://127.0.0.1:"+port+"/api";
+      const write=await fetch(base+"/follow-up/preparation/"+uuid(1),{
+        method:"PATCH",headers:{Authorization:"Bearer isolated-test-token","Content-Type":"application/json"},
+        body:JSON.stringify({field:"invitations",done:false}),
+      });
+      assert.equal(write.status,503,"disabled or preview must reject writes");
+      const cron=await fetch(base+"/internal/follow-up-sync",{
+        headers:{Authorization:"Bearer isolated-ci-secret"},
+      });
+      assert.equal(cron.status,503,"disabled or preview must reject authorized cron writes");
+      assert.deepEqual(await counts(),finalCounts,"disabled/preview must not modify database");
+    }finally{disabled.kill("SIGTERM")}
+  }
+  console.log("OPERATIONAL PROTECTION PASS: disabled and preview reject writes");
 }finally{
  child.kill("SIGTERM");await new Promise(r=>auth.close(r));await pool.end();
 }
