@@ -169,6 +169,29 @@ router.use("/follow-up", (_req, res, next) => {
   res.status(503).json({ error: "Acompanhamento ainda não ativado. Migration pendente de aprovação." });
 });
 
+router.patch("/follow-up/campaign", requireSettingsAdmin, async (req, res): Promise<void> => {
+  const { type, description, value, scope } = req.body ?? {};
+  if (!["none","fixed","percent","gift","custom"].includes(type) ||
+    !["venue_only","external_only","both"].includes(scope) ||
+    ((type==="fixed" || type==="percent") && (!Number.isFinite(value) || value<=0 || (type==="percent" && value>100))) ||
+    (["gift","custom"].includes(type) && !String(description??"").trim())) {
+    res.status(400).json({ error:"Oferta padrão inválida" }); return;
+  }
+  try {
+    await pool.query(
+      "insert into public.reactivation_campaign_settings(id,offer_type,offer_description,offer_value,offer_scope) "+
+      "values ('default',$1,$2,$3,$4) "+
+      "on conflict(id) do update set "+
+      "offer_type=excluded.offer_type,offer_description=excluded.offer_description, "+
+      "offer_value=excluded.offer_value,offer_scope=excluded.offer_scope,updated_at=now()",
+      [type,String(description??""),["fixed","percent"].includes(type)?value:null,scope],
+    );
+    res.sendStatus(204);
+  } catch {
+    res.status(500).json({error:"Não foi possível guardar a oferta padrão"});
+  }
+});
+
 router.patch("/follow-up/preparation/:id", async (req, res): Promise<void> => {
   const id = String(req.params.id ?? "");
   const field = req.body?.field;
