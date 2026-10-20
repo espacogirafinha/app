@@ -61,8 +61,19 @@ jobs:
       - name: Install psql if missing
         run: |
           if ! command -v psql; then sudo apt-get update && sudo apt-get install -y postgresql-client; fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.0'
+      - run: corepack pnpm install --frozen-lockfile
       - name: Create disposable schema and validate migration
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/follow-up-base.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f lib/db/migrations/20261020_venue_preparation_reactivation.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/follow-up-schema-smoke.sql
+      - name: Build real Express API for integration
+        run: corepack pnpm --filter @workspace/api-server build
+      - name: Full integration against disposable Postgres
+        run: node tests/integration/follow-up-api.mjs
