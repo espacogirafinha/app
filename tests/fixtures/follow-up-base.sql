@@ -24,7 +24,7 @@ create table public.event_checklist_items(
 );
 create table app_private.notifications (
   id uuid primary key default gen_random_uuid(),type text not null,title text not null,
-  message text not null,venue_event_id uuid references public.venue_events(id),
+  message text not null, google_form_import_id uuid, venue_event_id uuid references public.venue_events(id),
   destination text not null,source_key text not null,
   created_at timestamptz not null default now()
 );
