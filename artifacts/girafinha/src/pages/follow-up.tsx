@@ -163,6 +163,18 @@ function ReactivationItem({ item }: { item: Reactivation }) {
           item.offer.type === "percent" ? `${item.offer.value}% de desconto` :
           item.offer.description}</p>}
       </div>
+      {item.converted && item.offer.type !== "none" && item.offer.proposedAt &&
+        !item.offer.usedAt && item.conversion &&
+        (item.offer.scope === "both" ||
+          (item.offer.scope === "venue_only" && item.conversion.kind === "venue_event") ||
+          (item.offer.scope === "external_only" && item.conversion.kind === "external_event")) &&
+        <Button variant="outline" size="sm" disabled={busy} onClick={() => {
+          if (window.confirm("Confirmas que a oferta foi realmente aplicada? O valor da reserva não será alterado.")) {
+            void change({ action: "redeem_offer" });
+          }
+        }}>
+          <Gift className="mr-2 h-4 w-4"/> Confirmar oferta utilizada
+        </Button>}
       {item.stage && whatsappUrl && <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" asChild>
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
