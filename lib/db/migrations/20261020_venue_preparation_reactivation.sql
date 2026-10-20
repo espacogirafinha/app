@@ -58,7 +58,7 @@ create table if not exists public.customer_reactivations (
     check (contacted_via in ('manual','whatsapp_api')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique(source_venue_event_id, target_year),
+  unique(source_venue_event_id),
   constraint only_one_conversion check (
     num_nonnulls(new_venue_event_id,new_external_event_id) <= 1
   ),
