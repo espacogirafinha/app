@@ -184,12 +184,12 @@ function ReactivationItem({ item, demo = false }: { item: Reactivation; demo?: b
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
             <MessageCircle className="mr-2 h-4 w-4" /> Abrir WhatsApp
           </a>
-        </Button>
-        <Button size="sm" disabled={busy} onClick={() => void change({ action: "contact", stage: item.stage })}>
+        </Button>}
+        <Button size="sm" disabled={busy || demo} onClick={() => void change({ action: "contact", stage: item.stage })}>
           <CheckCircle2 className="mr-2 h-4 w-4"/> Marcar como contactado
         </Button>
       </div>}
-      {!item.converted && !item.noInterest && <Button size="sm" variant="ghost" disabled={busy}
+      {!item.converted && !item.noInterest && <Button size="sm" variant="ghost" disabled={busy || demo}
         onClick={() => void change({ action: "no_interest" })}>Marcar sem interesse</Button>}
     </CardContent>
   </Card>;
