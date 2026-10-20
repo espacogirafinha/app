@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { requireSettingsAdmin } from "../lib/settings-access";
 import { pool } from "@workspace/db";
 import {
-  cycleDates, todayPortugal, resolveConversion, normalizePortuguesePhone,
+  cycleDates, addMonths, todayPortugal, resolveConversion, normalizePortuguesePhone,
   type VenueRecord as VenueForFollowUp, type ExternalRecord as ExternalForFollowUp,
 } from "../lib/follow-up-rules";
 
@@ -83,34 +83,46 @@ async function reconcile(today: string, venues: VenueRow[]) {
       );
     }
     if (event.status !== "completed" || !normalizePortuguesePhone(event.phone)) continue;
-    const dates = cycleDates(source.eventDate);
-    if (dates.firstDue > today) continue;
-    await pool.query(
-      `insert into public.customer_reactivations
-        (source_venue_event_id,target_year,estimated_event_date,first_due_date,second_due_date,
-         offer_type,offer_description,offer_value,offer_scope)
-       select $1,$2,$3,$4,$5,offer_type,offer_description,offer_value,offer_scope
-       from (select * from public.reactivation_campaign_settings where id='default'
-         union all
-         select 'default','none','',null,'both',now()
-         where not exists(select 1 from public.reactivation_campaign_settings where id='default')
-       ) settings
-       on conflict(source_venue_event_id) do update
-       set target_year=excluded.target_year,
-           estimated_event_date=excluded.estimated_event_date,
-           first_due_date=excluded.first_due_date, second_due_date=excluded.second_due_date,
-           updated_at=now()`,
-      [event.id, Number(dates.nextPartyEstimate.slice(0, 4)), dates.nextPartyEstimate, dates.firstDue, dates.secondDue],
-    );
-    const resolution = resolveConversion(source, venues.map(venue), []);
-    if (resolution.status === "confirmed" && resolution.conversion.kind === "venue_event") {
-      await pool.query(
-        `update public.customer_reactivations
-         set new_venue_event_id=$3,updated_at=now()
-         where source_venue_event_id=$1 and target_year=$2
-           and new_venue_event_id is null and new_external_event_id is null`,
-        [event.id, Number(dates.nextPartyEstimate.slice(0, 4)), resolution.conversion.id],
+    // Each anniversary year is an independent, immutable commercial opportunity.
+    // Generate only cycles whose first contact has become due. Stop when a
+    // newer matching venue booking takes over as the next source event.
+    const eventYear = Number(source.eventDate.slice(0, 4));
+    const todayYear = Number(today.slice(0, 4));
+    for (let targetYear = eventYear + 1; targetYear <= todayYear + 1; targetYear++) {
+      const cycleSource = { ...source, eventDate: addMonths(source.eventDate, (targetYear - eventYear - 1) * 12) };
+      const dates = cycleDates(cycleSource.eventDate);
+      if (dates.firstDue > today) continue;
+      const resolution = resolveConversion(cycleSource, venues.map(venue), []);
+      // A later booking is itself the reference for any subsequent cycle.
+      const priorConversion = await pool.query(
+        `select 1 from public.customer_reactivations
+         where source_venue_event_id=$1 and target_year < $2
+           and (new_venue_event_id is not null or new_external_event_id is not null)
+         limit 1`, [event.id, targetYear],
       );
+      if (priorConversion.rowCount) break;
+      await pool.query(
+        `insert into public.customer_reactivations
+          (source_venue_event_id,target_year,estimated_event_date,first_due_date,second_due_date,
+           offer_type,offer_description,offer_value,offer_scope)
+         select $1,$2,$3,$4,$5,offer_type,offer_description,offer_value,offer_scope
+         from (select * from public.reactivation_campaign_settings where id='default'
+           union all
+           select 'default','none','',null,'both',now()
+           where not exists(select 1 from public.reactivation_campaign_settings where id='default')
+         ) settings
+         on conflict(source_venue_event_id,target_year) do nothing`,
+        [event.id,targetYear,dates.nextPartyEstimate,dates.firstDue,dates.secondDue],
+      );
+      if (resolution.status === "confirmed" && resolution.conversion.kind === "venue_event") {
+        await pool.query(
+          `update public.customer_reactivations set new_venue_event_id=$3,updated_at=now()
+           where source_venue_event_id=$1 and target_year=$2
+             and new_venue_event_id is null and new_external_event_id is null`,
+          [event.id,targetYear,resolution.conversion.id],
+        );
+        break;
+      }
     }
   }
 }
@@ -157,7 +169,8 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
       const original = byId.get(row.source_venue_event_id);
       if (!original || original.status !== "completed") return [];
       const source = venue(original);
-      const match = resolveConversion(source, validVenues, validExternals);
+      const cycleSource = { ...source, eventDate: addMonths(source.eventDate, (Number(row.target_year) - Number(source.eventDate.slice(0,4)) - 1) * 12) };
+      const match = resolveConversion(cycleSource, validVenues, validExternals);
       const manualConversion = row.new_venue_event_id && validVenues.some(v => v.id === row.new_venue_event_id && v.status !== "cancelled")
         ? { kind: "venue_event", id: row.new_venue_event_id }
         : row.new_external_event_id && validExternals.some(v => v.id === row.new_external_event_id && v.status !== "cancelled")
@@ -263,7 +276,8 @@ router.patch("/follow-up/reactivation/:id", async (req, res): Promise<void> => {
           record.new_venue_event_id || record.new_external_event_id) {
         res.status(409).json({ error: "Contacto não permitido" }); return;
       }
-      const match = resolveConversion(venue(sourceRow), sources.venues.map(venue), sources.externals.map(external));
+      const cycleSource = { ...venue(sourceRow), eventDate: addMonths(dateString(sourceRow.event_date), (Number(record.target_year) - Number(dateString(sourceRow.event_date).slice(0,4)) - 1) * 12) };
+      const match = resolveConversion(cycleSource, sources.venues.map(venue), sources.externals.map(external));
       if (match.status !== "none") { res.status(409).json({ error: "Nova reserva ou correspondência para rever" }); return; }
       const col = stage === "first" ? "first_contacted_at" : "second_contacted_at";
       const due = stage === "first" ? "first_due_date" : "second_due_date";
@@ -335,7 +349,9 @@ router.patch("/follow-up/reactivation/:id", async (req, res): Promise<void> => {
       );
       const previous = sources.venues.find(row => row.id === reactivation.rows[0]?.source_venue_event_id);
       if (!previous) { res.status(404).json({ error: "Festa anterior não encontrada" }); return; }
-      const matches = resolveConversion(venue(previous), sources.venues.map(venue), sources.externals.map(external));
+      const cycleRecord = await pool.query("select target_year from public.customer_reactivations where id=$1", [id]);
+      const cycleSource = { ...venue(previous), eventDate: addMonths(dateString(previous.event_date), (Number(cycleRecord.rows[0]?.target_year) - Number(dateString(previous.event_date).slice(0,4)) - 1) * 12) };
+      const matches = resolveConversion(cycleSource, sources.venues.map(venue), sources.externals.map(external));
       const allowed = matches.status === "confirmed"
         ? matches.conversion.kind === kind && matches.conversion.id === bookingId
         : matches.status === "needs_review" &&
