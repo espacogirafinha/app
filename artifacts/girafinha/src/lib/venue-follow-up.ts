@@ -17,7 +17,7 @@ export type ReturnOffer =
   | { type: "gift" | "custom"; description: string };
 
 function dateParts(key: string) {
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(key);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
   if (!match) throw new Error("Invalid event date");
   return [Number(match[1]), Number(match[2]), Number(match[3])] as const;
 }
@@ -67,9 +67,9 @@ export function preparationIsDue(event: VenueForFollowUp, now = new Date()) {
 }
 
 function normalizeName(name: string | null | undefined) {
-  return (name ?? "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
+  return (name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("pt-PT").replace(/[^a-z ]/g, " ")
-    .replace(/\\s+/g, " ").trim();
+    .replace(/\s+/g, " ").trim();
 }
 
 export function findNextBooking(source: VenueForFollowUp, bookings: VenueForFollowUp[]) {
@@ -108,8 +108,8 @@ export function reactivationMessage(
   child: string,
   offer: ReturnOffer = { type: "none" },
 ) {
-  const parent = client.trim().split(/\\s+/)[0] || client;
-  const childName = child.trim().split(/\\s+/)[0] || child;
+  const parent = client.trim().split(/\s+/)[0] || client;
+  const childName = child.trim().split(/\s+/)[0] || child;
   if (stage === "first") {
     return `Olá, ${parent}! 💛 Já passou quase um ano desde a festa do/a ${childName} no Espaço Girafinha 🎉 Como o aniversário se está novamente a aproximar, quisemos avisar com antecedência caso queiram voltar a celebrar connosco. Se este ano preferirem fazer a festa noutro local, também temos serviços de decoração e animação 😊 Se quiserem, podemos já ver disponibilidade.`;
   }
