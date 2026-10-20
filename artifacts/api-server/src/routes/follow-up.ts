@@ -156,8 +156,10 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
       if (!original || original.status !== "completed") return [];
       const source = venue(original);
       const match = resolveConversion(source, validVenues, validExternals);
-      const manualConversion = row.new_venue_event_id ? { kind: "venue_event", id: row.new_venue_event_id }
-        : row.new_external_event_id ? { kind: "external_event", id: row.new_external_event_id } : null;
+      const manualConversion = row.new_venue_event_id && validVenues.some(v => v.id === row.new_venue_event_id && v.status !== "cancelled")
+        ? { kind: "venue_event", id: row.new_venue_event_id }
+        : row.new_external_event_id && validExternals.some(v => v.id === row.new_external_event_id && v.status !== "cancelled")
+          ? { kind: "external_event", id: row.new_external_event_id } : null;
       const conversion = manualConversion ?? (match.status === "confirmed" ? match.conversion : null);
       const noInterest = row.no_interest_at !== null;
       const stage = !row.first_contacted_at && dateString(row.first_due_date) <= today ? "first" :
@@ -321,10 +323,19 @@ router.patch("/follow-up/reactivation/:id", async (req, res): Promise<void> => {
       if (!UUID.test(bookingId) || !["venue_event","external_event"].includes(kind)) {
         res.status(400).json({ error: "Nova reserva inválida" }); return;
       }
-      const table = kind === "venue_event" ? "venue_events" : "external_events";
+      const sources = await loadSources();
+      const reactivation = await pool.query(
+        "select source_venue_event_id from public.customer_reactivations where id=$1", [id],
+      );
+      const previous = sources.venues.find(row => row.id === reactivation.rows[0]?.source_venue_event_id);
+      if (!previous) { res.status(404).json({ error: "Festa anterior não encontrada" }); return; }
+      const matches = resolveConversion(venue(previous), sources.venues.map(venue), sources.externals.map(external));
+      const allowed = matches.status === "confirmed"
+        ? matches.conversion.kind === kind && matches.conversion.id === bookingId
+        : matches.status === "needs_review" &&
+          matches.candidates.some(candidate => candidate.kind === kind && candidate.id === bookingId);
+      if (!allowed) { res.status(409).json({ error: "Reserva não corresponde ao mesmo cliente e ciclo anual" }); return; }
       const column = kind === "venue_event" ? "new_venue_event_id" : "new_external_event_id";
-      const check = await pool.query(`select id from public.${table} where id=$1 and status<>'cancelled'`, [bookingId]);
-      if (!check.rowCount) { res.status(404).json({ error: "Reserva não encontrada" }); return; }
       const result = await pool.query(
         `update public.customer_reactivations set ${column}=$2,updated_at=now()
         where id=$1 and new_venue_event_id is null and new_external_event_id is null returning id`,
