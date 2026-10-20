@@ -52,7 +52,7 @@ try{
   let count=await counts();
   assert.deepEqual(count,{checklists:1,tasks:2,notifications:1,reactivations:0});
   let notice=await request("/notifications");
-  assert.equal(notice.status,200,"notification API must return successfully");
+  assert.equal(notice.status,200,"notification API must return successfully: "+JSON.stringify(notice)+" logs: "+output.slice(-3000));
   assert.equal(notice.data.items.filter(x=>x.type==="venue_preparation_30d").length,1);
   assert.equal(notice.data.unreadCount,1);
 
