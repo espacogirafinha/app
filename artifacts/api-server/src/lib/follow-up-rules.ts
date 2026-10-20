@@ -61,26 +61,33 @@ export function todayPortugal(now = new Date()): string {
 export function resolveConversion(source: VenueRecord, venues: VenueRecord[], externals: ExternalRecord[]): ConversionResult {
   const phone = normalizePortuguesePhone(source.phone);
   const child = normalizeChild(source.birthdayChildName);
-  if (!phone || !child) return { status:"none" };
+  if (!phone) return { status:"none" };
   const estimate = addMonths(source.eventDate,12);
   const start = addMonths(estimate,-3);
   const end = addMonths(estimate,3);
-  const matchesVenue = venues.filter(v =>
+  const samePhoneVenues = venues.filter(v =>
     v.id!==source.id && v.status!=="cancelled" &&
     v.eventDate>=start && v.eventDate<=end &&
-    normalizePortuguesePhone(v.phone)===phone &&
-    normalizeChild(v.birthdayChildName)===child
+    normalizePortuguesePhone(v.phone)===phone
   );
+  const matchesVenue = child
+    ? samePhoneVenues.filter(v => normalizeChild(v.birthdayChildName)===child)
+    : [];
   if (matchesVenue.length===1) return {status:"confirmed",conversion:{kind:"venue_event",id:matchesVenue[0]!.id}};
   if (matchesVenue.length>1) return {
     status:"needs_review",
     candidates: matchesVenue.map(v=>({kind:"venue_event" as const,id:v.id})),
   };
+  const uncertainVenues = samePhoneVenues.filter(v =>
+    !child || !normalizeChild(v.birthdayChildName)
+  ).map(v => ({kind:"venue_event" as const,id:v.id}));
   const possibleExternals = externals.filter(e =>
     e.status!=="cancelled" && e.eventDate>=start && e.eventDate<=end &&
     normalizePortuguesePhone(e.phone)===phone
   );
-  return possibleExternals.length
-    ? {status:"needs_review",candidates:possibleExternals.map(e=>({kind:"external_event" as const,id:e.id}))}
-    : {status:"none"};
+  const candidates: Conversion[] = [
+    ...uncertainVenues,
+    ...possibleExternals.map(e=>({kind:"external_event" as const,id:e.id})),
+  ];
+  return candidates.length ? {status:"needs_review",candidates} : {status:"none"};
 }
