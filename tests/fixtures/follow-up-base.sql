@@ -5,10 +5,10 @@ create role authenticated nologin;
 create extension if not exists pgcrypto;
 create schema if not exists app_private;
 create table public.venue_events(
-  id uuid primary key default gen_random_uuid(),status text not null default 'confirmed'
+  id uuid primary key default gen_random_uuid(),customer_name text not null default '', birthday_child_name text, phone text not null default '', event_date date not null default current_date, party_theme text, pack_name text not null default 'Essencial', total_price numeric default 0,status text not null default 'confirmed'
 );
 create table public.external_events(
-  id uuid primary key default gen_random_uuid(),status text not null default 'confirmed'
+  id uuid primary key default gen_random_uuid(),customer_name text not null default '',phone text not null default '', event_date date not null default current_date, event_type text,total_price numeric default 0,status text not null default 'confirmed'
 );
 create table public.event_checklists(
   id uuid primary key default gen_random_uuid(),
