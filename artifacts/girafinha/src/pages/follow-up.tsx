@@ -139,7 +139,7 @@ function ReactivationItem({ item, demo = false }: { item: Reactivation; demo?: b
           {item.offer.usedAt && <Badge variant="outline">Utilizada</Badge>}
         </div>
         <p className="text-xs text-muted-foreground">Aplicar desconto ou mimo à reserva exige confirmação manual. Não altera preços.</p>
-        <Button size="sm" variant="ghost" onClick={() => setExpanded(current => !current)}>
+        <Button size="sm" variant="ghost" disabled={Boolean(item.offer.proposedAt) || Boolean(item.offer.usedAt)} onClick={() => setExpanded(current => !current)}>
           {expanded ? "Fechar configuração" : "Editar oferta"}
         </Button>
         {expanded && <div className="grid gap-2">
