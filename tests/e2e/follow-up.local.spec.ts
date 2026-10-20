@@ -71,7 +71,7 @@ test("mock API: completing a task persists through the API and removes it from p
   });
   await page.goto("/follow-up-test.html");
   await expect(page.getByText("Preparação de festas (1)")).toBeVisible();
-  await page.getByRole("checkbox", {name:"Convites tratados"}).check();
+  await page.getByRole("checkbox", {name:"Convites tratados"}).click();
   await expect(page.getByText("Preparação de festas (0)")).toBeVisible();
   expect(writes).toEqual([{field:"invitations",done:true}]);
 });
