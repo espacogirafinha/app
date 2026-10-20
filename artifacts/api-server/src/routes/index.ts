@@ -18,6 +18,7 @@ import eventPaymentsRouter from "./event-payments";
 import expensesRouter from "./expenses";
 import inventoryRouter from "./inventory";
 import notificationsRouter from "./notifications";
+import followUpRouter from "./follow-up";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(eventPaymentsRouter);
 router.use(expensesRouter);
 router.use(inventoryRouter);
 router.use(notificationsRouter);
+router.use(followUpRouter);
 
 export default router;
