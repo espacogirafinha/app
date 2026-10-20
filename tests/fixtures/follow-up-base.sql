@@ -28,3 +28,5 @@ create table app_private.notifications (
   destination text not null,source_key text not null,
   created_at timestamptz not null default now()
 );
+
+create table app_private.notification_reads(notification_id uuid not null references app_private.notifications(id),user_id uuid not null,read_at timestamptz not null default now(),primary key(notification_id,user_id));
