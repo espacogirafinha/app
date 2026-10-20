@@ -10,25 +10,28 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { followUpApi, type FollowUpPage, type Preparation, type Reactivation } from "@/lib/follow-up-api";
 import { reactivationMessage, reactivationWhatsAppUrl, type ReturnOffer } from "@/lib/venue-follow-up";
+import { DEMO_FOLLOW_UP } from "@/lib/follow-up-demo";
 
-export function useFollowUp() {
-  return useQuery({ queryKey: ["follow-up"], queryFn: () => followUpApi<FollowUpPage>(""),
+export function useFollowUp(enabled = true) {
+  return useQuery({ queryKey: ["follow-up"], enabled, queryFn: () => followUpApi<FollowUpPage>(""),
     staleTime: 60_000, refetchOnWindowFocus: false });
 }
 function portugueseDate(date: string) {
   return date ? new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "short", year: "numeric", timeZone: "Europe/Lisbon" })
     .format(new Date(date.slice(0, 10) + "T12:00:00Z")) : "—";
 }
-function EventLink({ id, external = false, children }: { id: string; external?: boolean; children: React.ReactNode }) {
+function EventLink({ id, external = false, children, demo = false }: { id: string; external?: boolean; demo?: boolean; children: React.ReactNode }) {
+  if (demo) return <Button size="sm" variant="outline" disabled>{children}</Button>;
   return <Link href={`${external ? "/external-events" : "/venue-events"}?open=${encodeURIComponent(id)}`}>
     <Button size="sm" variant="outline">{children}</Button>
   </Link>;
 }
-function PreparationItem({ item }: { item: Preparation }) {
+function PreparationItem({ item, demo = false }: { item: Preparation; demo?: boolean }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [busy, setBusy] = useState<string | null>(null);
   async function toggle(field: "invitations" | "materials", done: boolean) {
+    if (demo) return;
     setBusy(field);
     try {
       await followUpApi<void>(`/preparation/${item.id}`, {
@@ -51,7 +54,7 @@ function PreparationItem({ item }: { item: Preparation }) {
       </div>
       <div className="space-y-3 rounded-lg bg-muted/30 p-3">
         <label className="flex min-h-9 items-center gap-3 text-sm">
-          <Checkbox checked={item.invitationsDone} disabled={busy !== null}
+          <Checkbox checked={item.invitationsDone} disabled={busy !== null || demo}
             onCheckedChange={value => void toggle("invitations", value === true)} />
           Convites tratados
         </label>
@@ -61,7 +64,7 @@ function PreparationItem({ item }: { item: Preparation }) {
           Material tratado
         </label>
       </div>
-      <EventLink id={item.id}><ExternalLink className="mr-2 h-4 w-4" />Abrir festa</EventLink>
+      <EventLink id={item.id} demo={demo}><ExternalLink className="mr-2 h-4 w-4" />Abrir festa</EventLink>
     </CardContent>
   </Card>;
 }
@@ -69,7 +72,7 @@ const OFFER_TYPES = [
   ["none", "Sem oferta"], ["fixed", "Desconto €"], ["percent", "Desconto %"],
   ["gift", "Mimo / benefício"], ["custom", "Texto personalizado"],
 ] as const;
-function ReactivationItem({ item }: { item: Reactivation }) {
+function ReactivationItem({ item, demo = false }: { item: Reactivation; demo?: boolean }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
@@ -82,6 +85,7 @@ function ReactivationItem({ item }: { item: Reactivation }) {
   const message = item.stage ? reactivationMessage(item.stage, item.source.customerName, item.source.birthdayChildName ?? "", offer) : "";
   const whatsappUrl = item.stage ? reactivationWhatsAppUrl(item.source.phone, message) : null;
   async function change(payload: Record<string, unknown>) {
+    if (demo) return;
     setBusy(true);
     try {
       await followUpApi<void>(`/reactivation/${item.id}`, { method: "PATCH", body: JSON.stringify(payload) });
@@ -113,8 +117,8 @@ function ReactivationItem({ item }: { item: Reactivation }) {
         {item.secondContactedAt && <p>2.º realizado: {new Date(item.secondContactedAt).toLocaleDateString("pt-PT")}</p>}
       </div>
       <div className="flex flex-wrap gap-2">
-        <EventLink id={item.source.id}>Abrir festa anterior</EventLink>
-        {item.conversion && <EventLink id={item.conversion.id} external={item.conversion.kind === "external_event"}>
+        <EventLink id={item.source.id} demo={demo}>Abrir festa anterior</EventLink>
+        {item.conversion && <EventLink id={item.conversion.id} demo={demo} external={item.conversion.kind === "external_event"}>
           Ver nova reserva
         </EventLink>}
       </div>
@@ -122,7 +126,7 @@ function ReactivationItem({ item }: { item: Reactivation }) {
         Existe um Serviço Externo com o mesmo telefone. Confirma manualmente se corresponde à mesma criança antes de associar.
         <div className="mt-2 flex flex-wrap gap-2">
           {item.reviewCandidates.map(candidate =>
-            <Button key={candidate.id} variant="outline" size="sm" disabled={busy}
+            <Button key={candidate.id} variant="outline" size="sm" disabled={busy || demo}
               onClick={() => void change({ action: "convert", kind: candidate.kind, bookingId: candidate.id })}>
               Confirmar Serviço Externo
             </Button>)}
@@ -176,7 +180,7 @@ function ReactivationItem({ item }: { item: Reactivation }) {
           <Gift className="mr-2 h-4 w-4"/> Confirmar oferta utilizada
         </Button>}
       {item.stage && whatsappUrl && <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" asChild>
+        {demo ? <Button variant="outline" size="sm" disabled><MessageCircle className="mr-2 h-4 w-4" /> Abrir WhatsApp</Button> : <Button variant="outline" size="sm" asChild>
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
             <MessageCircle className="mr-2 h-4 w-4" /> Abrir WhatsApp
           </a>
@@ -191,7 +195,7 @@ function ReactivationItem({ item }: { item: Reactivation }) {
   </Card>;
 }
 
-function CampaignDefault({ campaign }: { campaign: FollowUpPage["campaign"] }) {
+function CampaignDefault({ campaign, demo = false }: { campaign: FollowUpPage["campaign"]; demo?: boolean }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
@@ -201,6 +205,7 @@ function CampaignDefault({ campaign }: { campaign: FollowUpPage["campaign"] }) {
   const [scope, setScope] = useState(campaign.offer_scope);
   const [busy, setBusy] = useState(false);
   async function save() {
+    if (demo) return;
     setBusy(true);
     try {
       await followUpApi<void>("/campaign", {
@@ -242,14 +247,16 @@ function CampaignDefault({ campaign }: { campaign: FollowUpPage["campaign"] }) {
           <option value="venue_only">Só Festa no Espaço</option>
           <option value="external_only">Só Serviços Externos</option>
         </select>
-        <Button onClick={() => void save()} disabled={busy}>Guardar oferta padrão</Button>
+        <Button onClick={() => void save()} disabled={busy || demo}>Guardar oferta padrão</Button>
       </div>}
     </CardContent>
   </Card>;
 }
 
 export default function FollowUpPage() {
-  const { data, isLoading, isError, refetch } = useFollowUp();
+  const demo = new URLSearchParams(window.location.search).get("demo") === "1";
+  const { data: liveData, isLoading, isError, refetch } = useFollowUp(!demo);
+  const data = demo ? DEMO_FOLLOW_UP : liveData;
   return <div className="space-y-7 pb-8">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div>
@@ -260,8 +267,9 @@ export default function FollowUpPage() {
         <RefreshCcw className="mr-2 h-4 w-4" /> Atualizar
       </Button>
     </div>
-    {isLoading && <p>A carregar acompanhamento…</p>}
-    {isError && <Card><CardContent className="space-y-2 p-4">
+    {demo && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">Demonstração com dados fictícios. Os botões de escrita estão desativados e nenhum dado real é consultado ou alterado.</div>}
+    {!demo && isLoading && <p>A carregar acompanhamento…</p>}
+    {!demo && isError && <Card><CardContent className="space-y-2 p-4">
       <p>Não foi possível carregar o acompanhamento. A base de dados pode ainda não ter a migration aprovada.</p>
       <Button variant="outline" onClick={() => void refetch()}>Tentar novamente</Button>
     </CardContent></Card>}
@@ -270,15 +278,15 @@ export default function FollowUpPage() {
         <div className="flex items-center gap-2"><ClipboardList className="h-5 w-5"/>
           <h2 className="text-lg font-bold">Preparação de festas ({data.preparationCount})</h2></div>
         {data.preparations.length === 0 ? <p className="text-sm text-muted-foreground">Sem festas com tarefas pendentes nos próximos 30 dias.</p> :
-          <div className="grid gap-3 lg:grid-cols-2">{data.preparations.map(item => <PreparationItem key={item.id} item={item}/>)}</div>}
+          <div className="grid gap-3 lg:grid-cols-2">{data.preparations.map(item => <PreparationItem key={item.id} item={item} demo={demo}/>)}</div>}
       </section>
       <section className="space-y-3">
-        <CampaignDefault campaign={data.campaign} />
+        <CampaignDefault campaign={data.campaign} demo={demo} />
         <div className="flex items-center gap-2"><CalendarClock className="h-5 w-5"/>
           <h2 className="text-lg font-bold">Reativação de clientes ({data.contactCount} por contactar)</h2></div>
         <p className="text-sm text-muted-foreground">Primeiro contacto 3 meses antes; segundo contacto 42 dias antes. Mensagens enviadas apenas manualmente.</p>
         {data.reactivations.length === 0 ? <p className="text-sm text-muted-foreground">Ainda não há oportunidades de reativação.</p> :
-          <div className="grid gap-3 lg:grid-cols-2">{data.reactivations.map(item => <ReactivationItem key={item.id} item={item}/>)}</div>}
+          <div className="grid gap-3 lg:grid-cols-2">{data.reactivations.map(item => <ReactivationItem key={item.id} item={item} demo={demo}/>)}</div>}
       </section>
     </>}
   </div>;
