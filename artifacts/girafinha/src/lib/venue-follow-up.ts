@@ -10,11 +10,13 @@ export type VenueForFollowUp = {
 };
 
 export type FollowUpStage = "first" | "second";
-export type ReturnOffer =
+export type OfferScope = "venue_only" | "external_only" | "both";
+export type ReturnOffer = { scope?: OfferScope } & (
   | { type: "none"; description?: string }
   | { type: "fixed"; value: number; description?: string }
   | { type: "percent"; value: number; description?: string }
-  | { type: "gift" | "custom"; description: string };
+  | { type: "gift" | "custom"; description: string }
+);
 
 function dateParts(key: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
@@ -118,8 +120,13 @@ export function reactivationMessage(
   const offerText = offer.type === "none" ? "" :
     offer.type === "fixed" ? `${offer.value} € de desconto` :
     offer.type === "percent" ? `${offer.value}% de desconto` : offer.description.trim();
+  const offerDestination = offer.scope === "venue_only"
+    ? "caso queiram voltar ao Espaço Girafinha"
+    : offer.scope === "external_only"
+      ? "caso queiram contratar os nossos serviços para outro local"
+      : "caso queiram voltar ao Espaço Girafinha ou contratar os nossos serviços para outro local";
   return offerText
-    ? `Olá, ${parent}! 💛 ${birthdayLead} 🎉 Como já celebraram connosco, temos também ${offerText} caso queiram voltar ao Espaço Girafinha ou contratar os nossos serviços para outro local 😊 Se quiserem, posso verificar disponibilidade.`
+    ? `Olá, ${parent}! 💛 ${birthdayLead} 🎉 Como já celebraram connosco, temos também ${offerText} ${offerDestination} 😊 Se quiserem, posso verificar disponibilidade.`
     : `Olá, ${parent}! 💛 O aniversário do/a ${childName} está a aproximar-se 🎉 Gostávamos muito de vos receber novamente no Espaço Girafinha! Se quiserem, posso verificar a disponibilidade 😊`;
 }
 
