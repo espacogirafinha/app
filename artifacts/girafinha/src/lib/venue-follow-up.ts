@@ -125,3 +125,46 @@ export function reactivationWhatsAppUrl(phone: string, message: string) {
   const normalized = normalizePortugueseWhatsAppPhone(phone);
   return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(message)}` : null;
 }
+
+export type ExternalForFollowUp = {
+  id: string;
+  customerName: string;
+  phone: string;
+  eventDate: string;
+  eventType?: string | null;
+  status: string;
+};
+export type FollowUpConversion = {
+  kind: "venue_event" | "external_event";
+  id: string;
+};
+export type ConversionResolution =
+  | { status: "confirmed"; conversion: FollowUpConversion }
+  | { status: "needs_review"; candidates: FollowUpConversion[] }
+  | { status: "none" };
+
+/**
+ * An external event does not normally record the child's name. Identical phone
+ * alone is never enough to auto-convert: surface a manual review candidate.
+ */
+export function resolveNewBooking(
+  source: VenueForFollowUp,
+  venues: VenueForFollowUp[],
+  externals: ExternalForFollowUp[],
+): ConversionResolution {
+  const confirmedVenue = findNextBooking(source, venues);
+  if (confirmedVenue) {
+    return { status: "confirmed", conversion: { kind: "venue_event", id: confirmedVenue.id } };
+  }
+  const phone = normalizePortugueseWhatsAppPhone(source.phone);
+  if (!phone) return { status: "none" };
+  const nextCycle = addCalendarMonths(source.eventDate, 12);
+  const start = addCalendarMonths(nextCycle, -3);
+  const end = addCalendarMonths(nextCycle, 3);
+  const candidates = externals.filter((event) =>
+    event.status !== "cancelled" &&
+    event.eventDate >= start && event.eventDate <= end &&
+    normalizePortugueseWhatsAppPhone(event.phone) === phone
+  ).map((event) => ({ kind: "external_event" as const, id: event.id }));
+  return candidates.length ? { status: "needs_review", candidates } : { status: "none" };
+}
