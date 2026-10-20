@@ -1,4 +1,7 @@
 -- Disposable PostgreSQL fixture for validating the staged migration, never production.
+-- Supabase provides these predefined roles; the disposable PostgreSQL fixture must emulate them.
+create role anon nologin;
+create role authenticated nologin;
 create extension if not exists pgcrypto;
 create schema if not exists app_private;
 create table public.venue_events(
