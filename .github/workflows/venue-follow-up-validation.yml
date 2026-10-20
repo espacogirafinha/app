@@ -22,7 +22,20 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Unit tests
         run: node --experimental-strip-types --test artifacts/girafinha/src/lib/venue-follow-up.test.ts
+      - name: Install Playwright Chromium
+        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Follow-up E2E desktop and mobile
+        run: corepack pnpm exec playwright test --config=playwright.follow-up.config.ts
       - name: Typecheck
         run: corepack pnpm run typecheck
       - name: Build
         run: corepack pnpm run build
+      - name: Archive E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: follow-up-e2e-results
+          path: |
+            test-results/
+            playwright-follow-up-report/
+          if-no-files-found: ignore
