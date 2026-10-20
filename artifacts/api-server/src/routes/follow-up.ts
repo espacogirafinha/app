@@ -6,6 +6,10 @@ import {
 } from "../lib/follow-up-rules";
 
 const router: IRouter = Router();
+// Explicit activation only after the database migration is approved and applied.
+// Preview deployments never write operational data, including if the flag is set.
+const WRITES_ENABLED = process.env.FOLLOW_UP_WRITES_ENABLED === "true" && process.env.VERCEL_ENV !== "preview";
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type VenueRow = {
   id: string; customer_name: string; birthday_child_name: string | null;
@@ -62,7 +66,7 @@ async function reconcile(today: string, venues: VenueRow[]) {
           "Preparação de festa",
           `A festa da ${child} é daqui a ${remainingDays(source.eventDate, today)} dias. Tratar convites e material.`,
           event.id,
-          `/venue-events?eventId=${event.id}`,
+          `/venue-events?open=${event.id}`,
           `venue-preparation-30d:${event.id}`,
         ],
       );
@@ -89,11 +93,17 @@ async function reconcile(today: string, venues: VenueRow[]) {
   }
 }
 
+export async function refreshDueNotifications(): Promise<void> {
+  if (!WRITES_ENABLED) return;
+  const { venues } = await loadSources();
+  await reconcile(todayPortugal(), venues);
+}
+
 router.get("/follow-up", async (_req, res): Promise<void> => {
   try {
     const today = todayPortugal();
     const { venues, externals } = await loadSources();
-    await reconcile(today, venues);
+    if (WRITES_ENABLED) await reconcile(today, venues);
     const [preps, react] = await Promise.all([
       pool.query("select * from public.venue_preparation_states"),
       pool.query("select * from public.customer_reactivations order by first_due_date"),
@@ -149,6 +159,11 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
     console.error("Follow-up retrieval failed", error);
     res.status(500).json({ error: "Não foi possível carregar o acompanhamento." });
   }
+});
+
+router.use("/follow-up", (_req, res, next) => {
+  if (WRITES_ENABLED) return next();
+  res.status(503).json({ error: "Acompanhamento ainda não ativado. Migration pendente de aprovação." });
 });
 
 router.patch("/follow-up/preparation/:id", async (req, res): Promise<void> => {
