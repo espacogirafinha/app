@@ -1,0 +1,80 @@
+name: Venue Follow-up Validation
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/venue-preparation-reactivation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.0'
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Unit tests
+        run: node --experimental-strip-types --test artifacts/girafinha/src/lib/venue-follow-up.test.ts artifacts/api-server/src/lib/follow-up-rules.test.ts
+      - name: Install Playwright Chromium
+        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Follow-up E2E desktop and mobile
+        run: corepack pnpm exec playwright test --config=playwright.follow-up.config.ts
+      - name: Typecheck
+        run: corepack pnpm run typecheck
+      - name: Build
+        run: corepack pnpm run build
+      - name: Archive E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: follow-up-e2e-results
+          path: |
+            test-results/
+            playwright-follow-up-report/
+          if-no-files-found: ignore
+  schema-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: validation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:validation@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql if missing
+        run: |
+          if ! command -v psql; then sudo apt-get update && sudo apt-get install -y postgresql-client; fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.0'
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Create disposable schema and validate migration
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/follow-up-base.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f lib/db/migrations/20261020_venue_preparation_reactivation.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/fixtures/follow-up-schema-smoke.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "truncate public.venue_events, public.external_events, public.event_checklists, public.event_checklist_items, public.customer_reactivations, app_private.notifications cascade"
+      - name: Build real Express API for integration
+        run: corepack pnpm --filter @workspace/api-server build
+      - name: Full integration against disposable Postgres
+        run: node tests/integration/follow-up-api.mjs

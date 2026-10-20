@@ -7,6 +7,7 @@ import { logger } from "./lib/logger";
 import { requireAuth } from "./lib/auth";
 import { paymentCutoverWriteFreeze } from "./lib/payment-cutover-write-freeze";
 import googleFormsRouter from "./integrations/google-forms-route";
+import followUpCronRouter from "./routes/follow-up-cron";
 
 const app: Express = express();
 
@@ -39,6 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", healthRouter);
 app.use("/api", googleFormsRouter);
+app.use("/api", followUpCronRouter);
 app.use("/api", requireAuth, router);
 
 export default app;
