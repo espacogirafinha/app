@@ -51,6 +51,11 @@ try{
   assert.equal(await sync(),200,"cron sync should succeed");
   let count=await counts();
   assert.deepEqual(count,{checklists:1,tasks:2,notifications:1,reactivations:0});
+  let notice=await request("/notifications");
+  assert.equal(notice.status,200,"notification API must return successfully");
+  assert.equal(notice.data.items.filter(x=>x.type==="venue_preparation_30d").length,1);
+  assert.equal(notice.data.unreadCount,1);
+
   assert.equal(await sync(),200);
   assert.deepEqual(await counts(),count,"D-30 cron must be idempotent");
   let page=await request("/follow-up");
@@ -71,7 +76,15 @@ try{
   await pool.query("update public.venue_events set event_date=$2 where id=$1",[uuid(1),utcDay(12)]);
   assert.equal(await sync(),200);
   assert.deepEqual(await counts(),count);
-  await pool.query("update public.venue_events set status='cancelled' where id=$1",[uuid(1)]);
+  const cancelledViaApi=await request("/venue-events/"+uuid(1),"PATCH",{status:"cancelled"});
+  assert.equal(cancelledViaApi.status,200,"cancel venue party through actual API: "+JSON.stringify(cancelledViaApi));
+  notice=await request("/notifications");
+  assert.equal(notice.status,200,"notification API after cancellation");
+  assert.equal(notice.data.items.filter(x=>x.type==="venue_preparation_30d").length,0,"cancelled party notification hidden, not physically deleted");
+  assert.equal(notice.data.unreadCount,0,"cancelled D-30 not counted as unread");
+  const preservedNotification=await pool.query("select count(*)::int as n from app_private.notifications where type='venue_preparation_30d'");
+  assert.equal(preservedNotification.rows[0].n,1,"notification history retained");
+
   page=await request("/follow-up");
   assert.equal(page.data.preparationCount,0);
   assert.equal(await sync(),200);
@@ -130,6 +143,30 @@ try{
   page=await request("/follow-up");
   assert.equal(page.data.reactivations.find(x=>x.id===external.id).conversion.kind,"external_event");
   assert.equal(await request("/follow-up/reactivation/"+external.id,"PATCH",{action:"convert",kind:"venue_event",bookingId:uuid(3)}).then(r=>r.status),409);
+  // Declined opportunity must never become stage-two eligible.
+  await venue(6,utcDay(-340),"completed","926111222","Beatriz");
+  assert.equal(await sync(),200);
+  let declinedResponse=await request("/follow-up");
+  let declined=declinedResponse.data.reactivations.find(x=>x.source.id===uuid(6));
+  assert.ok(declined && declined.stage==="first","declined test opportunity starts eligible");
+  assert.equal((await request("/follow-up/reactivation/"+declined.id,"PATCH",{action:"contact",stage:"first"})).status,204);
+  assert.equal((await request("/follow-up/reactivation/"+declined.id,"PATCH",{action:"no_interest"})).status,204);
+  declinedResponse=await request("/follow-up");
+  declined=declinedResponse.data.reactivations.find(x=>x.source.id===uuid(6));
+  assert.equal(declined.noInterest,true);
+  assert.equal(declined.stage,null,"second-stage action must not appear");
+  assert.equal(declined.firstContactedAt!==null,true);
+  assert.equal(declined.secondContactedAt,null);
+  assert.equal((await request("/follow-up/reactivation/"+declined.id,"PATCH",{action:"contact",stage:"second"})).status,409,"declined opportunity cannot mark second stage");
+  const declinedPersisted=await pool.query("select no_interest_at,first_contacted_at,second_contacted_at from public.customer_reactivations where id=$1",[declined.id]);
+  assert.ok(declinedPersisted.rows[0].no_interest_at);
+  assert.ok(declinedPersisted.rows[0].first_contacted_at);
+  assert.equal(declinedPersisted.rows[0].second_contacted_at,null);
+  for(let i=0;i<3;i++)assert.equal(await sync(),200);
+  const declinedAgain=(await request("/follow-up")).data.reactivations.find(x=>x.id===declined.id);
+  assert.equal(declinedAgain.stage,null);
+  assert.equal(declinedAgain.noInterest,true);
+  console.log("NO_INTEREST PASS: first-contact preserved, second blocked over repeated sync");
   const finalCounts=await counts();
   for(let i=0;i<3;i++)assert.equal(await sync(),200);
   assert.deepEqual(await counts(),finalCounts,"repeated sync must not create extra records");
