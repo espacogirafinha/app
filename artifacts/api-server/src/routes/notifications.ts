@@ -7,12 +7,18 @@ import {
   pushSubscriptionsTable,
 } from "@workspace/db";
 import { createPushRouter } from "./push-routes";
+import { refreshDueNotifications } from "./follow-up";
 
 const router: IRouter = Router();
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 router.get("/notifications", async (_req, res): Promise<void> => {
+  // The notification centre is already polled while users are in the app.
+  // Synchronize D-30 notifications once per event; uniqueness is enforced in Postgres.
+  // No writes run in Preview or before explicit activation.
+  try { await refreshDueNotifications(); }
+  catch (error) { console.error("Could not synchronize preparation notifications", error); }
   const userId = String(res.locals.userId ?? "");
   const items = await db
     .select({
