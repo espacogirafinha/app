@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireSettingsAdmin } from "../lib/settings-access";
 import { pool } from "@workspace/db";
 import {
   cycleDates, todayPortugal, resolveConversion, normalizePortuguesePhone,
@@ -104,9 +105,10 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
     const today = todayPortugal();
     const { venues, externals } = await loadSources();
     if (WRITES_ENABLED) await reconcile(today, venues);
-    const [preps, react] = await Promise.all([
+    const [preps, react, campaign] = await Promise.all([
       pool.query("select * from public.venue_preparation_states"),
       pool.query("select * from public.customer_reactivations order by first_due_date"),
+      pool.query("select * from public.reactivation_campaign_settings where id='default'"),
     ]);
     const prepById = new Map(preps.rows.map(row => [row.venue_event_id, row]));
     const validVenues = venues.map(venue);
@@ -152,6 +154,7 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
     res.json({
       preparations,
       reactivations,
+      campaign: campaign.rows[0] ?? { offer_type:"none", offer_description:"", offer_value:null, offer_scope:"both" },
       preparationCount: preparations.length,
       contactCount: reactivations.filter(item => item.stage !== null).length,
     });
