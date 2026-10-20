@@ -1,5 +1,7 @@
 name: Venue Follow-up Validation
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [feat/venue-preparation-reactivation]
   workflow_dispatch:
