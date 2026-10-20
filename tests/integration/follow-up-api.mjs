@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
-import pg from "pg";
+import { createRequire } from "node:module";
+const pg = createRequire(new URL("../../lib/db/package.json", import.meta.url))("pg");
 
 const databaseUrl = process.env.DATABASE_URL;
 assert.ok(databaseUrl?.includes("127.0.0.1"), "Integration test must use localhost Postgres");
