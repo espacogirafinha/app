@@ -39,6 +39,7 @@ export type Reactivation = {
   };
 };
 export type FollowUpPage = {
+  campaign: { offer_type: Reactivation["offer"]["type"]; offer_description: string; offer_value: string | number | null; offer_scope: Reactivation["offer"]["scope"] };
   preparations: Preparation[];
   reactivations: Reactivation[];
   preparationCount: number;
