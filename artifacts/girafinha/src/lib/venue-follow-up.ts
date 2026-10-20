@@ -23,9 +23,11 @@ function dateParts(key: string) {
 }
 
 function dateKey(year: number, month: number, day: number) {
-  const date = new Date(Date.UTC(year, month - 1, 1, 12));
-  date.setUTCDate(Math.min(day, new Date(Date.UTC(year, month, 0)).getUTCDate()));
-  return date.toISOString().slice(0, 10);
+  const target = new Date(Date.UTC(year, month - 1, 1, 12));
+  const y = target.getUTCFullYear();
+  const m = target.getUTCMonth();
+  const lastDay = new Date(Date.UTC(y, m + 1, 0, 12)).getUTCDate();
+  return new Date(Date.UTC(y, m, Math.min(day, lastDay), 12)).toISOString().slice(0, 10);
 }
 
 export function addCalendarMonths(key: string, months: number) {
@@ -109,13 +111,13 @@ export function reactivationMessage(
   const parent = client.trim().split(/\\s+/)[0] || client;
   const childName = child.trim().split(/\\s+/)[0] || child;
   if (stage === "first") {
-    return `Olá, ${parent}! 💛 Já passou quase um ano desde a festa do/a ${childName} no Espaço Girafinha 🎉 Como o aniversário se está novamente a aproximar, quisemos avisar com antecedência caso queiram voltar a celebrar connosco. Se quiserem, podemos já ver disponibilidade para a data 😊`;
+    return `Olá, ${parent}! 💛 Já passou quase um ano desde a festa do/a ${childName} no Espaço Girafinha 🎉 Como o aniversário se está novamente a aproximar, quisemos avisar com antecedência caso queiram voltar a celebrar connosco. Se este ano preferirem fazer a festa noutro local, também temos serviços de decoração e animação 😊 Se quiserem, podemos já ver disponibilidade.`;
   }
   const offerText = offer.type === "none" ? "" :
     offer.type === "fixed" ? `${offer.value} € de desconto` :
     offer.type === "percent" ? `${offer.value}% de desconto` : offer.description.trim();
   return offerText
-    ? `Olá, ${parent}! 💛 O aniversário do/a ${childName} está a aproximar-se 🎉 Como já festejaram connosco, este ano temos também ${offerText} caso queiram voltar a celebrar no Espaço Girafinha 😊 Se quiserem, posso verificar a disponibilidade.`
+    ? `Olá, ${parent}! 💛 O aniversário do/a ${childName} está a aproximar-se 🎉 Como já celebraram connosco, temos também ${offerText} caso queiram voltar ao Espaço Girafinha ou contratar os nossos serviços para outro local 😊 Se quiserem, posso verificar disponibilidade.`
     : `Olá, ${parent}! 💛 O aniversário do/a ${childName} está a aproximar-se 🎉 Gostávamos muito de vos receber novamente no Espaço Girafinha! Se quiserem, posso verificar a disponibilidade 😊`;
 }
 
