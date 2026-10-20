@@ -110,14 +110,16 @@ export function reactivationMessage(
 ) {
   const parent = client.trim().split(/\s+/)[0] || client;
   const childName = child.trim().split(/\s+/)[0] || child;
+  const previousPartyReference = childName ? `festa do/a ${childName}` : "vossa festa";
+  const birthdayLead = childName ? `O aniversário do/a ${childName} está a aproximar-se` : "Está a aproximar-se mais um aniversário";
   if (stage === "first") {
-    return `Olá, ${parent}! 💛 Já passou quase um ano desde a festa do/a ${childName} no Espaço Girafinha 🎉 Como o aniversário se está novamente a aproximar, quisemos avisar com antecedência caso queiram voltar a celebrar connosco. Se este ano preferirem fazer a festa noutro local, também temos serviços de decoração e animação 😊 Se quiserem, podemos já ver disponibilidade.`;
+    return `Olá, ${parent}! 💛 Já passou quase um ano desde a ${previousPartyReference} no Espaço Girafinha 🎉 Como o aniversário se está novamente a aproximar, quisemos avisar com antecedência caso queiram voltar a celebrar connosco. Se este ano preferirem fazer a festa noutro local, também temos serviços de decoração e animação 😊 Se quiserem, podemos já ver disponibilidade.`;
   }
   const offerText = offer.type === "none" ? "" :
     offer.type === "fixed" ? `${offer.value} € de desconto` :
     offer.type === "percent" ? `${offer.value}% de desconto` : offer.description.trim();
   return offerText
-    ? `Olá, ${parent}! 💛 O aniversário do/a ${childName} está a aproximar-se 🎉 Como já celebraram connosco, temos também ${offerText} caso queiram voltar ao Espaço Girafinha ou contratar os nossos serviços para outro local 😊 Se quiserem, posso verificar disponibilidade.`
+    ? `Olá, ${parent}! 💛 ${birthdayLead} 🎉 Como já celebraram connosco, temos também ${offerText} caso queiram voltar ao Espaço Girafinha ou contratar os nossos serviços para outro local 😊 Se quiserem, posso verificar disponibilidade.`
     : `Olá, ${parent}! 💛 O aniversário do/a ${childName} está a aproximar-se 🎉 Gostávamos muito de vos receber novamente no Espaço Girafinha! Se quiserem, posso verificar a disponibilidade 😊`;
 }
 
