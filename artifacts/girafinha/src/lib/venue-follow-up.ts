@@ -1,4 +1,4 @@
-import { normalizePortugueseWhatsAppPhone } from "./booking-confirmation-whatsapp";
+import { normalizePortugueseWhatsAppPhone } from "./booking-confirmation-whatsapp.ts";
 
 export type VenueForFollowUp = {
   id: string;
