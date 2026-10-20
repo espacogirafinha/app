@@ -50,3 +50,12 @@ test("ambiguous venue results require review", () => {
 test("a cancelled new venue is ignored", () => {
   assert.equal(resolveConversion(old,[old,{...next,status:"cancelled"}],[]).status,"none");
 });
+
+test("missing child name: retain a manual review candidate, never auto-convert", () => {
+  const unknownChild = {...old,birthdayChildName:null};
+  const result = resolveConversion(unknownChild,[unknownChild,next],[outside]);
+  assert.equal(result.status,"needs_review");
+  if(result.status==="needs_review") {
+    assert.equal(result.candidates.length,2);
+  }
+});
