@@ -265,6 +265,29 @@ router.patch("/follow-up/reactivation/:id", async (req, res): Promise<void> => {
       );
       res.sendStatus(204); return;
     }
+    if (action === "redeem_offer") {
+      const record = await pool.query("select * from public.customer_reactivations where id=$1", [id]);
+      const item = record.rows[0];
+      if (!item || item.offer_type === "none" || !item.offer_proposed_at ||
+          item.offer_used_at || item.no_interest_at ||
+          (!item.new_venue_event_id && !item.new_external_event_id)) {
+        res.status(409).json({error:"Oferta não elegível para utilização"}); return;
+      }
+      const convertedToVenue = Boolean(item.new_venue_event_id);
+      if ((convertedToVenue && item.offer_scope === "external_only") ||
+          (!convertedToVenue && item.offer_scope === "venue_only")) {
+        res.status(409).json({error:"Esta oferta não se aplica ao tipo de reserva"}); return;
+      }
+      const column = convertedToVenue ? "offer_used_venue_event_id" : "offer_used_external_event_id";
+      const reservationId = convertedToVenue ? item.new_venue_event_id : item.new_external_event_id;
+      const result = await pool.query(
+        "update public.customer_reactivations set "+column+"=$2,offer_used_at=now(),updated_at=now() "+
+        "where id=$1 and offer_used_at is null and offer_proposed_at is not null returning id",
+        [id,reservationId],
+      );
+      if (!result.rowCount) {res.status(409).json({error:"Oferta já utilizada"});return;}
+      res.sendStatus(204);return;
+    }
     if (action === "convert") {
       const kind = req.body?.kind;
       const bookingId = String(req.body?.bookingId ?? "");
