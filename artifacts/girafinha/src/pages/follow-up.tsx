@@ -81,7 +81,7 @@ function ReactivationItem({ item, demo = false }: { item: Reactivation; demo?: b
   const [description, setDescription] = useState(item.offer.description);
   const [scope, setScope] = useState(item.offer.scope);
   const [expanded, setExpanded] = useState(false);
-  const offer = { type: item.offer.type, value: item.offer.value ?? undefined, description: item.offer.description } as ReturnOffer;
+  const offer = { type: item.offer.type, value: item.offer.value ?? undefined, description: item.offer.description, scope: item.offer.scope } as ReturnOffer;
   const message = item.stage ? reactivationMessage(item.stage, item.source.customerName, item.source.birthdayChildName ?? "", offer) : "";
   const whatsappUrl = item.stage ? reactivationWhatsAppUrl(item.source.phone, message) : null;
   async function change(payload: Record<string, unknown>) {
