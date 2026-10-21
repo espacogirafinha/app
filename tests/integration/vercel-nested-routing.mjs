@@ -30,38 +30,32 @@ process.env.FOLLOW_UP_WRITES_ENABLED = 'true';
 process.env.VERCEL_ENV = 'development';
 process.env.GOOGLE_FORMS_INTEGRATION_SECRET = '';
 
-// Import physical production functions: no URL rewriting or business duplication.
+// One native two-level catch-all covers nested paths without adding functions
+// beyond the Hobby 12-function limit; existing exact routes keep precedence.
 const rootCatchAll = (await import('../../api/[...path].mjs')).default;
-const followUp = (await import('../../api/follow-up/[...path].mjs')).default;
-const reviewExact = (await import('../../api/integrations/google-forms/review.mjs')).default;
-const reviewNested = (await import('../../api/integrations/google-forms/review/[...path].mjs')).default;
+const nestedCatchAll = (await import('../../api/[segment]/[...path].mjs')).default;
+const tasksCatchAll = (await import('../../api/tasks/[...path].mjs')).default;
 const formSubmission = (await import('../../api/integrations/google-forms/venue-event.mjs')).default;
 const { readFileSync } = await import('node:fs');
-for (const path of ['api/follow-up/[...path].mjs',
-  'api/integrations/google-forms/review.mjs',
-  'api/integrations/google-forms/review/[...path].mjs']) {
-  assert.match(readFileSync(new URL('../../' + path, import.meta.url), 'utf8'),
-    /export default app;/, 'Physical adapter must export the real Express app');
-}
+assert.match(readFileSync(new URL('../../api/[segment]/[...path].mjs', import.meta.url), 'utf8'),
+  /export default app;/, 'Native physical catch-all must export the real Express app');
 function resolveRequest(raw) {
   const path = new URL(raw, 'http://localhost').pathname;
-  if (path === '/api/integrations/google-forms/venue-event')
-    return formSubmission;
-  if (path === '/api/integrations/google-forms/review')
-    return reviewExact;
-  if (path.startsWith('/api/integrations/google-forms/review/'))
-    return reviewNested;
-  if (path.startsWith('/api/follow-up/'))
-    return followUp;
-  if (path === '/api/follow-up') return rootCatchAll;
+  if (path === '/api/integrations/google-forms/venue-event') return formSubmission;
+  if (path.startsWith('/api/tasks/')) return tasksCatchAll;
+  const match = /^\/api\/[^/]+\/.+/.test(path);
+  if (match) return nestedCatchAll;
+  if (path.startsWith('/api/')) return rootCatchAll;
   return null;
 }
 for (const path of ['/api/follow-up/preparation/' + id,
-  '/api/follow-up/reactivation/' + id, '/api/follow-up/campaign'])
-  assert.equal(resolveRequest(path), followUp);
+  '/api/follow-up/reactivation/' + id, '/api/follow-up/campaign',
+  '/api/integrations/google-forms/review',
+  '/api/integrations/google-forms/review/' + id + '/resolve',
+  '/api/dashboard/example'])
+  assert.equal(resolveRequest(path), nestedCatchAll);
 assert.equal(resolveRequest('/api/follow-up'), rootCatchAll);
-assert.equal(resolveRequest('/api/integrations/google-forms/review'), reviewExact);
-assert.equal(resolveRequest('/api/integrations/google-forms/review/' + id + '/resolve'), reviewNested);
+assert.equal(resolveRequest('/api/tasks/example'), tasksCatchAll);
 assert.equal(resolveRequest('/api/integrations/google-forms/venue-event'), formSubmission);
 const proxy = createServer((req, res) => {
   const handler = resolveRequest(req.url ?? '/');
@@ -97,6 +91,8 @@ try {
       [importId, 'needs_review', 'requested extras require review', JSON.stringify({ fields: { customerName: 'Test' } })]);
   }
 
+  const dashboard = await request('/api/dashboard/example', 'GET', undefined, false);
+  assert.equal(dashboard.status, 401, 'Existing dashboard nested route must still reach auth middleware');
   const root = await request('/api/follow-up');
   assert.equal(root.status, 200, 'GET follow-up must reach Express: ' + JSON.stringify(root));
   const prep = await request('/api/follow-up/preparation/' + id, 'PATCH', { field: 'invalid', done: true });
