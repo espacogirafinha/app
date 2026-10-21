@@ -85,10 +85,10 @@ function checkedEntry(raw: unknown, status: CatalogueState): CatalogueItem {
     throw new Error("Categoria, unidade ou propriedade inválida em " + catalogCode);
   }
   const quantity = raw.quantity;
-  if (quantity !== null && (!Number.isSafeInteger(quantity) || Number(quantity) < 0)) {
+  if (quantity !== null && (typeof quantity !== "number" || !Number.isSafeInteger(quantity) || quantity < 0)) {
     throw new Error("Quantidade inválida em " + catalogCode);
   }
-  if (status === "proposto" && (!Number.isSafeInteger(quantity) || Number(quantity) <= 0)) {
+  if (status === "proposto" && (typeof quantity !== "number" || !Number.isSafeInteger(quantity) || quantity <= 0)) {
     throw new Error("Quantidade por confirmar no lote proposto: " + catalogCode);
   }
   if (referencePhoto && !/^[A-Za-z0-9()_-]+\.jpg$/i.test(referencePhoto)) {
