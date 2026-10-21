@@ -60,12 +60,9 @@ export async function followUpApi<T>(path: string, init?: RequestInit): Promise<
     return (result === null ? undefined : result) as T;
   } catch (error) {
     // Browser diagnostic: HTTP status and technical cause, never auth headers/tokens.
-    console.error("[follow-up] Request failed", {
-      method, operation: path.split("/")[1] || "list",
-      status: error instanceof ApiError ? error.status : undefined,
-      name: error instanceof Error ? error.name : "UnknownError",
-      message: error instanceof Error ? error.message : "Unexpected request error",
-    });
+    const status = error instanceof ApiError ? ` HTTP ${error.status}` : "";
+    const cause = error instanceof Error ? error.message : "Unexpected request error";
+    console.error(`[follow-up] Request failed: ${method} ${path.split("/")[1] || "list"}${status} — ${cause}`);
     throw error;
   }
 }
