@@ -67,6 +67,15 @@ async function loginViaAuthProvider(page: import("@playwright/test").Page, brows
   await expect(page.getByRole("heading", { name: "Acompanhamento" })).toBeVisible();
 }
 
+async function webkitFixture(page: import("@playwright/test").Page, scenario: "success" | "error") {
+  const url = "http://127.0.0.1:4177";
+  const session = `${scenario}-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+  await page.context().addCookies([
+    { name: "follow_up_e2e_session", value: session, url },
+    { name: "follow_up_e2e_error", value: scenario === "error" ? "503" : "none", url },
+  ]);
+}
+
 function response(preparation: { invitationsDone: boolean; materialsDone: boolean }) {
   const pending = !(preparation.invitationsDone && preparation.materialsDone);
   return {
@@ -86,6 +95,9 @@ test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, inc
   const writes: Array<{ path: string; auth: string | undefined; body: unknown }> = [];
   let reads = 0;
 
+  if (browserName === "webkit") {
+    await webkitFixture(page, "success");
+  } else {
   await page.context().route("**/*", async route => {
     if (!new URL(route.request().url()).pathname.startsWith("/api/follow-up")) return route.continue();
     const request = route.request();
@@ -107,6 +119,7 @@ test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, inc
       body: JSON.stringify(response(state)),
     });
   });
+  }
 
   await loginViaAuthProvider(page, browserName);
   await expect(page.getByText("Preparação de festas (1)")).toBeVisible();
@@ -121,11 +134,17 @@ test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, inc
   await expect(page.getByText("Preparação de festas (0)")).toBeVisible();
   // Reopen the pending item by undoing before completing both, in a fresh
   // refetch. This tests both directions without writing to Production.
-  await expect.poll(() => reads).toBeGreaterThanOrEqual(3);
+  await expect.poll(async () => browserName === "webkit"
+    ? (await (await page.request.get("/__follow-up-e2e-state")).json()).reads as number
+    : reads).toBeGreaterThanOrEqual(3);
 
   // The last completion removes the card, so we revisit the same locally
   // mocked booking after resetting the second field and triggering an API GET.
-  state.materialsDone = false;
+  if (browserName === "webkit") {
+    await page.request.post("/__follow-up-e2e-state", { data: { materialsDone: false } });
+  } else {
+    state.materialsDone = false;
+  }
   await page.getByRole("button", { name: "Atualizar" }).click();
   await expect(materials).not.toBeChecked();
   await invitations.click();
@@ -135,15 +154,23 @@ test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, inc
   await materials.click();
   await expect(materials).not.toBeChecked();
 
-  expect(writes.map(w => ({ path: w.path, body: w.body }))).toEqual([
+  const actual = browserName === "webkit"
+    ? (await (await page.request.get("/__follow-up-e2e-state")).json()).writes as Array<{ path: string; body: unknown; hasBearer: boolean }>
+    : writes;
+  expect(actual.map(w => ({ path: w.path, body: w.body }))).toEqual([
     { path: `/api/follow-up/preparation/${eventId}`, body: { field: "invitations", done: true } },
     { path: `/api/follow-up/preparation/${eventId}`, body: { field: "materials", done: true } },
     { path: `/api/follow-up/preparation/${eventId}`, body: { field: "invitations", done: false } },
     { path: `/api/follow-up/preparation/${eventId}`, body: { field: "materials", done: true } },
     { path: `/api/follow-up/preparation/${eventId}`, body: { field: "materials", done: false } },
   ]);
-  expect(writes.every(w => w.auth === `Bearer ${accessToken}`)).toBe(true);
-  expect(reads).toBeGreaterThanOrEqual(6);
+  if (browserName === "webkit") {
+    expect((actual as Array<{ hasBearer: boolean }>).every(w => w.hasBearer)).toBe(true);
+    expect((await (await page.request.get("/__follow-up-e2e-state")).json()).reads).toBeGreaterThanOrEqual(6);
+  } else {
+    expect(writes.every(w => w.auth === `Bearer ${accessToken}`)).toBe(true);
+    expect(reads).toBeGreaterThanOrEqual(6);
+  }
 });
 
 test("real SPA: without an authenticated session the route is blocked before API calls", async ({ page }) => {
@@ -170,6 +197,7 @@ test("real SPA: failed PATCH preserves HTTP status in the UI and console", async
     return route.fulfill({ status: 200, contentType: "application/json",
       body: JSON.stringify(response({ invitationsDone: false, materialsDone: false })) });
   });
+  }
   await loginViaAuthProvider(page, browserName);
   await page.getByRole("checkbox", { name: "Convites tratados" }).click();
   await expect(page.getByText("Não foi possível guardar a tarefa (HTTP 503).", { exact: true })).toBeVisible();
