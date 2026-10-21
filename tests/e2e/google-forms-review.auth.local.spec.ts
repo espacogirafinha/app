@@ -47,14 +47,14 @@ test("authenticated GET presents all five pending reviews with cursor pagination
   });
   await page.goto("/google-forms-review");
   await expect(page.getByRole("heading", { name: "Pedidos do Formulário" })).toBeVisible();
-  await expect(page.getByText("Pedido Teste 1", { exact: true })).toBeVisible();
-  await expect(page.getByText("Pedido Teste 2", { exact: true })).toBeVisible();
-  await expect(page.getByText("Pedido Teste 3", { exact: true })).toHaveCount(0);
+  await expect(page.locator("#review-" + id(1))).toBeVisible();
+  await expect(page.locator("#review-" + id(2))).toBeVisible();
+  await expect(page.locator("#review-" + id(3))).toHaveCount(0);
 
   await page.getByRole("button", { name: "Carregar mais pedidos" }).click();
-  await expect(page.getByText("Pedido Teste 4", { exact: true })).toBeVisible();
+  await expect(page.locator("#review-" + id(4))).toBeVisible();
   await page.getByRole("button", { name: "Carregar mais pedidos" }).click();
-  await expect(page.getByText("Pedido Teste 5", { exact: true })).toBeVisible();
+  await expect(page.locator("#review-" + id(5))).toBeVisible();
   await expect(page.getByRole("button", { name: "Carregar mais pedidos" })).toHaveCount(0);
   for (let i = 1; i <= 5; i++) {
     await expect(page.locator("#review-" + id(i))).toBeVisible();
