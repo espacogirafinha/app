@@ -5,14 +5,6 @@
   "outputDirectory": "artifacts/girafinha/dist/public",
   "rewrites": [
     {
-      "source": "/api/follow-up/:followUpPath*",
-      "destination": "/api/follow-up/_router?__followUpPath=:followUpPath*"
-    },
-    {
-      "source": "/api/integrations/google-forms/review/:reviewPath*",
-      "destination": "/api/integrations/google-forms/review/_router?__reviewPath=:reviewPath*"
-    },
-    {
       "source": "/api/workshops/:workshopPath*",
       "destination": "/api/workshops/_router?__workshopPath=:workshopPath*"
     },
