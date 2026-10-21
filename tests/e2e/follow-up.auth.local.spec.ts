@@ -86,7 +86,7 @@ test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, inc
   const writes: Array<{ path: string; auth: string | undefined; body: unknown }> = [];
   let reads = 0;
 
-  await page.context().route(/\\/api\\/follow-up(?:\\/|$|\\?)/, async route => {
+  await page.context().route(/\/api\/follow-up(?:\/|$|\?)/, async route => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     if (request.method() === "PATCH") {
@@ -147,7 +147,7 @@ test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, inc
 
 test("real SPA: without an authenticated session the route is blocked before API calls", async ({ page }) => {
   const requests: string[] = [];
-  await page.context().route(/\\/api\\/follow-up(?:\\/|$|\\?)/, async route => {
+  await page.context().route(/\/api\/follow-up(?:\/|$|\?)/, async route => {
     requests.push(route.request().method());
     return route.fulfill({ status: 401, body: "{}" });
   });
@@ -160,7 +160,7 @@ test("real SPA: without an authenticated session the route is blocked before API
 test("real SPA: failed PATCH preserves HTTP status in the UI and console", async ({ page, browserName }) => {
   const errors: string[] = [];
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
-  await page.context().route(/\\/api\\/follow-up(?:\\/|$|\\?)/, async route => {
+  await page.context().route(/\/api\/follow-up(?:\/|$|\?)/, async route => {
     if (route.request().method() === "PATCH") return route.fulfill({
       status: 503, contentType: "application/json", body: JSON.stringify({ error: "temporarily unavailable" }),
     });
