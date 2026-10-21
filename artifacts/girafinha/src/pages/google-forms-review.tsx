@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ClipboardList, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { ApiError, customFetch, useListVenueEvents } from "@workspace/api-client-react";
 import { canConfirmReview, matchingReviewEvents } from "@/lib/google-forms-review";
-import { useListVenueEvents } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,25 +75,27 @@ const reasonLabels: Record<string, string> = {
 };
 
 async function requestReview<T>(path: string, init?: RequestInit): Promise<T> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw Error("Sessão terminada. Entra novamente na app.");
-  const response = await fetch(`/api/integrations/google-forms/review${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-    },
-  });
-  if (!response.ok)
-    throw Error(
-      response.status === 409
-        ? "Este pedido já foi resolvido. Atualiza a lista."
-        : response.status === 422
-          ? "A festa escolhida não corresponde à data e telefone do formulário."
-          : "Não foi possível consultar ou atualizar os pedidos.",
-    );
-  return response.json() as Promise<T>;
+  const method = init?.method ?? "GET";
+  try {
+    const result = await customFetch<T>(`/api/integrations/google-forms/review${path}`, {
+      ...init,
+      requireAuth: true,
+      responseType: "json",
+    });
+    return (result === null ? undefined : result) as T;
+  } catch (error) {
+    // Preserve response status for diagnosis, without logging headers or tokens.
+    console.error("[google-forms-review] Request failed", {
+      operation: method,
+      status: error instanceof ApiError ? error.status : undefined,
+      cause: error instanceof Error ? error.name : "UnknownError",
+    });
+    if (error instanceof ApiError) {
+      if (error.status === 409) throw new Error("Este pedido já foi resolvido. Atualiza a lista.", { cause: error });
+      if (error.status === 422) throw new Error("A festa escolhida não corresponde à data e telefone do formulário.", { cause: error });
+    }
+    throw error;
+  }
 }
 
 export default function GoogleFormsReviewPage() {
@@ -192,11 +193,7 @@ export default function GoogleFormsReviewPage() {
       ) : isError ? (
         <Card>
           <CardContent className="space-y-3 pt-6">
-            <p>
-              Não foi possível consultar os pedidos. Se a migração ainda não
-              tiver sido aplicada, esta lista só ficará disponível depois da
-              ativação.
-            </p>
+            <p>Não foi possível carregar os pedidos. Tenta novamente.</p>
             <Button variant="outline" onClick={() => refetch()}>
               Tentar novamente
             </Button>

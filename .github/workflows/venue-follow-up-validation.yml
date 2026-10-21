@@ -21,9 +21,9 @@ jobs:
           version: '10.28.0'
       - run: corepack pnpm install --frozen-lockfile
       - name: Unit tests
-        run: node --experimental-strip-types --test artifacts/girafinha/src/lib/venue-follow-up.test.ts artifacts/api-server/src/lib/follow-up-rules.test.ts
-      - name: Install Playwright Chromium
-        run: corepack pnpm exec playwright install --with-deps chromium
+        run: node --experimental-strip-types --test artifacts/girafinha/src/lib/venue-follow-up.test.ts artifacts/api-server/src/lib/follow-up-rules.test.ts artifacts/girafinha/src/lib/google-forms-review.test.ts artifacts/api-server/src/integrations/google-forms-review.test.ts artifacts/api-server/src/integrations/google-forms.test.ts
+      - name: Install Playwright Chromium and WebKit
+        run: corepack pnpm exec playwright install --with-deps chromium webkit
       - name: Follow-up E2E desktop and mobile
         run: corepack pnpm exec playwright test --config=playwright.follow-up.config.ts
       - name: Typecheck

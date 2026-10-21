@@ -1,5 +1,7 @@
 export type CustomFetchOptions = RequestInit & {
   responseType?: "json" | "text" | "blob" | "auto";
+  /** Fail closed before fetch when an authenticated session is required. */
+  requireAuth?: boolean;
 };
 
 export type ErrorType<T = unknown> = ApiError<T>;
@@ -327,7 +329,7 @@ export async function customFetch<T = unknown>(
   options: CustomFetchOptions = {},
 ): Promise<T> {
   input = applyBaseUrl(input);
-  const { responseType = "auto", headers: headersInit, ...init } = options;
+  const { responseType = "auto", requireAuth = false, headers: headersInit, ...init } = options;
 
   const method = resolveMethod(input, init.method);
 
@@ -349,12 +351,14 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
-  // Attach bearer token when an auth getter is configured and no
-  // Authorization header has been explicitly provided.
-  if (_authTokenGetter && !headers.has("authorization")) {
-    const token = await _authTokenGetter();
-    if (token) {
-      headers.set("authorization", `Bearer ${token}`);
+  // Authenticated-only calls fail before reaching the API if the AuthProvider
+  // has no active session; ordinary generated-client requests are unchanged.
+  if (!headers.has("authorization")) {
+    if (requireAuth && !_authTokenGetter) throw new Error("Precisas de iniciar sessão.");
+    if (_authTokenGetter) {
+      const token = await _authTokenGetter();
+      if (token) headers.set("authorization", `Bearer ${token}`);
+      else if (requireAuth) throw new Error("Precisas de iniciar sessão.");
     }
   }
 

@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { ApiError, customFetch } from "@workspace/api-client-react";
 
 export type Preparation = {
   id: string;
@@ -46,22 +46,34 @@ export type FollowUpPage = {
   contactCount: number;
 };
 
+/**
+ * Uses the same AuthProvider-configured session transport as generated API hooks.
+ * No per-feature Supabase session reads, bearer handling, or demo auth bypasses.
+ */
 export async function followUpApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const session = await supabase.auth.getSession();
-  // Isolated Vite/Playwright test harness only. Never enabled in a production build.
-  const isolatedHarness = import.meta.env.DEV &&
-    window.location.pathname.endsWith("/follow-up-test.html");
-  const accessToken = isolatedHarness ? "playwright-isolated-test" : session.data.session?.access_token;
-  if (!accessToken) throw new Error("Precisas de iniciar sessão.");
-  const response = await fetch("/api/follow-up" + path, {
-    ...init,
-    headers: {
-      Authorization: "Bearer " + accessToken,
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) throw new Error("Não foi possível atualizar o acompanhamento.");
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  const method = init?.method ?? "GET";
+  try {
+    const result = await customFetch<T>("/api/follow-up" + path, {
+      ...init, requireAuth: true, responseType: "json",
+    });
+    // API PATCH endpoints return HTTP 204 without a response body.
+    return (result === null ? undefined : result) as T;
+  } catch (error) {
+    // Browser diagnostic: HTTP status and technical cause, never auth headers/tokens.
+    const status = error instanceof ApiError ? ` HTTP ${error.status}` : "";
+    const cause = error instanceof Error ? error.message : "Unexpected request error";
+    console.error(`[follow-up] Request failed: ${method} ${path.split("/")[1] || "list"}${status} — ${cause}`);
+    throw error;
+  }
+}
+
+export function followUpSaveError(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    if (error.status === 401 || error.status === 403) return "Sessão expirada ou acesso não autorizado. Inicia sessão novamente.";
+    return `${fallback} (HTTP ${error.status}).`;
+  }
+  if (error instanceof Error && error.message === "Precisas de iniciar sessão.") {
+    return error.message;
+  }
+  return `${fallback}. Verifica a ligação e tenta novamente.`;
 }
