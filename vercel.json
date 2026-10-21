@@ -13,4 +13,10 @@
       "destination": "/index.html"
     }
   ]
+  ,"crons": [
+    {
+      "path": "/api/internal/follow-up-sync",
+      "schedule": "0 9 * * *"
+    }
+  ]
 }
