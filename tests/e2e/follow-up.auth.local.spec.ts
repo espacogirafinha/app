@@ -189,7 +189,10 @@ test("real SPA: without an authenticated session the route is blocked before API
 test("real SPA: failed PATCH preserves HTTP status in the UI and console", async ({ page, browserName }) => {
   const errors: string[] = [];
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
-  await page.context().route("**/*", async route => {
+  if (browserName === "webkit") {
+    await webkitFixture(page, "error");
+  } else {
+    await page.context().route("**/*", async route => {
     if (!new URL(route.request().url()).pathname.startsWith("/api/follow-up")) return route.continue();
     if (route.request().method() === "PATCH") return route.fulfill({
       status: 503, contentType: "application/json", body: JSON.stringify({ error: "temporarily unavailable" }),
