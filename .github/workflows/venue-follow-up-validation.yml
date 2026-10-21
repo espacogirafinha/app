@@ -78,3 +78,5 @@ jobs:
         run: corepack pnpm --filter @workspace/api-server build
       - name: Full integration against disposable Postgres
         run: node tests/integration/follow-up-api.mjs
+      - name: Verify Vercel-style filesystem routing against actual Express adapters
+        run: node tests/integration/vercel-nested-routing.mjs
