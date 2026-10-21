@@ -30,8 +30,9 @@ const auth = createServer((req, res) => {
 await new Promise(resolve => auth.listen(0, '127.0.0.1', resolve));
 process.env.SUPABASE_URL = 'http://127.0.0.1:' + auth.address().port;
 process.env.SUPABASE_ANON_KEY = 'isolated';
-process.env.FOLLOW_UP_WRITES_ENABLED = 'false';
-process.env.VERCEL_ENV = 'preview';
+// Writable only on disposable CI PostgreSQL; otherwise PATCH is intentionally 503.
+process.env.FOLLOW_UP_WRITES_ENABLED = 'true';
+process.env.VERCEL_ENV = 'development';
 process.env.GOOGLE_FORMS_INTEGRATION_SECRET = '';
 
 // These imports are the production-built Express adapters, not fake API handlers.
