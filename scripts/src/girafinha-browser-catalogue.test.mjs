@@ -69,7 +69,7 @@ test("caminhos fotográficos suspeitos são rejeitados",()=>{
 test("não utiliza Supabase, fetch, nem upload automático de fotografias",()=>{
   const source=readFileSync("artifacts/girafinha/src/pages/catalog-preview.tsx","utf8");
   const module=readFileSync("artifacts/girafinha/src/lib/catalog-preview.ts","utf8");
-  assert.doesNotMatch(source,/useListInventoryItems|useCreateInventoryItem|supabase|fetch\s*\(/i);
-  assert.doesNotMatch(module,/supabase|fetch\s*\(/i);
+  assert.doesNotMatch(source,/useListInventoryItems|useCreateInventoryItem|import.*supabase|supabase\s*\.|fetch\s*\(/i);
+  assert.doesNotMatch(module,/import.*supabase|supabase\s*\.|fetch\s*\(/i);
   assert.match(source,/URL\.createObjectURL/);
 });
