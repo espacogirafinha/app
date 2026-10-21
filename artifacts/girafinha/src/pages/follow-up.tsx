@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { followUpApi, type FollowUpPage, type Preparation, type Reactivation } from "@/lib/follow-up-api";
+import { followUpApi, followUpSaveError, type FollowUpPage, type Preparation, type Reactivation } from "@/lib/follow-up-api";
 import { reactivationMessage, reactivationWhatsAppUrl, type ReturnOffer } from "@/lib/venue-follow-up";
 import { DEMO_FOLLOW_UP } from "@/lib/follow-up-demo";
 
@@ -38,7 +38,7 @@ function PreparationItem({ item, demo = false }: { item: Preparation; demo?: boo
         method: "PATCH", body: JSON.stringify({ field, done }),
       });
       await queryClient.invalidateQueries({ queryKey: ["follow-up"] });
-    } catch { toast({ title: "Não foi possível guardar a tarefa.", variant: "destructive" }); }
+    } catch (error) { toast({ title: followUpSaveError(error, "Não foi possível guardar a tarefa"), variant: "destructive" }); }
     finally { setBusy(null); }
   }
   return <Card className="min-w-0">
@@ -90,8 +90,8 @@ function ReactivationItem({ item, demo = false }: { item: Reactivation; demo?: b
     try {
       await followUpApi<void>(`/reactivation/${item.id}`, { method: "PATCH", body: JSON.stringify(payload) });
       await queryClient.invalidateQueries({ queryKey: ["follow-up"] });
-    } catch {
-      toast({ title: "Não foi possível guardar. Verifica os dados.", variant: "destructive" });
+    } catch (error) {
+      toast({ title: followUpSaveError(error, "Não foi possível guardar"), variant: "destructive" });
     } finally { setBusy(false); }
   }
   const label = item.converted ? "Nova reserva" : item.noInterest ? "Sem interesse" :
@@ -216,8 +216,8 @@ function CampaignDefault({ campaign, demo = false }: { campaign: FollowUpPage["c
       await queryClient.invalidateQueries({ queryKey: ["follow-up"] });
       setExpanded(false);
       toast({ title: "Oferta padrão guardada" });
-    } catch {
-      toast({ title: "Não foi possível guardar a oferta padrão.", variant: "destructive" });
+    } catch (error) {
+      toast({ title: followUpSaveError(error, "Não foi possível guardar a oferta padrão"), variant: "destructive" });
     } finally { setBusy(false); }
   }
   return <Card>
