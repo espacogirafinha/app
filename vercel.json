@@ -12,8 +12,8 @@
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
-  ]
-  ,"crons": [
+  ],
+  "crons": [
     {
       "path": "/api/internal/follow-up-sync",
       "schedule": "0 9 * * *"
