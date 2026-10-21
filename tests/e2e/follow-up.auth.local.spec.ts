@@ -14,7 +14,31 @@ const accessToken = [
   "isolated-playwright-signature",
 ].join(".");
 
-async function loginViaAuthProvider(page: import("@playwright/test").Page) {
+async function loginViaAuthProvider(page: import("@playwright/test").Page, browserName: string) {
+  if (browserName === "webkit") {
+    // Safari-like return visit: AuthProvider reads the same persisted
+    // Supabase session as on a normal signed-in Production browser.
+    const session = {
+      access_token: accessToken,
+      refresh_token: "isolated-playwright-refresh",
+      token_type: "bearer", expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user: {
+        id: "22222222-2222-4222-8222-222222222222",
+        aud: "authenticated", role: "authenticated",
+        email: "playwright@example.invalid",
+        app_metadata: { provider: "email", providers: ["email"] },
+        user_metadata: {}, created_at: "2026-10-01T00:00:00Z",
+      },
+    };
+    await page.addInitScript(value => {
+      localStorage.setItem("sb-127-auth-token", JSON.stringify(value));
+      localStorage.setItem("sb-127.0.0.1-auth-token", JSON.stringify(value));
+    }, session);
+    await page.goto("/follow-up");
+    await expect(page.getByRole("heading", { name: "Acompanhamento" })).toBeVisible();
+    return;
+  }
   await page.route("**/auth/v1/token?grant_type=password", async route => {
     await route.fulfill({
       status: 200,
@@ -57,7 +81,7 @@ function response(preparation: { invitationsDone: boolean; materialsDone: boolea
   };
 }
 
-test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, including undo", async ({ page }) => {
+test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, including undo", async ({ page, browserName }) => {
   const state = { invitationsDone: false, materialsDone: false };
   const writes: Array<{ path: string; auth: string | undefined; body: unknown }> = [];
   let reads = 0;
@@ -83,7 +107,7 @@ test("real SPA AuthProvider: PATCH invitations/materials on 204 and refetch, inc
     });
   });
 
-  await loginViaAuthProvider(page);
+  await loginViaAuthProvider(page, browserName);
   await expect(page.getByText("Preparação de festas (1)")).toBeVisible();
   const invitations = page.getByRole("checkbox", { name: "Convites tratados" });
   const materials = page.getByRole("checkbox", { name: "Material tratado" });
@@ -133,7 +157,7 @@ test("real SPA: without an authenticated session the route is blocked before API
   expect(requests).toEqual([]);
 });
 
-test("real SPA: failed PATCH preserves HTTP status in the UI and console", async ({ page }) => {
+test("real SPA: failed PATCH preserves HTTP status in the UI and console", async ({ page, browserName }) => {
   const errors: string[] = [];
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
   await page.route("**/api/follow-up**", async route => {
@@ -143,7 +167,7 @@ test("real SPA: failed PATCH preserves HTTP status in the UI and console", async
     return route.fulfill({ status: 200, contentType: "application/json",
       body: JSON.stringify(response({ invitationsDone: false, materialsDone: false })) });
   });
-  await loginViaAuthProvider(page);
+  await loginViaAuthProvider(page, browserName);
   await page.getByRole("checkbox", { name: "Convites tratados" }).click();
   await expect(page.getByText("Não foi possível guardar a tarefa (HTTP 503).")).toBeVisible();
   await expect(page.getByRole("checkbox", { name: "Convites tratados" })).not.toBeChecked();
