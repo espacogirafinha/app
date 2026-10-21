@@ -15,6 +15,7 @@ export function followUpWritesEnabled() { return WRITES_ENABLED; }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type VenueRow = {
   id: string; customer_name: string; birthday_child_name: string | null;
+  start_time: string | null;
   phone: string; event_date: string; status: string;
   party_theme: string | null; pack_name: string;
 };
@@ -42,7 +43,7 @@ function remainingDays(date: string, today: string) {
 }
 async function loadSources() {
   const [venues, externals] = await Promise.all([
-    pool.query<VenueRow>("select id, customer_name, birthday_child_name, phone, event_date, status, party_theme, pack_name from public.venue_events"),
+    pool.query<VenueRow>("select id, customer_name, birthday_child_name, phone, event_date, start_time, status, party_theme, pack_name from public.venue_events"),
     pool.query<ExternalRow>("select id, customer_name, phone, event_date, status, event_type from public.external_events"),
   ]);
   return { venues: venues.rows, externals: externals.rows };
@@ -158,12 +159,14 @@ router.get("/follow-up", async (_req, res): Promise<void> => {
     ).map(event => {
       const state = prepById.get(event.id);
       return {
-        ...venue(event), theme: event.party_theme, packName: event.pack_name,
+        ...venue(event), startTime: event.start_time, theme: event.party_theme, packName: event.pack_name,
         daysRemaining: remainingDays(dateString(event.event_date), today),
         invitationsDone: Boolean(state?.invitations_done),
         materialsDone: Boolean(state?.materials_done),
       };
-    }).filter(event => !event.invitationsDone || !event.materialsDone);
+    }).filter(event => !event.invitationsDone || !event.materialsDone)
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate) ||
+        (a.startTime ?? "").localeCompare(b.startTime ?? "") || a.id.localeCompare(b.id));
     const byId = new Map(venues.map(row => [row.id, row]));
     const reactivations = react.rows.flatMap(row => {
       const original = byId.get(row.source_venue_event_id);
