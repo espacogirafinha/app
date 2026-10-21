@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "wouter";
 import {
   ArchiveRestore,
   Boxes,
   History,
   ImageIcon,
+  Images,
   Minus,
   PackagePlus,
   Pencil,
@@ -173,10 +175,15 @@ export default function InventoryPage() {
             Stock físico e material reutilizável da Girafinha.
           </p>
         </div>
-        <Button className="w-full rounded-xl sm:w-auto" onClick={() => setEditor({})}>
-          <Plus className="h-4 w-4" />
-          Novo artigo
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Link href="/inventory-preview" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#badbce] bg-[#edf8f3] px-4 py-2 text-sm font-semibold text-[#276958] hover:bg-[#e2f2eb]">
+            <Images className="h-4 w-4" /> Catálogo visual · Preview
+          </Link>
+          <Button className="w-full rounded-xl sm:w-auto" onClick={() => setEditor({})}>
+            <Plus className="h-4 w-4" />
+            Novo artigo
+          </Button>
+        </div>
       </div>
 
       <Tabs value={itemType} onValueChange={changeType}>
