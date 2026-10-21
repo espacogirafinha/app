@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { devApiPlugin } from "./dev-api-plugin";
+import { followUpE2EHttpFixture } from "./follow-up-e2e-http-fixture";
 
 const rawPort = process.env.PORT ?? "5173";
 
@@ -24,6 +25,7 @@ export default defineConfig(async ({ mode }) => {
   return {
   base: basePath,
   plugins: [
+    ...(process.env.FOLLOW_UP_E2E_HTTP_FIXTURE === "1" ? [followUpE2EHttpFixture()] : []),
     devApiPlugin(),
     react(),
     tailwindcss(),
