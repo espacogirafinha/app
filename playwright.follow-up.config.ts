@@ -13,7 +13,7 @@ export default defineConfig({
     { name: "webkit", testMatch: /follow-up\.auth\.local\.spec\.ts/, use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
-    command: "PORT=4177 VITE_SUPABASE_URL=http://127.0.0.1:9999 VITE_SUPABASE_ANON_KEY=test-anon-key corepack pnpm --filter @workspace/girafinha dev",
+    command: "FOLLOW_UP_E2E_HTTP_FIXTURE=1 PORT=4177 VITE_SUPABASE_URL=http://127.0.0.1:9999 VITE_SUPABASE_ANON_KEY=test-anon-key corepack pnpm --filter @workspace/girafinha dev",
     url: "http://127.0.0.1:4177/follow-up-test.html",
     timeout: 120_000,
     reuseExistingServer: true,
