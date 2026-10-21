@@ -1,0 +1,34 @@
+name: Girafinha inventory preview checks
+
+on:
+  pull_request:
+    paths:
+      - "scripts/src/girafinha-inventory-preview.mjs"
+      - "scripts/src/girafinha-inventory-preview.test.mjs"
+      - "supabase/migrations/20261021160000_inventory_catalog_code_unique_preview.sql"
+      - ".github/workflows/inventory-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DATABASE_URL: ""
+      SUPABASE_URL: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Assert no database credentials or automatic imports
+        run: |
+          test -z "$DATABASE_URL"
+          test -z "$SUPABASE_URL"
+          test -z "$SUPABASE_SERVICE_ROLE_KEY"
+      - name: Test import planning, deduplication, ledger SQL and image integrity
+        run: node --test scripts/src/girafinha-inventory-preview.test.mjs
