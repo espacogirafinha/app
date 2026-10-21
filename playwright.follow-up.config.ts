@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: /follow-up(?:\.auth)?\.local\.spec\.ts/,
+  testMatch: /(?:follow-up(?:\.auth)?|google-forms-review\.auth)\.local\.spec\.ts/,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
@@ -10,7 +10,7 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:4177", trace: "retain-on-failure" },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "webkit", testMatch: /follow-up\.auth\.local\.spec\.ts/, use: { ...devices["Desktop Safari"] } },
+    { name: "webkit", testMatch: /(?:follow-up|google-forms-review)\.auth\.local\.spec\.ts/, use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
     command: "FOLLOW_UP_E2E_HTTP_FIXTURE=1 PORT=4177 VITE_SUPABASE_URL=http://127.0.0.1:9999 VITE_SUPABASE_ANON_KEY=test-anon-key corepack pnpm --filter @workspace/girafinha dev",
