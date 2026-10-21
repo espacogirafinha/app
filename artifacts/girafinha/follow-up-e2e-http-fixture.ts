@@ -39,6 +39,13 @@ export function followUpE2EHttpFixture(): Plugin {
         };
 
         if (url.pathname === "/__follow-up-e2e-state") {
+          if (req.method === "POST") {
+            let raw = "";
+            for await (const chunk of req) raw += String(chunk);
+            const update = JSON.parse(raw) as { invitationsDone?: boolean; materialsDone?: boolean };
+            if (typeof update.invitationsDone === "boolean") state.invitationsDone = update.invitationsDone;
+            if (typeof update.materialsDone === "boolean") state.materialsDone = update.materialsDone;
+          }
           json(200, state); return;
         }
         const hasBearer = /^Bearer\s+\S+$/.test(String(req.headers.authorization ?? ""));
