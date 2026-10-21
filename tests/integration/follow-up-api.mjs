@@ -263,6 +263,21 @@ try{
     console.log("REBOOKING_CHAIN PASS");
   }finally{frozenApi.kill("SIGTERM")}
 
+  // Chronological sort, including two events with the same date, via real API.
+  // Insert out of order only after the existing lifecycle/idempotency assertions.
+  await venue(81,utcDay(11));
+  await venue(82,utcDay(4));
+  await venue(83,utcDay(4));
+  await venue(84,utcDay(8));
+  for (const [id,time] of [[81,"14:00"],[82,"17:00"],[83,"14:00"],[84,"16:00"]]) {
+    await pool.query("update public.venue_events set start_time=$2 where id=$1",[uuid(id),time]);
+  }
+  const sorted=await request("/follow-up");
+  assert.equal(sorted.status,200);
+  assert.deepEqual(sorted.data.preparations.map(v=>v.id),
+    [uuid(83),uuid(82),uuid(84),uuid(81)],
+    "preparations must be ordered by event_date ASC then start_time ASC");
+  console.log("PREPARATION_ORDER PASS: date and start time");
 }finally{
  child.kill("SIGTERM");await new Promise(r=>auth.close(r));await pool.end();
 }
