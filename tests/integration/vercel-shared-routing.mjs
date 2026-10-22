@@ -53,7 +53,7 @@ const server = createServer((req, res) => {
   const originalHeader = req.headers["x-probe"];
   appAdapter(req, res);
   observed.push({
-    name, url: req.url, method: req.method,
+    name, url: req.originalUrl, method: req.method,
     probeHeader: req.headers["x-probe"], originalMethod, originalHeader,
   });
 });
