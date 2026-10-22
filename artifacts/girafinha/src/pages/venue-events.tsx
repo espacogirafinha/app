@@ -26,16 +26,14 @@ import { VenueEventModal } from "@/components/venue-event-modal";
 import { EventPaymentsPanel } from "@/components/event-payments-panel";
 import { VenueQuickMarkPaidDialog } from "@/components/venue-quick-mark-paid-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { buildTemplatedWhatsAppUrl, formatAmount } from "@/lib/whatsapp-templates";
 import {
   getListEventPaymentsQueryKey,
   getListVenueEventsQueryKey,
   useDeleteVenueEvent,
   useListEventPayments,
   useListVenueEvents,
-  useListMessageTemplates,
 } from "@workspace/api-client-react";
-import type { MessageTemplate, VenueEvent } from "@workspace/api-client-react";
+import type { VenueEvent } from "@workspace/api-client-react";
 import {
   buildBookingConfirmationWhatsAppLink,
   buildBookingFeedbackWhatsAppLink,
@@ -45,7 +43,6 @@ import {
 
 export default function VenueEventsPage() {
   const { data: events, isLoading } = useListVenueEvents();
-  const { data: messageTemplates } = useListMessageTemplates();
   const linkedId = useMemo(getLinkedCalendarItemId, []);
   const [expandedId, setExpandedId] = useState<string | null>(linkedId);
   const [listView, setListView] = useState<"upcoming" | "past">("upcoming");
@@ -199,7 +196,6 @@ export default function VenueEventsPage() {
                   onToggle={() => setExpandedId((current) => (current === event.id ? null : event.id))}
                   onDelete={() => handleDelete(event)}
                   deleting={deleteVenueEvent.isPending}
-                  messageTemplates={messageTemplates}
                 />
               ))}
             </div>
@@ -250,17 +246,14 @@ function VenueEventRow({
   onToggle,
   onDelete,
   deleting,
-  messageTemplates,
 }: {
   event: VenueEvent;
   expanded: boolean;
   onToggle: () => void;
   onDelete: () => void;
   deleting: boolean;
-  messageTemplates?: MessageTemplate[];
 }) {
   const date = parseISO(event.eventDate);
-  const whatsappUrl = buildWhatsAppUrl(event, messageTemplates);
   const dateLabel = format(date, "dd MMM", { locale: ptBR }).replace(".", "").toUpperCase();
   const timeLabel = normalizeTime(event.startTime) + (event.endTime ? "–" + normalizeTime(event.endTime) : "");
   const childSummary = [
@@ -325,7 +318,6 @@ function VenueEventRow({
 
           <VenueWhatsAppActions
             event={event}
-            fallbackWhatsAppUrl={whatsappUrl}
             layout="mobile"
           />
         </div>
@@ -381,7 +373,6 @@ function VenueEventRow({
             ) : null}
             <VenueWhatsAppActions
               event={event}
-              fallbackWhatsAppUrl={whatsappUrl}
               layout="desktop"
             />
             <Button variant="outline" size="sm" onClick={onToggle} className="rounded-xl">
@@ -471,20 +462,19 @@ function VenueEventRow({
 
 function VenueWhatsAppActions({
   event,
-  fallbackWhatsAppUrl,
   layout,
 }: {
   event: VenueEvent;
-  fallbackWhatsAppUrl: string;
   layout: "mobile" | "desktop";
 }) {
+  const bookingEnded = hasBookingEnded({ eventDate: event.eventDate, endTime: event.endTime });
   const paymentParams = useMemo(
     () => ({ module: "venue_events" as const, entityId: event.id }),
     [event.id],
   );
   const paymentsQuery = useListEventPayments(paymentParams, {
     query: {
-      enabled: event.amountPaid > 0,
+      enabled: !bookingEnded,
       queryKey: getListEventPaymentsQueryKey(paymentParams),
     },
   });
@@ -495,12 +485,8 @@ function VenueWhatsAppActions({
     endTime: event.endTime,
     payments,
   });
-  const bookingEnded = hasBookingEnded({
-    eventDate: event.eventDate,
-    endTime: event.endTime,
-  });
   const confirmationLink =
-    !bookingEnded && summary && confirmationPayment.eligible
+    !bookingEnded && summary
       ? buildBookingConfirmationWhatsAppLink({
           customerName: event.customerName,
           birthdayChildName: event.birthdayChildName,
@@ -523,9 +509,10 @@ function VenueWhatsAppActions({
         endTime: event.endTime,
       })
     : null;
-  const loadingConfirmation =
-    event.amountPaid > 0 && paymentsQuery.isLoading && !feedbackLink;
-  const hasSpecificAction = Boolean(confirmationLink || feedbackLink);
+  const loadingConfirmation = !bookingEnded && paymentsQuery.isLoading;
+  const confirmationLabel = summary && summary.received <= 0 && summary.totalPrice > 0
+    ? "Pedir sinal por WhatsApp"
+    : "Confirmar reserva por WhatsApp";
   const invalidPhone =
     confirmationLink?.phone === null || feedbackLink?.phone === null;
   const containerClass =
@@ -546,13 +533,11 @@ function VenueWhatsAppActions({
     );
   }
 
-  if (!hasSpecificAction) {
+  if (!bookingEnded && (paymentsQuery.isError || !summary)) {
     return (
-      <Button asChild variant="outline" size="sm" className={actionClass}>
-        <a href={fallbackWhatsAppUrl} target="_blank" rel="noreferrer">
-          <MessageCircle className="h-4 w-4" />
-          WhatsApp
-        </a>
+      <Button type="button" variant="outline" size="sm" className={actionClass}
+        onClick={() => void paymentsQuery.refetch()}>
+        Voltar a verificar pagamentos
       </Button>
     );
   }
@@ -570,7 +555,7 @@ function VenueWhatsAppActions({
           >
             <a href={confirmationLink.url} target="_blank" rel="noreferrer">
               <MessageCircle className="h-3.5 w-3.5" />
-              Confirmar reserva por WhatsApp
+              {confirmationLabel}
             </a>
           </Button>
         ) : (
@@ -583,7 +568,7 @@ function VenueWhatsAppActions({
             title="Telefone inválido"
           >
             <MessageCircle className="h-3.5 w-3.5" />
-            Confirmar reserva por WhatsApp
+            {confirmationLabel}
           </Button>
         )
       ) : null}
@@ -737,15 +722,4 @@ function Info({ label, value }: { label: string; value?: string | null }) {
       <span className="font-medium text-foreground">{value || "-"}</span>
     </div>
   );
-}
-
-function buildWhatsAppUrl(event: VenueEvent, templates?: MessageTemplate[]) {
-  const fallback = `Ola ${event.customerName}! A sua festa no Espaco Girafinha esta registada para ${event.eventDate} as ${event.startTime}.`;
-  return buildTemplatedWhatsAppUrl(event.phone, fallback, templates, "venue_events", {
-    customerName: event.customerName,
-    eventDate: event.eventDate,
-    startTime: event.startTime,
-    amountDue: formatAmount(event.remainingBalance),
-    packName: event.packName,
-  });
 }

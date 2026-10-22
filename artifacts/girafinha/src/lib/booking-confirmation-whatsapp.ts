@@ -58,13 +58,19 @@ export function buildBookingConfirmationMessage(input: BookingConfirmationInput)
   const childConfirmation = childFirstName
     ? `A reserva da festa de ${childFirstName} está confirmada 🎉`
     : "A reserva da festa está confirmada 🎉";
+  const needsDeposit = input.totalReceived <= 0 && input.totalPrice > 0;
+  const freeBooking = input.totalPrice <= 0;
   const balanceLine =
     remainingBalance <= 0
       ? `O valor total é de ${formatEuro(input.totalPrice)} e já se encontra totalmente liquidado.`
       : `O valor total é de ${formatEuro(input.totalPrice)}, ficando ${formatEuro(remainingBalance)} por liquidar no dia da festa, em numerário.`;
 
   const confirmationLead =
-    input.depositAmount === null
+    freeBooking
+      ? childConfirmation
+      : needsDeposit
+        ? "Para confirmar a reserva da festa, pedimos que efetue o pagamento do sinal. Obrigada 😊"
+        : input.depositAmount === null || input.depositAmount <= 0
       ? `Temos um pagamento registado. ${childConfirmation}`
       : `Já recebemos o formulário e o pagamento dos ${formatEuro(input.depositAmount)} de sinal. ${childConfirmation}`;
 
@@ -79,8 +85,7 @@ export function buildBookingConfirmationMessage(input: BookingConfirmationInput)
     "",
     `Os pais e a criança podem chegar 30 minutos antes, às ${arrivalTime}, para fazerem com calma os preparativos que forem necessários.`,
     "",
-    balanceLine,
-    "",
+    ...(!freeBooking && !needsDeposit ? [balanceLine, ""] : []),
     "Obrigada pela preferência 💛",
     "Espaço Girafinha",
   ].join("\n");
@@ -173,13 +178,7 @@ export function resolveBookingConfirmationPayment(input: {
     )
     .reduce((total, payment) => total + payment.amount, 0);
 
-  if (
-    legacyReceived > 0 &&
-    hasBookingEnded(
-      { eventDate: input.eventDate, endTime: input.endTime },
-      input.now,
-    )
-  ) {
+  if (legacyReceived > 0) {
     return {
       eligible: true as const,
       depositAmount: null,

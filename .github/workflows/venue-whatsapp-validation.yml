@@ -1,0 +1,37 @@
+name: Venue WhatsApp validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/girafinha/src/lib/booking-confirmation-whatsapp*'
+      - 'artifacts/girafinha/src/pages/venue-events.tsx'
+      - 'tests/e2e/venue-events-search.local.spec.ts'
+      - '.github/workflows/venue-whatsapp-validation.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.0'
+      - run: corepack pnpm install --frozen-lockfile
+      - name: WhatsApp message regressions
+        run: node --experimental-strip-types --test artifacts/girafinha/src/lib/booking-confirmation-whatsapp.test.ts
+      - run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Actual venue list on desktop and mobile, mocked API only
+        run: corepack pnpm exec playwright test --config playwright.venue-events-search.config.ts
+      - run: corepack pnpm run typecheck
+      - run: corepack pnpm run build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: venue-whatsapp-results
+          path: test-results/
+          if-no-files-found: ignore

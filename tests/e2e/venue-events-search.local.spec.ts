@@ -411,3 +411,85 @@ test("festa no próprio dia alterna exclusivamente na hora de fim em Lisboa", as
   await expect(row.getByRole("link", { name: "Pedir feedback por WhatsApp" })).toBeVisible();
   await expect(row.getByText("Confirmar reserva por WhatsApp", { exact: true })).toHaveCount(0);
 });
+
+// Synthetic regressions for the reported names; no Production records are read.
+for (const scenario of [
+  { name: "Ana Raquel", type: "reservation_deposit", received: 110, price: 550, label: "Confirmar reserva por WhatsApp", text: "pagamento dos 110,00 € de sinal" },
+  { name: "Alexandra", type: "legacy_payment", received: 110, price: 550, label: "Confirmar reserva por WhatsApp", text: "Temos um pagamento registado." },
+  { name: "Susana", type: "legacy_payment", received: 550, price: 550, label: "Confirmar reserva por WhatsApp", text: "já se encontra totalmente liquidado" },
+  { name: "Marisa", type: null, received: 0, price: 550, label: "Pedir sinal por WhatsApp", text: "Para confirmar a reserva" },
+  { name: "Reserva gratuita", type: null, received: 0, price: 0, label: "Confirmar reserva por WhatsApp", text: "está confirmada" },
+]) {
+  for (const mobile of [false, true]) {
+    test(`WhatsApp lista: ${scenario.name}, ${mobile ? "mobile" : "desktop"}`, async ({ page }) => {
+      await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 });
+      await page.clock.setFixedTime(new Date("2026-10-22T12:00:00Z"));
+      const event = venueEvent({ customerName: scenario.name, amountPaid: 0,
+        totalPrice: scenario.price, remainingBalance: scenario.price - scenario.received });
+      await page.route("**/api/**", async route => {
+        const path = new URL(route.request().url()).pathname;
+        expect(route.request().method()).toBe("GET");
+        if (path === "/api/venue-events") return route.fulfill({ json: [event] });
+        if (path === "/api/event-payments") return route.fulfill({ json: {
+          items: scenario.type ? [{ paymentType: scenario.type, amount: scenario.received }] : [],
+          summary: { totalPrice: scenario.price, received: scenario.received,
+            remainingBalance: scenario.price - scenario.received, historicalOverpayment: 0,
+            paymentStatus: scenario.received ? "partial" : "unpaid", expectedDeposit: 110,
+            depositReceived: scenario.type === "reservation_deposit" ? 110 : 0, depositRemaining: 0 },
+        } });
+        return route.fulfill({ json: [] });
+      });
+      await page.goto("/venue-events-search-test.html");
+      const link = page.getByRole("link", { name: scenario.label, exact: true });
+      await expect(link).toBeVisible();
+      const message = new URL((await link.getAttribute("href"))!).searchParams.get("text")!;
+      expect(message).toContain(scenario.text);
+      if (scenario.type === "legacy_payment") expect(message).not.toContain("de sinal");
+      if (!scenario.received) expect(message).not.toMatch(/Temos um pagamento|Já recebemos|totalmente liquidado/);
+      if (scenario.price === 0) expect(message).not.toMatch(/pagamento|sinal|liquid|numerário/i);
+      await expect(page.getByRole("link", { name: "WhatsApp", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("link", { name: "Pedir feedback por WhatsApp" })).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+      if (scenario.name === "Alexandra") await page.screenshot({ path: `test-results/venue-whatsapp-${mobile ? "mobile" : "desktop"}.png`, fullPage: true });
+    });
+  }
+}
+
+test("WhatsApp lista: erro nunca revela fallback e permite repetir consulta", async ({ page }) => {
+  let fail = true;
+  await page.route("**/api/**", async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/api/venue-events") return route.fulfill({ json: [venueEvent({})] });
+    if (path === "/api/event-payments") {
+      if (fail) return route.fulfill({ status: 500, json: {} });
+      return route.fulfill({ json: { items: [], summary: { totalPrice: 550, received: 0 } } });
+    }
+    return route.fulfill({ json: [] });
+  });
+  await page.goto("/venue-events-search-test.html");
+  await expect(page.getByRole("button", { name: "Voltar a verificar pagamentos" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "WhatsApp", exact: true })).toHaveCount(0);
+  fail = false;
+  await page.getByRole("button", { name: "Voltar a verificar pagamentos" }).click();
+  await expect(page.getByRole("link", { name: "Pedir sinal por WhatsApp" })).toBeVisible();
+});
+
+test("WhatsApp lista: carregamento e telefone inválido nunca usam mensagem antiga", async ({ page }) => {
+  let release!: () => void;
+  const ready = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/**", async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/api/venue-events") return route.fulfill({ json: [venueEvent({ phone: "12345", amountPaid: 0 })] });
+    if (path === "/api/event-payments") {
+      await ready;
+      return route.fulfill({ json: { items: [], summary: { totalPrice: 550, received: 0 } } });
+    }
+    return route.fulfill({ json: [] });
+  });
+  await page.goto("/venue-events-search-test.html");
+  await expect(page.getByRole("button", { name: "A verificar…" })).toBeDisabled();
+  await expect(page.getByRole("link", { name: /WhatsApp/ })).toHaveCount(0);
+  release();
+  await expect(page.getByRole("button", { name: "Pedir sinal por WhatsApp" })).toBeDisabled();
+  await expect(page.getByRole("link", { name: /WhatsApp/ })).toHaveCount(0);
+});
