@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 /**
  * Permanent Girafinha decoration catalogue import: strict request validation.
  * No data is sent to production unless the authenticated, independently guarded
@@ -80,4 +82,27 @@ export function validateCatalogueImport(payload: unknown): CatalogueImportRow[] 
       throw new Error("Material sem confirmação ou quantidade inválida: " + catalogCode);
     return {catalogCode, name, category, quantity: item.quantity, unit: item.unit, color, theme, notes};
   });
+}
+
+/**
+ * Deterministic digest of the validated owned-material batch.
+ * Fingerprints only stable, imported fields. No private catalogue is
+ * committed to GitHub or bundled into the Preview.
+ */
+export function catalogueImportFingerprint(rows: CatalogueImportRow[]): string {
+  const canonical = rows
+    .map(({catalogCode,name,category,quantity,unit,color,theme,notes}) => ({
+      catalogCode,name,category,quantity,unit,color,theme,notes,
+    }))
+    .sort((a,b) => a.catalogCode.localeCompare(b.catalogCode, "en"));
+  return createHash("sha256").update(JSON.stringify(canonical), "utf8").digest("hex");
+}
+
+export function approvedBatchMatches(
+  rows: CatalogueImportRow[],
+  expectedDigest: string | undefined
+): boolean {
+  return typeof expectedDigest === "string"
+    && /^[0-9a-f]{64}$/.test(expectedDigest)
+    && catalogueImportFingerprint(rows) === expectedDigest;
 }
