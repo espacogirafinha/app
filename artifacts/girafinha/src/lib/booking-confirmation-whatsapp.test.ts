@@ -212,7 +212,7 @@ test("festa antiga sem qualquer pagamento não fica elegível para confirmação
   });
 });
 
-test("legacy_payment não ativa fallback antes de a festa terminar", () => {
+test("legacy_payment confirma também uma festa futura sem inventar sinal", () => {
   const result = resolveBookingConfirmationPayment({
     eventDate: "2026-11-05",
     endTime: "19:00",
@@ -221,8 +221,30 @@ test("legacy_payment não ativa fallback antes de a festa terminar", () => {
   });
 
   assert.deepEqual(result, {
-    eligible: false,
+    eligible: true,
     depositAmount: null,
-    source: null,
+    source: "legacy_payment",
   });
+});
+
+
+test("sem pagamento pede sinal sem confirmar pagamento ou reserva", () => {
+  const message = buildBookingConfirmationMessage({ ...base, depositAmount: null, totalReceived: 0 });
+  assert.match(message, /Para confirmar a reserva/);
+  assert.match(message, /pagamento do sinal/);
+  assert.doesNotMatch(message, /Temos um pagamento|Já recebemos|está confirmada|totalmente liquidado|por liquidar no dia/);
+});
+
+test("reserva gratuita confirma sem mencionar pagamentos", () => {
+  const message = buildBookingConfirmationMessage({ ...base, depositAmount: null, totalPrice: 0, totalReceived: 0 });
+  assert.match(message, /está confirmada/);
+  assert.doesNotMatch(message, /pagamento|sinal|liquid|valor total|numerário/i);
+});
+
+test("reserva gratuita não menciona pagamentos mesmo com histórico positivo", () => {
+  for (const depositAmount of [null, 110]) {
+    const message = buildBookingConfirmationMessage({ ...base, totalPrice: 0, totalReceived: 110, depositAmount });
+    assert.match(message, /está confirmada/);
+    assert.doesNotMatch(message, /pagamento|sinal|liquid|valor total|numerário/i);
+  }
 });
