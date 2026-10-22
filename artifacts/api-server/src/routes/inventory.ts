@@ -27,6 +27,7 @@ import {
   calculateInventoryMovement,
   InventoryStockError,
 } from "../lib/inventory-stock";
+import { catalogueImportEnabled, validateCatalogueImport } from "../lib/catalog-batch";
 
 const router: IRouter = Router();
 
@@ -331,6 +332,74 @@ router.post("/inventory/items/:id/movements", async (req, res): Promise<void> =>
     }
     throw error;
   }
+});
+
+/**
+ * Owner-approved import: disabled in Preview regardless of its database configuration.
+ * Existing material stock and its movement ledger are committed atomically.
+ */
+router.post("/inventory/catalog/import", async (req, res): Promise<void> => {
+  if (!catalogueImportEnabled(process.env, res.locals.userEmail as string | undefined)) {
+    res.status(403).json({ error: "Importação desligada. Só pode ser autorizada em produção pela gestão." });
+    return;
+  }
+  if (req.body?.confirmation !== "IMPORTAR MATERIAIS") {
+    res.status(400).json({ error: "Confirmação de importação inválida." });
+    return;
+  }
+  let rows: ReturnType<typeof validateCatalogueImport>;
+  try {
+    rows = validateCatalogueImport(req.body);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Lote inválido" });
+    return;
+  }
+  const check = await db.execute(sql`
+    SELECT EXISTS(
+      SELECT 1 FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname = 'inventory_items_catalog_code_unique_idx'
+    ) AS ready
+  `);
+  if ((check.rows[0] as {ready?: boolean} | undefined)?.ready !== true) {
+    res.status(409).json({ error: "Índice único dos códigos não está instalado; importação bloqueada." });
+    return;
+  }
+  const insertedCount = await db.transaction(async (tx) => {
+    const inserted = await tx.insert(inventoryItemsTable)
+      .values(rows.map((item) => ({
+        itemType: "material",
+        name: item.name,
+        category: item.category,
+        quantityCurrent: String(item.quantity),
+        unit: item.unit,
+        color: item.color,
+        theme: item.theme,
+        notes: item.notes,
+        isActive: true,
+      })))
+      .onConflictDoNothing()
+      .returning({
+        id: inventoryItemsTable.id,
+        quantityCurrent: inventoryItemsTable.quantityCurrent,
+      });
+    if (inserted.length) {
+      await tx.insert(inventoryMovementsTable).values(inserted.map((item) => ({
+        itemId: item.id,
+        movementType: "adjustment",
+        quantityDelta: item.quantityCurrent,
+        quantityBefore: "0",
+        quantityAfter: item.quantityCurrent,
+        reason: "Stock inicial · catálogo Girafinha",
+      })));
+    }
+    return inserted.length;
+  });
+  res.status(201).json({
+    submitted: rows.length,
+    inserted: insertedCount,
+    skippedAsExisting: rows.length - insertedCount,
+  });
 });
 
 export default router;
