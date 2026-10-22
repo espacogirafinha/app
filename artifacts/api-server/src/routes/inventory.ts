@@ -27,7 +27,7 @@ import {
   calculateInventoryMovement,
   InventoryStockError,
 } from "../lib/inventory-stock";
-import { catalogueImportEnabled, validateCatalogueImport } from "../lib/catalog-batch";
+import { approvedBatchMatches, catalogueImportEnabled, validateCatalogueImport } from "../lib/catalog-batch";
 
 const router: IRouter = Router();
 
@@ -352,6 +352,10 @@ router.post("/inventory/catalog/import", async (req, res): Promise<void> => {
     rows = validateCatalogueImport(req.body);
   } catch (error) {
     res.status(400).json({ error: error instanceof Error ? error.message : "Lote inválido" });
+    return;
+  }
+  if (!approvedBatchMatches(rows, process.env.GIRAFINHA_CATALOG_APPROVED_SHA256)) {
+    res.status(409).json({ error: "Lote diferente do catálogo aprovado; importação bloqueada." });
     return;
   }
   const check = await db.execute(sql`
