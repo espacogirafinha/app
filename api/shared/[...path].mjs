@@ -9,7 +9,7 @@ export default function handler(req, res) {
   if (apiPath) {
     url.searchParams.delete("__apiPath");
     const query = url.searchParams.toString();
-    req.url = `/api/${apiPath.replace(/^\\/+/, "")}${query ? `?${query}` : ""}`;
+    req.url = `/api/${apiPath.replace(/^\/+/, "")}${query ? `?${query}` : ""}`;
   }
 
   return app(req, res);
