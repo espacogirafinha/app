@@ -8,14 +8,9 @@ assert.match(dbUrl, /(?:127\.0\.0\.1|localhost)/, 'Test needs disposable local P
 const { Pool } = createRequire(new URL('../../lib/db/package.json', import.meta.url))('pg');
 const pool = new Pool({ connectionString: dbUrl });
 const config = JSON.parse(await readFile(new URL('../../vercel.json', import.meta.url), 'utf8'));
-const rules = [
-  { source: '/api/follow-up/:followUpPath*', destination: '/api/follow-up/_router?__followUpPath=:followUpPath*' },
-  { source: '/api/integrations/google-forms/review/:reviewPath*', destination: '/api/integrations/google-forms/review/_router?__reviewPath=:reviewPath*' },
-];
-for (const rule of rules) {
-  assert.ok(config.rewrites.some(r => r.source === rule.source && r.destination === rule.destination),
-    'Missing Vercel rewrite: ' + rule.source);
-}
+assert.ok(!config.rewrites.some(r => r.source.startsWith('/api/follow-up/') ||
+  r.source.startsWith('/api/integrations/google-forms/review/')),
+  'Native filesystem routing must not use PR #71 rewrites');
 assert.ok(config.crons.some(x => x.path === '/api/internal/follow-up-sync' && x.schedule === '0 9 * * *'),
   'The existing cron must stay unchanged');
 
@@ -35,44 +30,43 @@ process.env.FOLLOW_UP_WRITES_ENABLED = 'true';
 process.env.VERCEL_ENV = 'development';
 process.env.GOOGLE_FORMS_INTEGRATION_SECRET = '';
 
-// These imports are the production-built Express adapters, not fake API handlers.
-const followUp = (await import('../../api/follow-up/_router.mjs')).default;
-const review = (await import('../../api/integrations/google-forms/review/_router.mjs')).default;
+// Import physical production functions: no URL rewriting or business duplication.
+const rootCatchAll = (await import('../../api/[...path].mjs')).default;
+const followUp = (await import('../../api/follow-up/[...path].mjs')).default;
+const reviewExact = (await import('../../api/integrations/google-forms/review.mjs')).default;
+const reviewNested = (await import('../../api/integrations/google-forms/review/[...path].mjs')).default;
 const formSubmission = (await import('../../api/integrations/google-forms/venue-event.mjs')).default;
-
-// Mimics Vercel rewriting a wildcard into a physical function path and query.
-function resolveRequest(raw) {
-  const incoming = new URL(raw, 'http://localhost');
-  for (const item of [
-    { root: '/api/follow-up', key: 'followUpPath', dest: '/api/follow-up/_router', handler: followUp },
-    { root: '/api/integrations/google-forms/review', key: 'reviewPath',
-      dest: '/api/integrations/google-forms/review/_router', handler: review },
-  ]) {
-    if (incoming.pathname !== item.root && !incoming.pathname.startsWith(item.root + '/')) continue;
-    const suffix = incoming.pathname.slice(item.root.length).replace(/^\/+/, '');
-    const destination = new URL(item.dest, 'http://localhost');
-    destination.searchParams.set('__' + item.key, suffix);
-    incoming.searchParams.forEach((value, name) => destination.searchParams.append(name, value));
-    return { handler: item.handler, rewritten: destination.pathname + destination.search };
-  }
-  if (incoming.pathname === '/api/integrations/google-forms/venue-event')
-    return { handler: formSubmission, rewritten: incoming.pathname + incoming.search };
-  return { handler: null, rewritten: incoming.pathname + incoming.search };
+const { readFileSync } = await import('node:fs');
+for (const path of ['api/follow-up/[...path].mjs',
+  'api/integrations/google-forms/review.mjs',
+  'api/integrations/google-forms/review/[...path].mjs']) {
+  assert.match(readFileSync(new URL('../../' + path, import.meta.url), 'utf8'),
+    /export default app;/, 'Physical adapter must export the real Express app');
 }
-for (const p of ['/api/follow-up', '/api/follow-up/preparation/' + id,
+function resolveRequest(raw) {
+  const path = new URL(raw, 'http://localhost').pathname;
+  if (path === '/api/integrations/google-forms/venue-event')
+    return formSubmission;
+  if (path === '/api/integrations/google-forms/review')
+    return reviewExact;
+  if (path.startsWith('/api/integrations/google-forms/review/'))
+    return reviewNested;
+  if (path.startsWith('/api/follow-up/'))
+    return followUp;
+  if (path === '/api/follow-up') return rootCatchAll;
+  return null;
+}
+for (const path of ['/api/follow-up/preparation/' + id,
   '/api/follow-up/reactivation/' + id, '/api/follow-up/campaign'])
-  assert.equal(resolveRequest(p).handler, followUp);
-for (const p of ['/api/integrations/google-forms/review',
-  '/api/integrations/google-forms/review/' + id + '/resolve'])
-  assert.equal(resolveRequest(p).handler, review);
-assert.equal(resolveRequest('/api/integrations/google-forms/venue-event').handler, formSubmission,
-  'Existing webhook adapter must not be shadowed');
-assert.ok(resolveRequest('/api/integrations/google-forms/review?cursor=abc%2Bdef').rewritten.includes('cursor=abc%2Bdef'));
-
+  assert.equal(resolveRequest(path), followUp);
+assert.equal(resolveRequest('/api/follow-up'), rootCatchAll);
+assert.equal(resolveRequest('/api/integrations/google-forms/review'), reviewExact);
+assert.equal(resolveRequest('/api/integrations/google-forms/review/' + id + '/resolve'), reviewNested);
+assert.equal(resolveRequest('/api/integrations/google-forms/venue-event'), formSubmission);
 const proxy = createServer((req, res) => {
-  const { handler, rewritten } = resolveRequest(req.url ?? '/');
-  if (!handler) { res.writeHead(404); res.end('Missing Vercel function'); return; }
-  req.url = rewritten;
+  const handler = resolveRequest(req.url ?? '/');
+  if (!handler) { res.writeHead(404); res.end('Missing native function'); return; }
+  // Native filesystem routing preserves the original request URL untouched.
   handler(req, res);
 });
 await new Promise(resolve => proxy.listen(0, '127.0.0.1', resolve));

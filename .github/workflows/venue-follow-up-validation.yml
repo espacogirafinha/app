@@ -80,3 +80,5 @@ jobs:
         run: node tests/integration/follow-up-api.mjs
       - name: Verify Vercel-style filesystem routing against actual Express adapters
         run: node tests/integration/vercel-nested-routing.mjs
+      - name: Verify shared filesystem routing and Hobby function count
+        run: node tests/integration/vercel-shared-routing.mjs
