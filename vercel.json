@@ -5,6 +5,26 @@
   "outputDirectory": "artifacts/girafinha/dist/public",
   "rewrites": [
     {
+      "source": "/api/event-payments/:id",
+      "destination": "/api/shared/_router?__apiPath=event-payments/:id"
+    },
+    {
+      "source": "/api/expenses/:id",
+      "destination": "/api/shared/_router?__apiPath=expenses/:id"
+    },
+    {
+      "source": "/api/external-events/:id",
+      "destination": "/api/shared/_router?__apiPath=external-events/:id"
+    },
+    {
+      "source": "/api/selected-extras/:id",
+      "destination": "/api/shared/_router?__apiPath=selected-extras/:id"
+    },
+    {
+      "source": "/api/venue-events/:id",
+      "destination": "/api/shared/_router?__apiPath=venue-events/:id"
+    },
+    {
       "source": "/api/workshops/:workshopPath*",
       "destination": "/api/workshops/_router?__workshopPath=:workshopPath*"
     },
