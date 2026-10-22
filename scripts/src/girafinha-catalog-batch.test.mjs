@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   catalogueImportEnabled,
   validateCatalogueImport,
+  catalogueImportFingerprint,
+  approvedBatchMatches,
 } from "../../artifacts/api-server/src/lib/catalog-batch.ts";
 import { readFileSync } from "node:fs";
 
@@ -75,4 +77,23 @@ test("endpoint faz validação de environment antes de tocar na BD", () => {
   assert.match(section,/db\.transaction/);
   assert.match(section,/inventoryMovementsTable/);
   assert.match(section,/inventory_items_catalog_code_unique_idx/);
+});
+
+test("assinatura impede lote modificado, reordenações não mudam assinatura", () => {
+  const rows = validateCatalogueImport(payload());
+  const fingerprint = catalogueImportFingerprint(rows);
+  assert.match(fingerprint, /^[a-f0-9]{64}$/);
+  assert.equal(approvedBatchMatches(rows, fingerprint), true);
+  assert.equal(approvedBatchMatches([...rows].reverse(), fingerprint), true);
+  assert.equal(approvedBatchMatches(rows, undefined), false);
+  assert.equal(approvedBatchMatches(rows, "incorrect"), false);
+  assert.equal(approvedBatchMatches([{...rows[0],quantity:100}, rows[1]], fingerprint), false);
+  assert.equal(approvedBatchMatches([{...rows[0],notes:"Outra peça"}, rows[1]], fingerprint), false);
+  assert.equal(approvedBatchMatches([rows[0]], fingerprint), false);
+});
+test("rota bloqueia lote não aprovado antes de escrever ou consultar BD", () => {
+  const source=readFileSync("artifacts/api-server/src/routes/inventory.ts","utf8");
+  const section=source.split('router.post("/inventory/catalog/import"')[1];
+  assert.ok(section.indexOf("catalogueImportEnabled") < section.indexOf("approvedBatchMatches"));
+  assert.ok(section.indexOf("approvedBatchMatches") < section.indexOf("db.execute"));
 });
