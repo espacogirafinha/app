@@ -1,0 +1,69 @@
+name: Girafinha inventory preview checks
+
+on:
+  pull_request:
+    paths:
+      - "scripts/src/girafinha-inventory-preview.mjs"
+      - "scripts/src/girafinha-inventory-preview.test.mjs"
+      - "scripts/src/girafinha-inventory-pg.test.mjs"
+      - "scripts/src/girafinha-browser-catalogue.test.mjs"
+      - "scripts/src/girafinha-catalog-batch.test.mjs"
+      - "artifacts/api-server/src/lib/catalog-batch.ts"
+      - "artifacts/api-server/src/routes/inventory.ts"
+      - "artifacts/girafinha/src/pages/catalog-import.tsx"
+      - "artifacts/girafinha/src/pages/catalog-preview.tsx"
+      - "artifacts/girafinha/src/lib/catalog-preview.ts"
+      - "artifacts/girafinha/src/App.tsx"
+      - "artifacts/girafinha/src/pages/inventory.tsx"
+      - "supabase/migrations/20261021160000_inventory_catalog_code_unique_preview.sql"
+      - ".github/workflows/inventory-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory-isolated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: preview_tester
+          POSTGRES_PASSWORD: disposable_only
+          POSTGRES_DB: girafinha_inventory_preview
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U preview_tester -d girafinha_inventory_preview"
+          --health-interval 5s --health-timeout 3s --health-retries 15
+    env:
+      DATABASE_URL: ""
+      SUPABASE_URL: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Assert no Supabase credentials or automatic imports
+        run: |
+          test -z "$DATABASE_URL"
+          test -z "$SUPABASE_URL"
+          test -z "$SUPABASE_SERVICE_ROLE_KEY"
+      - name: Run offline catalogue, deduplication and JPEG tests
+        run: node --test scripts/src/girafinha-inventory-preview.test.mjs
+      - name: Validate browser-only catalogue preview
+        run: node --test scripts/src/girafinha-browser-catalogue.test.mjs
+      - name: Validate one-time import authorization and payload
+        run: node --test scripts/src/girafinha-catalog-batch.test.mjs
+      - name: Install pg only into disposable CI workspace
+        run: |
+          mkdir -p "$RUNNER_TEMP/girafinha-pg"
+          npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/girafinha-pg" --no-save --no-package-lock pg@8.20.0
+          ln -s "$RUNNER_TEMP/girafinha-pg/node_modules" scripts/node_modules
+      - name: PostgreSQL isolated import, replay and ledger validation
+        env:
+          PGTEST_URL: postgres://preview_tester:disposable_only@localhost:5432/girafinha_inventory_preview
+        run: node --test scripts/src/girafinha-inventory-pg.test.mjs

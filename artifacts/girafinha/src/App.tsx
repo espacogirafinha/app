@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { lazy, Suspense } from "react";
@@ -18,6 +18,8 @@ const CalendarPage = lazy(() => import("@/pages/calendar"));
 const ReportsPage = lazy(() => import("@/pages/reports"));
 const ExpensesPage = lazy(() => import("@/pages/expenses"));
 const InventoryPage = lazy(() => import("@/pages/inventory"));
+const CatalogueImportPage = lazy(() => import("@/pages/catalog-import"));
+const CataloguePreviewPage = lazy(() => import("@/pages/catalog-preview"));
 const FinancialMovementsPage = lazy(() => import("@/pages/financial-movements"));
 const WorkshopsPage = lazy(() => import("@/pages/workshops"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
@@ -54,6 +56,7 @@ function AuthedRoutes() {
           <Route path="/financial-movements" component={FinancialMovementsPage} />
           <Route path="/expenses" component={ExpensesPage} />
           <Route path="/inventory" component={InventoryPage} />
+          <Route path="/inventory/import" component={CatalogueImportPage} />
           <Route path="/settings" component={SettingsPage} />
           <Route component={NotFound} />
         </Switch>
@@ -88,14 +91,32 @@ function Gate() {
   return <AuthedRoutes />;
 }
 
+function AppRoute() {
+  const [location] = useLocation();
+
+  // Independent read-only local catalogue preview: do NOT even mount Supabase Auth.
+  // This route makes no API, inventory or Storage requests and contains no catalogue data.
+  if (location === "/inventory-preview") {
+    return (
+      <div className="min-h-screen bg-background p-4 sm:p-8">
+        <div className="mx-auto max-w-6xl">
+          <Suspense fallback={<PageLoader />}>
+            <CataloguePreviewPage />
+          </Suspense>
+        </div>
+      </div>
+    );
+  }
+
+  return <AuthProvider><Gate /></AuthProvider>;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AuthProvider>
-            <Gate />
-          </AuthProvider>
+          <AppRoute />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
