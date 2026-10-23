@@ -1,3 +1,4 @@
+import { ExpenseDocuments, ExpenseDocumentCounts } from "@/components/expense-documents";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, Edit, Plus, ReceiptText, Search, Trash2, X } from "lucide-react";
@@ -315,7 +316,7 @@ export default function ExpensesPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {expenses.map((expense) => (
+          <ExpenseDocumentCounts ids={expenses.map(expense=>expense.id)}>{(documentCounts)=>expenses.map((expense) => (
             <Card key={expense.id} className="border-border/70 shadow-sm">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -331,6 +332,7 @@ export default function ExpensesPage() {
 
                 <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
                   <span className="rounded-full bg-muted px-2 py-1">{expense.categoryName}</span>
+                  {documentCounts[expense.id] > 0 && <span className="rounded-full bg-primary/10 px-2 py-1 text-primary">📎 {documentCounts[expense.id]} comprovativo{documentCounts[expense.id] === 1 ? "" : "s"}</span>}
                   <span className="rounded-full bg-muted px-2 py-1">
                     {expense.expenseType === "operational" ? "Operacional" : "Investimento"}
                   </span>
@@ -355,7 +357,7 @@ export default function ExpensesPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          ))}</ExpenseDocumentCounts>
         </div>
       )}
 
@@ -628,9 +630,7 @@ function ExpenseDialog({
             <Textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} rows={3} placeholder="Opcional" />
           </Field>
 
-          <p className="text-xs text-muted-foreground">
-            Comprovativo: ficará como melhoria posterior; os anexos atuais são específicos de eventos/imagens e não serão duplicados aqui.
-          </p>
+          <ExpenseDocuments expenseId={expense?.id} />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

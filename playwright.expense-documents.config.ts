@@ -1,0 +1,21 @@
+import { defineConfig, devices } from "@playwright/test";
+export default defineConfig({
+  testDir: "./tests/e2e",
+  testMatch: /expense-documents\.local\.spec\.ts/,
+  timeout: 60000,
+  fullyParallel: false,
+  reporter: [["list"]],
+  use: {
+    baseURL: "http://127.0.0.1:4175",
+    launchOptions: process.env.PLAYWRIGHT_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+      : undefined,
+  },
+  projects: [
+    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "mobile",
+      use: { ...devices["iPhone 13"], defaultBrowserType: "chromium" },
+    },
+  ],
+});
