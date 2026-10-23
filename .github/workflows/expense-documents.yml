@@ -31,6 +31,8 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - name: Unit validation
         run: node --experimental-strip-types --test artifacts/api-server/src/lib/expense-document-validation.test.ts
+      - name: Offline demo with zero network access
+        run: node tests/integration/expense-documents-demo.mjs
       - name: Isolated PostgreSQL lifecycle, RLS and financial invariance
         run: node tests/integration/expense-documents.mjs
         env:
@@ -45,6 +47,12 @@ jobs:
           VITE_SUPABASE_ANON_KEY: local-fixture-key
       - name: Typecheck and build
         run: corepack pnpm run build
+      - name: Demo is absent from Production build and present in Preview build
+        run: |
+          VERCEL_ENV=production corepack pnpm --filter @workspace/girafinha build
+          test ! -f artifacts/girafinha/dist/public/comprovativos-demo.html
+          VERCEL_ENV=preview corepack pnpm --filter @workspace/girafinha build
+          test -f artifacts/girafinha/dist/public/comprovativos-demo.html
       - uses: actions/upload-artifact@v4
         if: always()
         with:

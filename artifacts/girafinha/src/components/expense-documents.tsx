@@ -15,8 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   documentRequest,
   documentQueryKey,
-  downloadExpenseDocument,
-  uploadExpenseDocument,
+  expenseDocumentsClient,
+  type ExpenseDocumentsClient,
   type ExpenseDocument,
 } from "@/lib/expense-documents";
 
@@ -38,7 +38,13 @@ export function ExpenseDocumentCounts({
   });
   return <>{children(query.data ?? {})}</>;
 }
-export function ExpenseDocuments({ expenseId }: { expenseId?: string }) {
+export function ExpenseDocuments({
+  expenseId,
+  transport = expenseDocumentsClient,
+}: {
+  expenseId?: string;
+  transport?: ExpenseDocumentsClient;
+}) {
   const client = useQueryClient();
   const { toast } = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -49,7 +55,7 @@ export function ExpenseDocuments({ expenseId }: { expenseId?: string }) {
   const query = useQuery({
     queryKey: [...documentQueryKey, "expense", expenseId],
     queryFn: () =>
-      documentRequest<ExpenseDocument[]>("list", undefined, {
+      transport.request<ExpenseDocument[]>("list", undefined, {
         expenseId: expenseId!,
       }),
     enabled: !!expenseId,
@@ -58,7 +64,7 @@ export function ExpenseDocuments({ expenseId }: { expenseId?: string }) {
   const library = useQuery({
     queryKey: [...documentQueryKey, "library", search],
     queryFn: () =>
-      documentRequest<ExpenseDocument[]>("library", undefined, { search }),
+      transport.request<ExpenseDocument[]>("library", undefined, { search }),
     enabled: !!expenseId && picker,
     retry: false,
   });
@@ -84,7 +90,7 @@ export function ExpenseDocuments({ expenseId }: { expenseId?: string }) {
     if (!files || !expenseId) return;
     const selected = Array.from(files);
     await run(async () => {
-      for (const file of selected) await uploadExpenseDocument(expenseId, file);
+      for (const file of selected) await transport.upload(expenseId, file);
     }, "Comprovativo anexado");
     if (fileInput.current) fileInput.current.value = "";
     if (camera.current) camera.current.value = "";
@@ -198,9 +204,10 @@ export function ExpenseDocuments({ expenseId }: { expenseId?: string }) {
               key={doc.id}
               document={doc}
               busy={busy}
+              download={transport.download}
               onRemove={() =>
                 void run(async () => {
-                  const result = await documentRequest<{
+                  const result = await transport.request<{
                     cleanupPending: boolean;
                   }>("unlink", { expenseId, documentId: doc.id });
                   if (result.cleanupPending)
@@ -250,7 +257,7 @@ export function ExpenseDocuments({ expenseId }: { expenseId?: string }) {
                       className="h-auto min-h-11 w-full justify-start whitespace-normal text-left"
                       onClick={() =>
                         void run(async () => {
-                          await documentRequest("link", {
+                          await transport.request("link", {
                             expenseId,
                             documentId: doc.id,
                           });
@@ -279,10 +286,12 @@ function DocumentCard({
   document: doc,
   busy,
   onRemove,
+  download,
 }: {
   document: ExpenseDocument;
   busy: boolean;
   onRemove: () => void;
+  download: ExpenseDocumentsClient["download"];
 }) {
   const { toast } = useToast();
   const [preview, setPreview] = useState<string>();
@@ -291,7 +300,7 @@ function DocumentCard({
     let active = true;
     let url: string | undefined;
     if (doc.mimeType.startsWith("image/"))
-      void downloadExpenseDocument(doc)
+      void download(doc)
         .then((blob) => {
           if (active) {
             url = URL.createObjectURL(blob);
@@ -303,14 +312,14 @@ function DocumentCard({
       active = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [doc.id, doc.storagePath, doc.mimeType]);
-  async function open(download: boolean) {
-    const tab = download ? null : window.open("about:blank", "_blank");
+  }, [doc.id, doc.storagePath, doc.mimeType, download]);
+  async function open(shouldDownload: boolean) {
+    const tab = shouldDownload ? null : window.open("about:blank", "_blank");
     if (tab) tab.opener = null;
     try {
-      const blob = await downloadExpenseDocument(doc);
+      const blob = await download(doc);
       const url = URL.createObjectURL(blob);
-      if (download) {
+      if (shouldDownload) {
         const link = window.document.createElement("a");
         link.href = url;
         link.download = doc.filename;

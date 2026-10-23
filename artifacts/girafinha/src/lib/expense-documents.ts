@@ -22,7 +22,7 @@ export async function documentRequest<T>(
     },
   );
 }
-export async function uploadExpenseDocument(expenseId: string, file: File) {
+export async function expenseDocumentMetadata(file: File) {
   if (
     !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(
       file.type,
@@ -40,17 +40,16 @@ export async function uploadExpenseDocument(expenseId: string, file: File) {
   )
     .map((v) => v.toString(16).padStart(2, "0"))
     .join("");
+  return { filename: file.name, mimeType: file.type, size: file.size, sha256 };
+}
+export async function uploadExpenseDocument(expenseId: string, file: File) {
+  const metadata = await expenseDocumentMetadata(file);
   const prepared = await documentRequest<{
     document: ExpenseDocument;
     upload: boolean;
   }>("prepare", {
     expenseId,
-    metadata: {
-      filename: file.name,
-      mimeType: file.type,
-      size: file.size,
-      sha256,
-    },
+    metadata,
   });
   if (!prepared.upload) return;
   try {
@@ -86,3 +85,10 @@ export async function downloadExpenseDocument(
   if (error) throw error;
   return data;
 }
+
+export const expenseDocumentsClient = {
+  request: documentRequest,
+  upload: uploadExpenseDocument,
+  download: downloadExpenseDocument,
+};
+export type ExpenseDocumentsClient = typeof expenseDocumentsClient;

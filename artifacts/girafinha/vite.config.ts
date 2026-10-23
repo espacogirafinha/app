@@ -58,6 +58,11 @@ export default defineConfig(async ({ mode }) => {
     emptyOutDir: true,
     sourcemap: false,
     rollupOptions: {
+      input: {
+        app: path.resolve(import.meta.dirname, "index.html"),
+        ...((process.env.VERCEL_ENV === "preview" || (!process.env.VERCEL_ENV && process.env.EXPENSE_DOCUMENTS_DEMO === "1"))
+          ? { receiptsDemo: path.resolve(import.meta.dirname, "comprovativos-demo.html") } : {}),
+      },
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;

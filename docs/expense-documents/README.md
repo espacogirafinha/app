@@ -66,3 +66,15 @@ PR independente da main `005f77190a2d35c4ed5564879138124a2ce1b3fc`. O PR #73 nã
 - Não há novas funções físicas; não foram alteradas `api/` nem `vercel.json`.
 - Não houve alterações financeiras remotas, migration remota, merge, deploy Production ou alterações de variáveis de ambiente.
 - Pendente para aprovação funcional no próprio Preview: base Supabase isolada ligada ao Preview com a migration aplicada. Até lá, não declarar que o módulo está ativado nesse ambiente. A câmara física/Safari num iPhone real também não foram testados.
+
+## Validação gratuita e demonstração (atualização 23/10/2026)
+
+Orçamento adicional autorizado: **0 €**. Não criar projetos, branches Supabase ou serviços pagos. Não aplicar migrations remotas, não alterar Production e não fazer merge.
+
+O Docker não está disponível no executor local. Os testes reais de Express + PostgreSQL + Supabase Auth/Storage são executados em Docker descartável nos runners GitHub Actions já existentes deste repositório público, sem ligação a qualquer projeto remoto. As instâncias são paradas e eliminadas no fim. Não são criados serviços cloud ou cobrados ambientes Supabase adicionais.
+
+A alternativa de validação no Preview é `/comprovativos-demo.html`, usando exatamente o componente real de comprovativos com um transporte em memória. Duas despesas fictícias (8,40 € e 45,68 €) partilham um PDF fictício de 54,08 €. É possível carregar imagens/PDFs, abrir/descarregar, associar ficheiros existentes e remover associações. O transporte aplica os mesmos limites de MIME/tamanho e SHA-256 do cliente real. O teste impede chamadas de rede e verifica que os valores fictícios não mudam.
+
+A página não importa a sessão da aplicação nem acede a Supabase/API. Uma política CSP `connect-src 'none'` bloqueia ligações de dados. Os ficheiros ficam apenas na memória da página, sem localStorage/IndexedDB; recarregar ou fechar repõe os exemplos. O build inclui a página apenas em Vercel Preview (ou no build local explicitamente marcado `EXPENSE_DOCUMENTS_DEMO=1`), nunca num build `VERCEL_ENV=production`.
+
+Limitações gratuitas explicitamente aceites para a demonstração: não persiste entre carregamentos nem entre dispositivos; não testa a ligação Preview→base real; permissões e persistência reais são verificadas separadamente na integração Supabase local em Docker. A câmara física e Safari nativo num iPhone requerem um teste manual no dispositivo. O PR permanece DRAFT para aprovação visual/funcional, sem qualquer pedido de ambiente pago.
