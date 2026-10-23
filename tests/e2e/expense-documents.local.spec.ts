@@ -198,13 +198,11 @@ test("uploads an image, shows private preview, opens and downloads, rejects unsu
   await expect(
     section.getByText("Esta despesa ainda não tem comprovativos."),
   ).toBeVisible();
-  await section
-    .getByLabel("Selecionar comprovativos")
-    .setInputFiles({
-      name: "talao.png",
-      mimeType: "image/png",
-      buffer: imageBytes,
-    });
+  await section.getByLabel("Selecionar comprovativos").setInputFiles({
+    name: "talao.png",
+    mimeType: "image/png",
+    buffer: imageBytes,
+  });
   await expect(
     section.getByRole("img", { name: "Pré-visualização de talao.png" }),
   ).toBeVisible();
@@ -220,13 +218,11 @@ test("uploads an image, shows private preview, opens and downloads, rejects unsu
   const popup = await popupPromise;
   await popup.waitForURL(/^blob:/);
   await popup.close();
-  await section
-    .getByLabel("Selecionar comprovativos")
-    .setInputFiles({
-      name: "programa.exe",
-      mimeType: "application/octet-stream",
-      buffer: Buffer.from("invalid"),
-    });
+  await section.getByLabel("Selecionar comprovativos").setInputFiles({
+    name: "programa.exe",
+    mimeType: "application/octet-stream",
+    buffer: Buffer.from("invalid"),
+  });
   await expect(
     page.getByText(
       "Escolha uma fotografia JPG, PNG, WEBP ou um PDF, até 10 MB.",

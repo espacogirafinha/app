@@ -51,3 +51,36 @@ jobs:
           name: expense-documents-ui
           path: test-results/
           if-no-files-found: ignore
+
+  supabase-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.0'
+      - run: corepack pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@v1
+        with:
+          version: '2.121.0'
+      - name: Start disposable Supabase (no project linked)
+        run: |
+          mkdir -p /tmp/expense-supabase
+          cd /tmp/expense-supabase
+          supabase init
+          supabase start -x studio,imgproxy,logflare,vector,realtime,edge-runtime,supavisor
+          umask 077
+          supabase status -o json > /tmp/expense-supabase-status.json
+      - name: Build real API
+        run: corepack pnpm --filter @workspace/api-server build
+      - name: Full receipt flow against real local Supabase Auth and Storage
+        run: node tests/integration/expense-documents-supabase.mjs
+        env:
+          DOCUMENT_SUPABASE_STATUS_FILE: /tmp/expense-supabase-status.json
+      - name: Stop disposable Supabase
+        if: always()
+        run: cd /tmp/expense-supabase && supabase stop --no-backup
