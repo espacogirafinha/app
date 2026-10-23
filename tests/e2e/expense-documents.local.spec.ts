@@ -85,13 +85,9 @@ test("receipt section, reuse, removal, persistence, file inputs and responsive l
   await expect(
     section.getByRole("button", { name: "Descarregar", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("dialog")
-    .screenshot({
-      path: testInfo.outputPath(
-        `expense-documents-${testInfo.project.name}.png`,
-      ),
-    });
+  await page.getByRole("dialog").screenshot({
+    path: testInfo.outputPath(`expense-documents-${testInfo.project.name}.png`),
+  });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -111,13 +107,11 @@ test("receipt section, reuse, removal, persistence, file inputs and responsive l
   await expect(
     section.getByText("Esta despesa ainda não tem comprovativos."),
   ).toBeVisible();
-  await section
-    .getByLabel("Selecionar comprovativos")
-    .setInputFiles({
-      name: "foto.png",
-      mimeType: "image/png",
-      buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-    });
+  await section.getByLabel("Selecionar comprovativos").setInputFiles({
+    name: "foto.png",
+    mimeType: "image/png",
+    buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+  });
   await expect(section.getByText(doc.filename)).toBeVisible();
   expect(financialWrites).toBe(0);
 });
@@ -150,4 +144,93 @@ test("invalid files and unavailable migration provide clear feedback without fin
   await expect(
     page.getByRole("button", { name: "Guardar", exact: true }),
   ).toBeEnabled();
+});
+
+test("uploads an image, shows private preview, opens and downloads, rejects unsupported files", async ({
+  page,
+}) => {
+  let attached = false;
+  let storageUploads = 0;
+  let finalized = false;
+  const image = {
+    ...doc,
+    filename: "talao.png",
+    mimeType: "image/png",
+    storagePath: "fixture/talao.png",
+    associationCount: 1,
+  };
+  const imageBytes = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/ksAAAAASUVORK5CYII=",
+    "base64",
+  );
+  await page.route("**/storage/v1/**", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      storageUploads++;
+      await route.fulfill({
+        json: { Key: `expense-documents/${image.storagePath}` },
+        headers: { "access-control-allow-origin": "*" },
+      });
+    } else
+      await route.fulfill({
+        body: imageBytes,
+        contentType: "image/png",
+        headers: { "access-control-allow-origin": "*" },
+      });
+  });
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const action = url.searchParams.get("documentAction");
+    let result: unknown = [];
+    if (action === "list") result = attached ? [image] : [];
+    else if (action === "counts") result = attached ? { [expenseId]: 1 } : {};
+    else if (action === "prepare") result = { document: image, upload: true };
+    else if (action === "finalize") {
+      finalized = true;
+      attached = true;
+      result = image;
+    } else if (url.pathname === "/api/expenses") result = [row];
+    await route.fulfill({ json: result });
+  });
+  await page.goto("/expenses-flow-test.html");
+  await page.getByRole("button", { name: "Editar", exact: true }).click();
+  const section = page.getByRole("region", { name: "Comprovativos" });
+  await expect(
+    section.getByText("Esta despesa ainda não tem comprovativos."),
+  ).toBeVisible();
+  await section
+    .getByLabel("Selecionar comprovativos")
+    .setInputFiles({
+      name: "talao.png",
+      mimeType: "image/png",
+      buffer: imageBytes,
+    });
+  await expect(
+    section.getByRole("img", { name: "Pré-visualização de talao.png" }),
+  ).toBeVisible();
+  expect(storageUploads).toBe(1);
+  expect(finalized).toBe(true);
+  const downloadPromise = page.waitForEvent("download");
+  await section
+    .getByRole("button", { name: "Descarregar", exact: true })
+    .click();
+  expect((await downloadPromise).suggestedFilename()).toBe("talao.png");
+  const popupPromise = page.waitForEvent("popup");
+  await section.getByRole("button", { name: "Abrir", exact: true }).click();
+  const popup = await popupPromise;
+  await popup.waitForURL(/^blob:/);
+  await popup.close();
+  await section
+    .getByLabel("Selecionar comprovativos")
+    .setInputFiles({
+      name: "programa.exe",
+      mimeType: "application/octet-stream",
+      buffer: Buffer.from("invalid"),
+    });
+  await expect(
+    page.getByText(
+      "Escolha uma fotografia JPG, PNG, WEBP ou um PDF, até 10 MB.",
+    ),
+  ).toBeVisible();
+  expect(storageUploads).toBe(1);
 });

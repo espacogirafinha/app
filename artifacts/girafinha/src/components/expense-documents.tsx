@@ -68,7 +68,6 @@ export function ExpenseDocuments({ expenseId }: { expenseId?: string }) {
     setBusy(true);
     try {
       await action();
-      await refresh();
       toast({ title: success });
     } catch (e) {
       toast({
@@ -77,6 +76,7 @@ export function ExpenseDocuments({ expenseId }: { expenseId?: string }) {
         variant: "destructive",
       });
     } finally {
+      await refresh();
       setBusy(false);
     }
   }
