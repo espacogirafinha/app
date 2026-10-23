@@ -52,7 +52,7 @@ A migration não é aplicada automaticamente pelo código ou workflow em qualque
 
 ## Aprovação
 
-PR independente da main `005f77190a2d35c4ed5564879138124a2ce1b3fc`. O PR #73 não foi modificado nem incorporado. Não fazer merge, deploy Production ou migration em Production sem autorização expressa. O Preview compila e expõe as rotas, mas o uso documental com dados persistentes exige ativar a migration numa base de testes isolada ligada ao Preview, antes da aprovação funcional final.
+PR independente da main `005f77190a2d35c4ed5564879138124a2ce1b3fc`. O PR #73 não foi modificado nem incorporado. Não fazer merge, deploy Production ou migration em Production sem autorização expressa. A demonstração gratuita no Preview permite aprovação visual e funcional com dados fictícios. A ligação Preview→base remota persistente fica fora do âmbito de orçamento 0 €; o armazenamento real é validado em Supabase Docker descartável no CI.
 
 ## Evidência da entrega (23/10/2026)
 
@@ -65,7 +65,7 @@ PR independente da main `005f77190a2d35c4ed5564879138124a2ce1b3fc`. O PR #73 nã
 - Probes HTTP em Preview real (mesmo código de backend, deployment `dpl_rb21uZoXYvXmyxcRUCynKnFy7yfT`): GET list/counts e POST prepare/link/unlink devolveram 401 JSON da aplicação depois do acesso temporário pela proteção Vercel. Sem escritas, credenciais ou sessão da aplicação.
 - Não há novas funções físicas; não foram alteradas `api/` nem `vercel.json`.
 - Não houve alterações financeiras remotas, migration remota, merge, deploy Production ou alterações de variáveis de ambiente.
-- Pendente para aprovação funcional no próprio Preview: base Supabase isolada ligada ao Preview com a migration aplicada. Até lá, não declarar que o módulo está ativado nesse ambiente. A câmara física/Safari num iPhone real também não foram testados.
+- Atualização do âmbito de validação: usar a demonstração gratuita com mocks no próprio Preview; não ativar a migration em nenhuma base remota. A câmara física/Safari num iPhone real não foram testados.
 
 ## Validação gratuita e demonstração (atualização 23/10/2026)
 
