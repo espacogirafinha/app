@@ -1,0 +1,97 @@
+name: Expense documents validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/expense-document*'
+      - 'supabase/migrations/*expense_documents.sql'
+      - '.github/workflows/expense-documents.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: validation
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.0'
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Unit validation
+        run: node --experimental-strip-types --test artifacts/api-server/src/lib/expense-document-validation.test.ts
+      - name: Offline demo with zero network access
+        run: node tests/integration/expense-documents-demo.mjs
+      - name: Isolated PostgreSQL lifecycle, RLS and financial invariance
+        run: node tests/integration/expense-documents.mjs
+        env:
+          DOCUMENT_TEST_DATABASE_URL: postgres://postgres:validation@127.0.0.1:5432/postgres
+      - name: Desktop and mobile UI
+        run: |
+          corepack pnpm --filter @workspace/girafinha exec vite --port 4175 --host 127.0.0.1 > /tmp/expense-vite.log 2>&1 &
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:4175/expenses-flow-test.html >/dev/null && break; sleep 1; done
+          PLAYWRIGHT_EXECUTABLE_PATH="$(command -v google-chrome)" corepack pnpm exec playwright test --config playwright.expense-documents.config.ts
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_ANON_KEY: local-fixture-key
+      - name: Typecheck and build
+        run: corepack pnpm run build
+      - name: Demo is absent from Production build and present in Preview build
+        run: |
+          VERCEL_ENV=production corepack pnpm --filter @workspace/girafinha build
+          test ! -f artifacts/girafinha/dist/public/comprovativos-demo.html
+          VERCEL_ENV=preview corepack pnpm --filter @workspace/girafinha build
+          test -f artifacts/girafinha/dist/public/comprovativos-demo.html
+          corepack pnpm --filter @workspace/girafinha exec vite preview --port 4176 --host 127.0.0.1 > /tmp/expense-preview.log 2>&1 &
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:4176/comprovativos-demo.html >/dev/null && break; sleep 1; done
+          DOCUMENTS_E2E_BASE_URL=http://127.0.0.1:4176 PLAYWRIGHT_EXECUTABLE_PATH="$(command -v google-chrome)" corepack pnpm exec playwright test --config playwright.expense-documents.config.ts --grep "free offline demo"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: expense-documents-ui
+          path: test-results/
+          if-no-files-found: ignore
+
+  supabase-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.28.0'
+      - run: corepack pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@v1
+        with:
+          version: '2.121.0'
+      - name: Start disposable Supabase (no project linked)
+        run: |
+          mkdir -p /tmp/expense-supabase
+          cd /tmp/expense-supabase
+          supabase init
+          supabase start -x studio,imgproxy,logflare,vector,realtime,edge-runtime,supavisor
+          umask 077
+          supabase status -o json > /tmp/expense-supabase-status.json
+      - name: Build real API
+        run: corepack pnpm --filter @workspace/api-server build
+      - name: Full receipt flow against real local Supabase Auth and Storage
+        run: node tests/integration/expense-documents-supabase.mjs
+        env:
+          DOCUMENT_SUPABASE_STATUS_FILE: /tmp/expense-supabase-status.json
+      - name: Stop disposable Supabase
+        if: always()
+        run: cd /tmp/expense-supabase && supabase stop --no-backup
