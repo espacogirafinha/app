@@ -243,43 +243,46 @@ try {
     "insert into storage.objects(bucket_id,name) values('expense-documents',$1)",
     [pending.document.storagePath],
   );
-  await sql.query("set role authenticated");
-  await sql.query("select set_config('request.jwt.claim.sub',$1,false)", [
+  const roleClient = await pool.connect();
+  const roleSql = { query: roleClient.query.bind(roleClient) };
+  await roleSql.query("set role authenticated");
+  await roleSql.query("select set_config('request.jwt.claim.sub',$1,false)", [
     stranger,
   ]);
   assert.equal(
-    (await sql.query("select * from public.expense_documents")).rows.length,
+    (await roleSql.query("select * from public.expense_documents")).rows.length,
     0,
   );
   assert.equal(
     (
-      await sql.query(
+      await roleSql.query(
         "select * from storage.objects where bucket_id='expense-documents'",
       )
     ).rows.length,
     0,
   );
   await assert.rejects(() =>
-    sql.query(
+    roleSql.query(
       "insert into storage.objects(bucket_id,name) values('expense-documents','forged.pdf')",
     ),
   );
   await assert.rejects(() =>
-    sql.query(
+    roleSql.query(
       "insert into public.expense_document_links(expense_id,document_id) values($1,$2)",
       [expense1, pending.document.id],
     ),
   );
-  await sql.query("select set_config('request.jwt.claim.sub',$1,false)", [
+  await roleSql.query("select set_config('request.jwt.claim.sub',$1,false)", [
     user,
   ]);
   assert.equal(
-    (await sql.query("select * from public.expense_documents")).rows.length > 0,
+    (await roleSql.query("select * from public.expense_documents")).rows
+      .length > 0,
     true,
   );
   assert.equal(
     (
-      await sql.query(
+      await roleSql.query(
         "select * from storage.objects where bucket_id='expense-documents'",
       )
     ).rows.length,
@@ -287,27 +290,31 @@ try {
   );
   assert.equal(
     (
-      await sql.query(
+      await roleSql.query(
         "delete from storage.objects where bucket_id='expense-documents' returning *",
       )
     ).rows.length,
     0,
   );
   assert.equal(
-    (await sql.query("update storage.objects set name='changed' returning *"))
-      .rows.length,
+    (
+      await roleSql.query(
+        "update storage.objects set name='changed' returning *",
+      )
+    ).rows.length,
     0,
   );
-  await sql.query("reset role");
-  await sql.query("set role anon");
+  await roleSql.query("reset role");
+  await roleSql.query("set role anon");
   await assert.rejects(() =>
-    sql.query("select * from public.expense_documents"),
+    roleSql.query("select * from public.expense_documents"),
   );
   assert.equal(
-    (await sql.query("select * from storage.objects")).rows.length,
+    (await roleSql.query("select * from storage.objects")).rows.length,
     0,
   );
-  await sql.query("reset role");
+  await roleSql.query("reset role");
+  roleClient.release();
   assert.deepEqual(
     (await sql.query("select * from public.expenses order by id")).rows,
     before,

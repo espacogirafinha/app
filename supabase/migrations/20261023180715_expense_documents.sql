@@ -33,7 +33,6 @@ language sql stable security definer set search_path = '' as $$
   );
 $$;
 revoke all on function app_private.expense_documents_authorized() from public, anon;
-grant usage on schema app_private to authenticated;
 grant execute on function app_private.expense_documents_authorized() to authenticated;
 create policy expense_documents_read on public.expense_documents for select to authenticated
   using (app_private.expense_documents_authorized());

@@ -14,5 +14,4 @@ delete from storage.buckets where id='expense-documents';
 drop table public.expense_document_links;
 drop table public.expense_documents;
 drop function app_private.expense_documents_authorized();
--- Preserve schema USAGE: other modules may rely on it by rollback time.
 commit;
