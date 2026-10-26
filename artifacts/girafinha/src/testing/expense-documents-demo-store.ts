@@ -14,6 +14,11 @@ export const demoExpenses = Object.freeze([
     description: "Congelados para stock geral — exemplo",
     amount: 45.68,
   }),
+  Object.freeze({
+    id: "demo-new-expense",
+    description: "Nova despesa fictícia",
+    amount: 12.34,
+  }),
 ]);
 // Generates a valid, entirely fictional PDF in memory. No remote file or production data.
 function examplePdf() {
@@ -127,6 +132,6 @@ export async function createDemoDocumentClient(): Promise<ExpenseDocumentsClient
     },
   };
   const seed = examplePdf();
-  for (const expense of demoExpenses) await upload(expense.id, seed);
+  for (const expense of demoExpenses.slice(0, 2)) await upload(expense.id, seed);
   return client;
 }
