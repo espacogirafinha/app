@@ -230,3 +230,28 @@ test("uploads an image, shows private preview, opens and downloads, rejects unsu
   ).toBeVisible();
   expect(storageUploads).toBe(1);
 });
+
+test("new expense form shows receipt selection before the financial record exists", async ({ page }) => {
+  await page.route("**/api/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.has("documentAction"))
+      return route.fulfill({ json: [] });
+    if (url.pathname.endsWith("/api/expense-categories"))
+      return route.fulfill({ json: [{ id: row.categoryId, name: row.categoryName, isActive: true, sortOrder: 0 }] });
+    return route.fulfill({ json: url.pathname === "/api/expenses" ? [row] : [] });
+  });
+  await page.goto("/expenses-flow-test.html");
+  await page.getByRole("button", { name: "Adicionar despesa", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  const queued = dialog.getByRole("region", { name: "Comprovativos da nova despesa" });
+  await expect(queued.getByRole("button", { name: "Anexar comprovativo" })).toBeVisible();
+  await expect(queued.getByLabel("Fotografar comprovativo para nova despesa")).toHaveAttribute("capture", "environment");
+  await queued.getByLabel("Selecionar comprovativos para nova despesa").setInputFiles({
+    name: "talao-novo.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n%demo\n"),
+  });
+  await expect(queued.getByText("talao-novo.pdf")).toBeVisible();
+  await queued.getByRole("button", { name: "Remover talao-novo.pdf" }).click();
+  await expect(queued.getByText("Nenhum comprovativo selecionado (opcional).")).toBeVisible();
+});
