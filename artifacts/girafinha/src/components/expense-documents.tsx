@@ -20,6 +20,121 @@ import {
   type ExpenseDocument,
 } from "@/lib/expense-documents";
 
+
+/** Select files while creating an expense; upload only after its ID exists. */
+export function PendingExpenseDocuments({
+  files,
+  onChange,
+  disabled = false,
+}: {
+  files: File[];
+  onChange: (files: File[]) => void;
+  disabled?: boolean;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  function select(selected: FileList | null) {
+    if (!selected) return;
+    const next = [...files];
+    let rejected = 0;
+    for (const file of Array.from(selected)) {
+      if (
+        !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type) ||
+        file.size < 1 ||
+        file.size > 10 * 1024 * 1024
+      ) {
+        rejected++;
+        continue;
+      }
+      if (!next.some((existing) =>
+        existing.name === file.name &&
+        existing.size === file.size &&
+        existing.lastModified === file.lastModified
+      )) next.push(file);
+    }
+    onChange(next);
+    if (rejected) toast({
+      title: "Formato ou tamanho inválido",
+      description: "Escolha JPG, PNG, WEBP ou PDF, até 10 MB por ficheiro.",
+      variant: "destructive",
+    });
+    if (input.current) input.current.value = "";
+    if (cameraInput.current) cameraInput.current.value = "";
+  }
+
+  return (
+    <section
+      aria-label="Comprovativos da nova despesa"
+      className="space-y-3 rounded-xl border border-border/70 bg-muted/15 p-3 sm:p-4"
+    >
+      <div>
+        <h3 className="flex items-center gap-2 text-sm font-semibold">
+          <Paperclip className="h-4 w-4 text-primary" />
+          Comprovativos
+        </h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Pode selecionar fotos ou PDFs agora. Serão anexados automaticamente
+          depois de guardar a despesa.
+        </p>
+      </div>
+      <input
+        ref={input}
+        aria-label="Selecionar comprovativos para nova despesa"
+        className="sr-only"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        multiple
+        disabled={disabled}
+        onChange={(event) => select(event.target.files)}
+      />
+      <input
+        ref={cameraInput}
+        aria-label="Fotografar comprovativo para nova despesa"
+        className="sr-only"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+        disabled={disabled}
+        onChange={(event) => select(event.target.files)}
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" variant="outline" disabled={disabled}
+          onClick={() => input.current?.click()}>
+          <Paperclip className="h-4 w-4" />
+          Anexar comprovativo
+        </Button>
+        <Button type="button" size="sm" variant="outline" disabled={disabled}
+          onClick={() => cameraInput.current?.click()}>
+          <Camera className="h-4 w-4" />
+          Tirar fotografia
+        </Button>
+      </div>
+      {files.length ? (
+        <div className="space-y-2" aria-label="Comprovativos por anexar">
+          <p className="text-xs font-medium">
+            {files.length} {files.length === 1 ? "ficheiro selecionado" : "ficheiros selecionados"}
+          </p>
+          {files.map((file, index) => (
+            <div key={`${file.name}:${file.size}:${file.lastModified}`}
+              className="flex items-center justify-between gap-2 rounded-lg border bg-background px-3 py-2">
+              <span className="min-w-0 break-all text-xs">{file.name}</span>
+              <Button type="button" variant="ghost" size="sm"
+                aria-label={`Remover ${file.name}`} disabled={disabled}
+                onClick={() => onChange(files.filter((_, i) => i !== index))}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">Nenhum comprovativo selecionado (opcional).</p>
+      )}
+    </section>
+  );
+}
+
 export function ExpenseDocumentCounts({
   ids,
   children,
