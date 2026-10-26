@@ -77,3 +77,34 @@ test("free offline demo shares files, uploads, downloads, resets and never calls
   await expect(section.getByText("Associado a 2 despesas")).toBeVisible();
   expect(requests).toEqual([]);
 });
+
+test("free demo accepts attachments during creation of a new fictional expense", async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  page.on("request", (r) => {
+    if (/\/api\/|supabase\.|\/storage\/v1\/|\/auth\/v1\//.test(r.url()))
+      requests.push(r.url());
+  });
+  await page.goto("/comprovativos-demo.html");
+  await page.getByRole("button", { name: "Adicionar despesa" }).click();
+  const pending = page.getByRole("region", { name: "Comprovativos da nova despesa" });
+  await expect(pending.getByRole("button", { name: "Anexar comprovativo" })).toBeVisible();
+  await expect(pending.getByLabel("Fotografar comprovativo para nova despesa")).toHaveAttribute(
+    "capture",
+    "environment",
+  );
+  const image = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/ksAAAAASUVORK5CYII=",
+    "base64",
+  );
+  await pending.getByLabel("Selecionar comprovativos para nova despesa").setInputFiles({
+    name: "talão-novo.png", mimeType: "image/png", buffer: image,
+  });
+  await expect(pending.getByText("talão-novo.png")).toBeVisible();
+  await page.getByRole("button", { name: "Guardar despesa e comprovativos" }).click();
+  await expect(page.getByRole("button", { name: /Nova despesa fictícia/ })).toBeVisible();
+  const saved = page.getByRole("region", { name: "Comprovativos", exact: true });
+  await expect(saved.getByText("talão-novo.png")).toBeVisible();
+  expect(requests).toEqual([]);
+});
