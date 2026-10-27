@@ -255,3 +255,95 @@ test("new expense form shows receipt selection before the financial record exist
   await queued.getByRole("button", { name: "Remover talao-novo.pdf" }).click();
   await expect(queued.getByText("Nenhum comprovativo selecionado (opcional).")).toBeVisible();
 });
+
+
+test("creating an expense attaches the selected document once, in the same save flow", async ({ page }) => {
+  const createdId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+  const created = { ...row, id: createdId, description: "Material de displays — ensaio", amount: 12.34 };
+  const prepareExpenseIds: string[] = [];
+  let createCount = 0;
+  let linked = false;
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const action = url.searchParams.get("documentAction");
+    const method = route.request().method();
+    let result: unknown = [];
+    if (action === "prepare") {
+      const body = JSON.parse(route.request().postData() ?? "{}");
+      prepareExpenseIds.push(body.expenseId);
+      linked = true;
+      result = { document: doc, upload: false }; // Existing immutable invoice
+    } else if (action === "list") result = linked ? [doc] : [];
+    else if (action === "counts") result = linked ? { [createdId]: 1 } : {};
+    else if (url.pathname === "/api/expenses") {
+      if (method === "POST") {
+        createCount++;
+        result = created;
+      } else result = createCount ? [created, row] : [row];
+    } else if (url.pathname.includes("expense-categories")) {
+      result = [{ id: row.categoryId, name: row.categoryName, isActive: true, sortOrder: 0 }];
+    }
+    await route.fulfill({ json: result });
+  });
+  await page.goto("/expenses-flow-test.html");
+  await page.getByRole("button", { name: "Adicionar despesa", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('input[placeholder="Ex.: Continente"]').fill(created.description);
+  await dialog.locator('input[inputmode="decimal"]').fill("12,34");
+  await dialog.getByText("Escolher categoria").click();
+  await page.getByRole("option", { name: row.categoryName }).click();
+  const pending = dialog.getByRole("region", { name: "Comprovativos da nova despesa" });
+  await pending.getByLabel("Selecionar comprovativos para nova despesa").setInputFiles({
+    name: "fatura-displays.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+  });
+  await expect(pending.getByText("fatura-displays.pdf")).toBeVisible();
+  await dialog.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(createCount).toBe(1);
+  expect(prepareExpenseIds).toEqual([createdId]);
+  await expect(page.getByText("📎 1 comprovativo")).toBeVisible();
+});
+
+test("failed receipt upload never resubmits the financial expense and opens edit for recovery", async ({ page }) => {
+  const createdId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+  const created = { ...row, id: createdId, description: "Teste de upload falhado", amount: 9.99 };
+  let createCount = 0;
+  let attemptedUploads = 0;
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const action = url.searchParams.get("documentAction");
+    const method = route.request().method();
+    if (action === "prepare") {
+      attemptedUploads++;
+      await route.fulfill({ status: 502, json: { error: "Storage indisponível" } });
+      return;
+    }
+    let result: unknown = [];
+    if (action === "list") result = [];
+    else if (action === "counts") result = {};
+    else if (url.pathname === "/api/expenses") {
+      if (method === "POST") {
+        createCount++;
+        result = created;
+      } else result = createCount ? [created, row] : [row];
+    } else if (url.pathname.includes("expense-categories")) {
+      result = [{ id: row.categoryId, name: row.categoryName, isActive: true, sortOrder: 0 }];
+    }
+    await route.fulfill({ json: result });
+  });
+  await page.goto("/expenses-flow-test.html");
+  await page.getByRole("button", { name: "Adicionar despesa", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('input[placeholder="Ex.: Continente"]').fill(created.description);
+  await dialog.locator('input[inputmode="decimal"]').fill("9,99");
+  await dialog.getByText("Escolher categoria").click();
+  await page.getByRole("option", { name: row.categoryName }).click();
+  await dialog.getByLabel("Selecionar comprovativos para nova despesa").setInputFiles({
+    name: "comprovativo-falho.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+  });
+  await dialog.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByRole("dialog").getByText("Editar despesa")).toBeVisible();
+  await expect(page.getByText("Despesa guardada, mas faltam comprovativos")).toBeVisible();
+  expect(attemptedUploads).toBe(1);
+  expect(createCount).toBe(1);
+});
