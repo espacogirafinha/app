@@ -50,13 +50,32 @@ A migration não é aplicada automaticamente pelo código ou workflow em qualque
 - UI: `corepack pnpm exec playwright test --config playwright.expense-documents.config.ts`; servidor Vite de testes em 127.0.0.1:4175, configuração Supabase fictícia. Testa computador e viewport iPhone em Chromium; a câmara física e Safari nativo requerem validação num dispositivo real.
 - Obrigatórios: `corepack pnpm run typecheck` e `corepack pnpm run build`.
 
+## Revisão técnica e segurança — 27/10/2026
+
+Aprovação funcional pela responsável concluída; PR #75 marcado **Ready for Review**, ainda **sem autorização para merge, migrations remotas ou Production**.
+
+### Novo registo com comprovativo no mesmo formulário
+
+- Em **Despesas → Adicionar despesa**, os botões **Anexar comprovativo** e **Tirar fotografia** surgem antes de guardar.
+- Os ficheiros JPG/PNG/WEBP/PDF até 10 MiB são selecionados e apresentados numa lista removível em memória local do formulário; ainda não criam objetos Storage nem dados financeiros.
+- Ao guardar, a API financeira cria a despesa **uma única vez** e devolve o ID. Só depois o frontend envia cada ficheiro ao módulo privado de documentos, ligando-o à nova despesa.
+- Guardar sem anexos mantém a criação normal. Enquanto decorre o envio, o formulário impede uma segunda submissão e desativa Cancelar.
+- Se falhar um anexo, a despesa já criada é preservada. O formulário muda para **Editar despesa**, mostra o nome do ficheiro falhado e permite repetir o carregamento, sem criar uma segunda despesa. Os ficheiros falhados devem ser selecionados de novo na edição.
+- O Preview gratuito inclui uma simulação autónoma de criação, sem sessão/recursos de Production. O fluxo real é validado com mocks no Playwright; Storage/Auth/PostgreSQL são validados em Docker descartável separado.
+
+### Orçamento 0 € e capacidade disponível
+
+A organização Supabase `espacogirafinha's Org` foi confirmada no plano **Free** em 27/10/2026, com dois projetos existentes. Consulta apenas de leitura ao catálogo `storage.objects`: o projeto **Espaço Girafinha Reservas** tinha 7 objetos, que somavam 3.620.938 bytes nos metadados; o projeto do site `espacogirafinha.pt` tinha 0 objetos. Estes valores são inventário pontual, **não medem consumo médio faturado, largura de banda/egress nem garantem quota futura**. O plano Free inclui 1 GB de ficheiros por organização, sem taxas de overage; ultrapassar os limites pode restringir o serviço. Confirmar o consumo no Dashboard antes de qualquer go-live. Fontes oficiais: https://supabase.com/docs/guides/platform/billing-on-supabase e https://supabase.com/docs/guides/platform/cost-control.
+
+A migration permanece **apenas no repositório**: a pesquisa em Production confirmou que `expense_documents`, `expense_document_links` e o bucket `expense-documents` ainda não existem. Nenhuma alteração remota foi efetuada. Câmara física e Safari nativo de iPhone ainda exigem teste manual.
+
 ## Aprovação
 
 PR independente da main `005f77190a2d35c4ed5564879138124a2ce1b3fc`. O PR #73 não foi modificado nem incorporado. Não fazer merge, deploy Production ou migration em Production sem autorização expressa. A demonstração gratuita no Preview permite aprovação visual e funcional com dados fictícios. A ligação Preview→base remota persistente fica fora do âmbito de orçamento 0 €; o armazenamento real é validado em Supabase Docker descartável no CI.
 
 ## Evidência da entrega (23/10/2026)
 
-- PR: https://github.com/espacogirafinha/app/pull/75 (DRAFT), branch `feat/expense-documents`.
+- PR: https://github.com/espacogirafinha/app/pull/75 (Ready for Review), branch `feat/expense-documents`.
 - Código testado: `389dbc41ca3781d16cb122efaa27c0d57f4622e4`.
 - CI completo: https://github.com/espacogirafinha/app/actions/runs/40004692750 — ambos os jobs aprovados.
 - 229 testes unitários locais aprovados; 6 E2E UI desktop/mobile aprovados; integração PostgreSQL 17, RLS, concorrência, recuperação e rollback aprovados.
@@ -77,4 +96,4 @@ A alternativa de validação no Preview é `/comprovativos-demo.html`, usando ex
 
 A página não importa a sessão da aplicação nem acede a Supabase/API. Uma política CSP `connect-src 'none'` bloqueia ligações de dados. Os ficheiros ficam apenas na memória da página, sem localStorage/IndexedDB; recarregar ou fechar repõe os exemplos. O build inclui a página apenas em Vercel Preview (ou no build local explicitamente marcado `EXPENSE_DOCUMENTS_DEMO=1`), nunca num build `VERCEL_ENV=production`.
 
-Limitações gratuitas explicitamente aceites para a demonstração: não persiste entre carregamentos nem entre dispositivos; não testa a ligação Preview→base real; permissões e persistência reais são verificadas separadamente na integração Supabase local em Docker. A câmara física e Safari nativo num iPhone requerem um teste manual no dispositivo. O PR permanece DRAFT para aprovação visual/funcional, sem qualquer pedido de ambiente pago.
+Limitações gratuitas explicitamente aceites para a demonstração: não persiste entre carregamentos nem entre dispositivos; não testa a ligação Preview→base real; permissões e persistência reais são verificadas separadamente na integração Supabase local em Docker. A câmara física e Safari nativo num iPhone requerem um teste manual no dispositivo. O PR está Ready for Review após aprovação funcional, sem autorização para merge ou ativação remota; não há pedido de ambiente pago.
