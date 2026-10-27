@@ -1,6 +1,6 @@
 import { ExpenseDocuments, ExpenseDocumentCounts, PendingExpenseDocuments } from "@/components/expense-documents";
 import { uploadExpenseDocument } from "@/lib/expense-documents";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, Edit, Plus, ReceiptText, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -131,6 +131,7 @@ export default function ExpensesPage() {
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
   const [uploadingNewDocuments, setUploadingNewDocuments] = useState(false);
+  const savingExpenseRef = useRef(false);
 
   const range = dateMode === "month"
     ? monthRange(month)
@@ -371,12 +372,16 @@ export default function ExpensesPage() {
         eventOptions={eventOptions}
         isSaving={isSaving}
         onOpenChange={(open) => {
+          if (!open && isSaving) return;
           if (!open) {
             setCreating(false);
             setEditing(null);
           }
         }}
         onSave={async (data, pendingFiles) => {
+          // Guard synchronously against double click/Enter while requests are in flight.
+          if (savingExpenseRef.current) return;
+          savingExpenseRef.current = true;
           try {
             if (editing) {
               await updateExpense.mutateAsync({ id: editing.id, data });
@@ -411,10 +416,11 @@ export default function ExpensesPage() {
             await refresh();
             setCreating(false);
             setEditing(null);
-            toast({ title: editing ? "Despesa atualizada" : "Despesa e comprovativos guardados" });
+            toast({ title: editing ? "Despesa atualizada" : pendingFiles.length ? "Despesa e comprovativos guardados" : "Despesa registada" });
           } catch {
             toast({ title: "Não foi possível concluir a gravação", variant: "destructive" });
           } finally {
+            savingExpenseRef.current = false;
             setUploadingNewDocuments(false);
           }
         }}
@@ -669,7 +675,7 @@ function ExpenseDialog({
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="button" variant="outline" disabled={isSaving} onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={isSaving}>{isSaving ? "A guardar..." : "Guardar"}</Button>
           </DialogFooter>
         </form>
