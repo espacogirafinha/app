@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { ExpenseDocuments, ExpenseDocumentCounts, PendingExpenseDocuments } from "@/components/expense-documents";
+import { uploadExpenseDocument } from "@/lib/expense-documents";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, Edit, Plus, ReceiptText, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -128,6 +130,8 @@ export default function ExpensesPage() {
   const [editing, setEditing] = useState<Expense | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+  const [uploadingNewDocuments, setUploadingNewDocuments] = useState(false);
+  const savingExpenseRef = useRef(false);
 
   const range = dateMode === "month"
     ? monthRange(month)
@@ -203,7 +207,7 @@ export default function ExpensesPage() {
   };
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: getListExpensesQueryKey() });
-  const isSaving = createExpense.isPending || updateExpense.isPending || deleteExpense.isPending;
+  const isSaving = createExpense.isPending || updateExpense.isPending || deleteExpense.isPending || uploadingNewDocuments;
 
   return (
     <div className="animate-in space-y-4 fade-in slide-in-from-bottom-4 duration-500 md:space-y-6">
@@ -315,7 +319,7 @@ export default function ExpensesPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {expenses.map((expense) => (
+          <ExpenseDocumentCounts ids={expenses.map(expense=>expense.id)}>{(documentCounts)=>expenses.map((expense) => (
             <Card key={expense.id} className="border-border/70 shadow-sm">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -331,6 +335,7 @@ export default function ExpensesPage() {
 
                 <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
                   <span className="rounded-full bg-muted px-2 py-1">{expense.categoryName}</span>
+                  {documentCounts[expense.id] > 0 && <span className="rounded-full bg-primary/10 px-2 py-1 text-primary">📎 {documentCounts[expense.id]} comprovativo{documentCounts[expense.id] === 1 ? "" : "s"}</span>}
                   <span className="rounded-full bg-muted px-2 py-1">
                     {expense.expenseType === "operational" ? "Operacional" : "Investimento"}
                   </span>
@@ -355,7 +360,7 @@ export default function ExpensesPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          ))}</ExpenseDocumentCounts>
         </div>
       )}
 
@@ -367,24 +372,56 @@ export default function ExpensesPage() {
         eventOptions={eventOptions}
         isSaving={isSaving}
         onOpenChange={(open) => {
+          if (!open && isSaving) return;
           if (!open) {
             setCreating(false);
             setEditing(null);
           }
         }}
-        onSave={async (data) => {
+        onSave={async (data, pendingFiles) => {
+          // Guard synchronously against double click/Enter while requests are in flight.
+          if (savingExpenseRef.current) return;
+          savingExpenseRef.current = true;
           try {
             if (editing) {
               await updateExpense.mutateAsync({ id: editing.id, data });
             } else {
-              await createExpense.mutateAsync({ data });
+              // Create exactly once, then attach files using the returned ID.
+              const created = await createExpense.mutateAsync({ data });
+              if (pendingFiles.length) {
+                setUploadingNewDocuments(true);
+                const failed: string[] = [];
+                for (const file of pendingFiles) {
+                  try {
+                    await uploadExpenseDocument(created.id, file);
+                  } catch {
+                    failed.push(file.name);
+                  }
+                }
+                await refresh();
+                if (failed.length) {
+                  // The financial record exists. Open editing so the user can
+                  // retry only the failed files, never create a duplicate expense.
+                  setCreating(false);
+                  setEditing(created);
+                  toast({
+                    title: "Despesa guardada, mas faltam comprovativos",
+                    description: `Não foi possível anexar: ${failed.join(", ")}. Tente novamente no formulário de edição.`,
+                    variant: "destructive",
+                  });
+                  return;
+                }
+              }
             }
             await refresh();
             setCreating(false);
             setEditing(null);
-            toast({ title: editing ? "Despesa atualizada" : "Despesa registada" });
+            toast({ title: editing ? "Despesa atualizada" : pendingFiles.length ? "Despesa e comprovativos guardados" : "Despesa registada" });
           } catch {
-            toast({ title: "Não foi possível guardar a despesa", variant: "destructive" });
+            toast({ title: "Não foi possível concluir a gravação", variant: "destructive" });
+          } finally {
+            savingExpenseRef.current = false;
+            setUploadingNewDocuments(false);
           }
         }}
       />
@@ -484,13 +521,15 @@ function ExpenseDialog({
   eventOptions: ExpenseEventOption[];
   isSaving: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: CreateExpenseBody) => Promise<void>;
+  onSave: (data: CreateExpenseBody, pendingFiles: File[]) => Promise<void>;
 }) {
   const [form, setForm] = useState<ExpenseForm>(emptyForm());
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!open) return;
+    setPendingFiles([]);
     setForm(expense ? {
       expenseDate: expense.expenseDate,
       description: expense.description,
@@ -505,6 +544,7 @@ function ExpenseDialog({
 
   const initialize = (nextOpen: boolean) => {
     if (nextOpen) {
+      setPendingFiles([]);
       setForm(expense ? {
         expenseDate: expense.expenseDate,
         description: expense.description,
@@ -551,7 +591,7 @@ function ExpenseDialog({
               supplier: form.supplier.trim() || null,
               notes: form.notes.trim() || null,
               eventLinks: form.eventLinks,
-            });
+            }, pendingFiles);
           }}
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -628,12 +668,14 @@ function ExpenseDialog({
             <Textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} rows={3} placeholder="Opcional" />
           </Field>
 
-          <p className="text-xs text-muted-foreground">
-            Comprovativo: ficará como melhoria posterior; os anexos atuais são específicos de eventos/imagens e não serão duplicados aqui.
-          </p>
+          {expense ? (
+            <ExpenseDocuments expenseId={expense.id} />
+          ) : (
+            <PendingExpenseDocuments files={pendingFiles} onChange={setPendingFiles} disabled={isSaving} />
+          )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="button" variant="outline" disabled={isSaving} onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" disabled={isSaving}>{isSaving ? "A guardar..." : "Guardar"}</Button>
           </DialogFooter>
         </form>
