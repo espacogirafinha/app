@@ -343,7 +343,7 @@ test("failed receipt upload never resubmits the financial expense and opens edit
   });
   await dialog.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect(page.getByRole("dialog").getByText("Editar despesa")).toBeVisible();
-  await expect(page.getByText("Despesa guardada, mas faltam comprovativos")).toBeVisible();
+  await expect(page.getByText("Despesa guardada, mas faltam comprovativos").first()).toBeVisible();
   expect(attemptedUploads).toBe(1);
   expect(createCount).toBe(1);
 });
