@@ -27,6 +27,7 @@ import {
   summarizeVenueProfitability,
 } from "../lib/reports-profitability";
 import { eq } from "drizzle-orm";
+import { requireRole } from "../lib/roles";
 
 const router: IRouter = Router();
 const ACTIVE_PARTICIPANT_STATUSES = new Set(["registered", "confirmed", "attended"]);
@@ -218,7 +219,7 @@ function workshopsReport(workshops: WorkshopRow[], participants: WorkshopPartici
   };
 }
 
-router.get("/reports-v2", async (req, res): Promise<void> => {
+router.get("/reports-v2", requireRole("admin", "staff"), async (req, res): Promise<void> => {
   const defaults = defaultDateRange();
   const startDate = isValidDateParam(req.query.startDate) ? req.query.startDate : defaults.startDate;
   const endDate = isValidDateParam(req.query.endDate) ? req.query.endDate : defaults.endDate;

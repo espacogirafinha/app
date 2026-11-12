@@ -30,8 +30,10 @@ import {
   UpdateExpenseParams,
 } from "@workspace/api-zod";
 import { requireSettingsAdmin } from "../lib/settings-access";
+import { requireRole } from "../lib/roles";
 
 const router: IRouter = Router();
+const requireExpenseAccess = requireRole("admin", "staff");
 
 type ExpenseEventLinkInput = {
   eventType: "venue_event" | "external_event";
@@ -250,7 +252,7 @@ async function loadExpense(id: string) {
   return expenseResponse(row, linksByExpense.get(row.id) ?? []);
 }
 
-router.get("/settings/expense-categories", async (_req, res): Promise<void> => {
+router.get("/settings/expense-categories", requireExpenseAccess, async (_req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(expenseCategoriesTable)
@@ -327,7 +329,7 @@ router.patch("/settings/expense-categories/:id", requireSettingsAdmin, async (re
   }
 });
 
-router.get("/expenses", async (req, res): Promise<void> => {
+router.get("/expenses", requireExpenseAccess, async (req, res): Promise<void> => {
   const parsed = ListExpensesQueryParams.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -371,7 +373,7 @@ router.get("/expenses", async (req, res): Promise<void> => {
   res.json(rows.map((row) => expenseResponse(row, linksByExpense.get(row.id) ?? [])));
 });
 
-router.post("/expenses", async (req, res): Promise<void> => {
+router.post("/expenses", requireExpenseAccess, async (req, res): Promise<void> => {
   const parsed = CreateExpenseBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -428,7 +430,7 @@ router.post("/expenses", async (req, res): Promise<void> => {
   res.status(201).json(await loadExpense(createdId));
 });
 
-router.patch("/expenses/:id", async (req, res): Promise<void> => {
+router.patch("/expenses/:id", requireExpenseAccess, async (req, res): Promise<void> => {
   const params = UpdateExpenseParams.safeParse(req.params);
   const body = UpdateExpenseBody.safeParse(req.body);
   if (!params.success) {
@@ -500,7 +502,7 @@ router.patch("/expenses/:id", async (req, res): Promise<void> => {
   res.json(await loadExpense(params.data.id));
 });
 
-router.delete("/expenses/:id", async (req, res): Promise<void> => {
+router.delete("/expenses/:id", requireExpenseAccess, async (req, res): Promise<void> => {
   const params = DeleteExpenseParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
