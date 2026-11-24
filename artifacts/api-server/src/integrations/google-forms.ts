@@ -288,8 +288,27 @@ export function planImport(
   const matchingPacks = packs.filter(
     (pack) => pack.isActive && normalizePack(pack.name) === n.packName,
   );
-  const packBasePrice =
-    matchingPacks.length === 1 ? parseMoney(matchingPacks[0].basePrice) : null;
+  // The catalog may contain both the standard Essencial and "Essencial manhã".
+  // Do not reject every Essencial submission merely because both are active.
+  // Pick the morning price only for parties entirely in the morning; any
+  // overlapping/ambiguous interval still requires manual review.
+  let selectedPack = matchingPacks.length === 1 ? matchingPacks[0] : null;
+  if (matchingPacks.length === 2 && n.packName === "Essencial") {
+    const isMorning = (pack: Pack) =>
+      /\bmanha\b/.test(
+        pack.name
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase(),
+      );
+    const morningPacks = matchingPacks.filter(isMorning);
+    const regularPacks = matchingPacks.filter((pack) => !isMorning(pack));
+    if (morningPacks.length === 1 && regularPacks.length === 1) {
+      if (n.endTime <= "13:00") selectedPack = morningPacks[0];
+      else if (n.startTime >= "13:00") selectedPack = regularPacks[0];
+    }
+  }
+  const packBasePrice = selectedPack ? parseMoney(selectedPack.basePrice) : null;
   if (packBasePrice === null || packBasePrice <= 0)
     return {
       status: "needs_review" as const,
@@ -385,7 +404,10 @@ export function planImport(
     eventDate: n.eventDate,
     startTime: n.startTime,
     endTime: n.endTime,
-    packName: n.packName,
+    packName:
+      selectedPack && /manha/i.test(selectedPack.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+        ? selectedPack.name
+        : n.packName,
     totalPrice: total,
     expectedReservationDepositAmount,
     reservationDepositPolicy: deposit ? ("frozen_after_payment" as const) : ("auto_20" as const),

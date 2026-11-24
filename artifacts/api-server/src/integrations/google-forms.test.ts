@@ -142,6 +142,44 @@ test("known pack with empty catalog stays review-only", () => {
   assert.equal(result.status, "needs_review");
   assert.equal(result.event, null);
 });
+
+const morningCatalog = [
+  ...packs,
+  { id: "pack-e-morning", name: "Pack essencial manhã", basePrice: "200.00", isActive: true },
+];
+test("Essencial morning submission picks active morning price without duplicating the event", () => {
+  const result = planImport(
+    { ...base, fields: { ...base.fields, pack: "Pack Essencial (2:30h)", time: "10:00h às 12:30h", deposit: "50.00" } },
+    [],
+    morningCatalog,
+  );
+  assert.equal(result.status, "created");
+  assert.equal(result.event?.packName, "Pack essencial manhã");
+  assert.equal(result.event?.totalPrice, 200);
+  assert.equal(result.event?.expectedReservationDepositAmount, 40);
+  assert.equal(result.deposit?.amount, 50);
+});
+test("Essencial afternoon submission retains the standard price", () => {
+  const result = planImport(
+    { ...base, fields: { ...base.fields, pack: "Pack Essencial (2:30h)", time: "16:00h às 18:30h" } },
+    [],
+    morningCatalog,
+  );
+  assert.equal(result.status, "created");
+  assert.equal(result.event?.packName, "Essencial");
+  assert.equal(result.event?.totalPrice, 250);
+});
+test("Essencial spanning the morning boundary remains review-only", () => {
+  const result = planImport(
+    { ...base, fields: { ...base.fields, pack: "Pack Essencial (2:30h)", time: "12:00h às 14:30h" } },
+    [],
+    morningCatalog,
+  );
+  assert.equal(result.status, "needs_review");
+  assert.equal(result.event, null);
+  assert.ok(result.reasons.includes("pack price unavailable"));
+});
+
 test("Patricia needs review, never invents payment", () => {
   const result = planImport({
     ...base,
